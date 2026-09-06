@@ -1,7 +1,8 @@
 {
   "name": "Sailor's Companion",
   "author": "Antigravity & Teja",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "slug": "sailors-companion",
   "description": "The definitive Raft Quality of Life & Survival suite: Raft Teleportation & Recall ([F8]/[F9]), R&D Blueprint auto-unlocker, Customizable Navigation HUD Overlay (4 Styles), Anti-Shark Raft Protection, Infinite Durability, Free Crafting, Item Spawner, and Fly/Noclip mode.",
   "isModPermanent": false,
   "requiredByAllPlayers": false,
