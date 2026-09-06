@@ -129,6 +129,7 @@ namespace SailorsCompanion.UI
             try
             {
                 if (Plugin.ShowAnimalHealthBars == null || !Plugin.ShowAnimalHealthBars.Value) return;
+                if (!PlayerHelper.IsInGameWorld()) return;
                 if (_cachedEntities.Count == 0) return;
 
                 var player = PlayerHelper.GetLocalPlayer();

@@ -13,8 +13,33 @@ namespace SailorsCompanion
         private static Network_Player _cachedPlayer = null;
         private static float _lastSearchTime = 0f;
 
+        public static bool IsInGameWorld()
+        {
+            try
+            {
+                if (LoadSceneManager.IsLoadingScene || !LoadSceneManager.IsGameSceneLoaded)
+                {
+                    return false;
+                }
+            }
+            catch { }
+
+            var p = GetLocalPlayer();
+            return p != null && p.gameObject != null && p.gameObject.activeInHierarchy;
+        }
+
         public static Network_Player GetLocalPlayer()
         {
+            try
+            {
+                if (LoadSceneManager.IsLoadingScene || !LoadSceneManager.IsGameSceneLoaded)
+                {
+                    _cachedPlayer = null;
+                    return null;
+                }
+            }
+            catch { }
+
             if (_cachedPlayer != null && _cachedPlayer.gameObject != null && _cachedPlayer.gameObject.activeInHierarchy)
             {
                 return _cachedPlayer;

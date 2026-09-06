@@ -173,6 +173,7 @@ namespace SailorsCompanion.UI
             }
 
             if (!Plugin.EnableHUD.Value) return;
+            if (!PlayerHelper.IsInGameWorld()) return;
 
             // Refresh component references at most once per 2 seconds
             if (Time.unscaledTime - _lastComponentRefresh > 2.0f)
@@ -282,6 +283,7 @@ namespace SailorsCompanion.UI
         {
             if (Event.current.type != EventType.Repaint) return;
             if (!Plugin.EnableHUD.Value) return;
+            if (!PlayerHelper.IsInGameWorld()) return;
 
             var player = PlayerHelper.GetLocalPlayer();
             if (player == null) return;
