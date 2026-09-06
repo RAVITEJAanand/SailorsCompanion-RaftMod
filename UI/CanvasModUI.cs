@@ -182,26 +182,26 @@ namespace SailorsCompanion.UI
             winRt.anchorMax = new Vector2(0.5f, 0.5f);
             winRt.pivot = new Vector2(0.5f, 0.5f);
             winRt.anchoredPosition = Vector2.zero;
-            winRt.sizeDelta = new Vector2(960, 590);
+            winRt.sizeDelta = new Vector2(1100, 680);
 
             var winImg = _modWindowGO.AddComponent<Image>();
             winImg.color = new Color(0.06f, 0.06f, 0.08f, 0.98f);
 
             // Title Bar
-            var titleBar = CreateBox(_modWindowGO.transform, "TitleBar", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 52), new Color(0.09f, 0.09f, 0.12f, 1f));
+            var titleBar = CreateBox(_modWindowGO.transform, "TitleBar", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 54), new Color(0.09f, 0.09f, 0.12f, 1f));
             CreateBox(titleBar.transform, "TitleAccent", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(0, 2), new Color(0.85f, 0.15f, 0.20f, 1f));
 
-            var titleText = CreateText(titleBar.transform, "TitleText", $"⚓ <color=#EF4444>Sailor's Companion</color> <size=14><color=#FFFFFF>v{PluginInfo.PLUGIN_VERSION}</color></size> — <color=#E2E8F0>Quality of Life & Utilities</color>", 19, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
-            titleText.rectTransform.offsetMin = new Vector2(20, 0);
+            var titleText = CreateText(titleBar.transform, "TitleText", $"⚓ <color=#EF4444>Sailor's Companion</color> <size=15><color=#FFFFFF>v{PluginInfo.PLUGIN_VERSION}</color></size> — <color=#E2E8F0>Quality of Life & Utilities</color>", 20, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
+            titleText.rectTransform.offsetMin = new Vector2(22, 0);
 
             // Discord button in title bar
-            CreateButton(titleBar.transform, "Btn_Discord", "💬 Discord", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-60, 0), new Vector2(100, 32), () => Application.OpenURL("https://discord.gg/B4EMrR5Vrf"), new Color(0.80f, 0.16f, 0.20f, 0.95f), Color.white, 13);
+            CreateButton(titleBar.transform, "Btn_Discord", "💬 Discord", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-64, 0), new Vector2(110, 34), () => Application.OpenURL("https://discord.gg/B4EMrR5Vrf"), new Color(0.80f, 0.16f, 0.20f, 0.95f), Color.white, 14);
 
             // Close button in title bar
-            CreateButton(titleBar.transform, "Btn_Close", "✕", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-12, 0), new Vector2(34, 32), () => ToggleModWindow(), new Color(0.18f, 0.18f, 0.22f, 0.95f), Color.white, 16);
+            CreateButton(titleBar.transform, "Btn_Close", "✕", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-14, 0), new Vector2(36, 34), () => ToggleModWindow(), new Color(0.18f, 0.18f, 0.22f, 0.95f), Color.white, 17);
 
             // Tabs Row
-            var tabRow = CreateBox(_modWindowGO.transform, "TabRow", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -58), new Vector2(-28, 44), Color.clear);
+            var tabRow = CreateBox(_modWindowGO.transform, "TabRow", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -60), new Vector2(-32, 46), Color.clear);
             var tabLayout = tabRow.AddComponent<HorizontalLayoutGroup>();
             tabLayout.spacing = 8;
             tabLayout.childForceExpandWidth = true;
@@ -211,7 +211,7 @@ namespace SailorsCompanion.UI
             for (int i = 0; i < tabNames.Length; i++)
             {
                 int index = i;
-                var tabBtn = CreateButton(tabRow.transform, $"TabBtn_{i}", tabNames[i], Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SelectTab(index), new Color(0.13f, 0.13f, 0.17f, 0.92f), Color.white, 14);
+                var tabBtn = CreateButton(tabRow.transform, $"TabBtn_{i}", tabNames[i], Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SelectTab(index), new Color(0.13f, 0.13f, 0.17f, 0.92f), Color.white, 15);
                 _tabButtonImages[i] = tabBtn.GetComponent<Image>();
                 _tabButtonTexts[i] = tabBtn.GetComponentInChildren<Text>();
             }
@@ -219,8 +219,8 @@ namespace SailorsCompanion.UI
             // Tab Content Area (precisely bounded between Tabs and Footer)
             var contentArea = CreateBox(_modWindowGO.transform, "ContentArea", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
             var cRt = contentArea.GetComponent<RectTransform>();
-            cRt.offsetMin = new Vector2(18, 38);
-            cRt.offsetMax = new Vector2(-18, -108);
+            cRt.offsetMin = new Vector2(20, 42);
+            cRt.offsetMax = new Vector2(-20, -114);
 
             // Build individual tab pages
             _tabPages[0] = BuildSurvivalQoLTab(contentArea.transform);
@@ -230,9 +230,9 @@ namespace SailorsCompanion.UI
             _tabPages[4] = BuildSpawnerTab(contentArea.transform);
 
             // Fixed Hotkeys Footer Bar
-            var footerBar = CreateBox(_modWindowGO.transform, "FooterBar", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(0, 34), new Color(0.08f, 0.08f, 0.10f, 1f));
+            var footerBar = CreateBox(_modWindowGO.transform, "FooterBar", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(0, 36), new Color(0.08f, 0.08f, 0.10f, 1f));
             CreateBox(footerBar.transform, "FooterAccent", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 1), new Color(0.20f, 0.20f, 0.25f, 0.8f));
-            CreateText(footerBar.transform, "FooterText", "<color=#94A3B8>Hotkeys:</color> <color=#EF4444>[F5]</color> Menu  |  <color=#EF4444>[F6]</color> HUD  |  <color=#EF4444>[F]</color> Fly  |  <color=#EF4444>[F8]</color> Recall to Raft  |  <color=#EF4444>[F9]</color> Summon Raft  |  <color=#EF4444>[ESC]</color> Close", 13, FontStyle.Normal, Color.white, TextAnchor.MiddleCenter);
+            CreateText(footerBar.transform, "FooterText", "<color=#94A3B8>Hotkeys:</color> <color=#EF4444>[F5]</color> Menu  |  <color=#EF4444>[F6]</color> HUD  |  <color=#EF4444>[F]</color> Fly  |  <color=#EF4444>[F8]</color> Recall to Raft  |  <color=#EF4444>[F9]</color> Summon Raft  |  <color=#EF4444>[ESC]</color> Close", 14, FontStyle.Normal, Color.white, TextAnchor.MiddleCenter);
 
             // Update Banner (shown when a newer version is available online)
             _updateBannerGO = CreateBox(_modWindowGO.transform, "UpdateBanner", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 36), new Vector2(-36, 40), new Color(0.72f, 0.12f, 0.16f, 0.98f));
@@ -273,94 +273,94 @@ namespace SailorsCompanion.UI
         {
             var page = CreateBox(parent, "Page_SurvivalQoL", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
             var layout = page.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 5;
-            layout.padding = new RectOffset(4, 4, 2, 2);
+            layout.spacing = 6;
+            layout.padding = new RectOffset(6, 6, 4, 4);
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
             // 1. Quick Action Bar: 3 Primary Utility Buttons
-            var actionRow = CreateBox(page.transform, "QuickActionBar", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
-            EnsureLayout(actionRow, -1, 36);
+            var actionRow = CreateBox(page.transform, "QuickActionBar", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), Color.clear);
+            EnsureLayout(actionRow, -1, 42);
             var actionLayout = actionRow.AddComponent<HorizontalLayoutGroup>();
-            actionLayout.spacing = 8;
+            actionLayout.spacing = 10;
             actionLayout.childForceExpandWidth = true;
 
             CreateButton(actionRow.transform, "Btn_QuickStack", "📦 Quick Stack to Chests (22m)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 ChestSorter.QuickStackToNearbyChests();
-            }, new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 14);
+            }, new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 15);
 
             CreateButton(actionRow.transform, "Btn_EmptyNets", "🕸️ Empty All Collection Nets", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 NetsHelper.EmptyAllNets(silent: false);
-            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 15);
 
             CreateButton(actionRow.transform, "Btn_WaterPlots", "🌱 Water All Crops & Grass", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 FarmingHelper.WaterAllPlots(silent: false);
-            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 15);
 
             // 2. Craft from Nearby Storage Toggle
             CreateToggleItem(page.transform, "🛠️ Craft from Nearby Storage (Auto-pulls materials from chests within 22m)", Plugin.CraftFromStorage.Value, v =>
             {
                 Plugin.CraftFromStorage.Value = v;
                 TeleportManager.SetNotification(v ? "🛠️ Craft from Storage: ENABLED" : "🛠️ Craft from Storage: DISABLED");
-            }, 35f);
+            }, 39f, 15);
 
             // 3. Collection Nets Auto-Empty Toggle
             CreateToggleItem(page.transform, "🕸️ Auto-Empty Collection Nets (Continuously gathers trapped items into inventory)", Plugin.AutoEmptyCollectionNets.Value, v =>
             {
                 Plugin.AutoEmptyCollectionNets.Value = v;
                 TeleportManager.SetNotification(v ? "🕸️ Auto-Empty Nets: ENABLED" : "🕸️ Auto-Empty Nets: DISABLED");
-            }, 35f);
+            }, 39f, 15);
 
             // 4. Farming Helper Auto-Water Toggle
             CreateToggleItem(page.transform, "🌱 Auto-Water Crops Continually (Never let crop plots or livestock grass dry out)", Plugin.AutoWaterCrops.Value, v =>
             {
                 Plugin.AutoWaterCrops.Value = v;
                 TeleportManager.SetNotification(v ? "🌱 Auto-Watering: ENABLED" : "🌱 Auto-Watering: DISABLED");
-            }, 35f);
+            }, 39f, 15);
 
             // 5. Crop Growth Acceleration Toggle
             CreateToggleItem(page.transform, "🌾 Accelerate Crop & Tree Growth (Speeds up farming & tree growth cycles)", Plugin.EnableCropGrowthBoost.Value, v =>
             {
                 Plugin.EnableCropGrowthBoost.Value = v;
                 TeleportManager.SetNotification(v ? "🌾 Crop Growth Boost: ENABLED" : "🌾 Crop Growth Boost: DISABLED");
-            }, 35f);
+            }, 39f, 15);
 
             // 6. Animal & Enemy Health Bars Toggle
             CreateToggleItem(page.transform, "🐾 Animal & Enemy Health Bars (Floating HP bars and distance meters over creatures)", Plugin.ShowAnimalHealthBars.Value, v =>
             {
                 Plugin.ShowAnimalHealthBars.Value = v;
                 TeleportManager.SetNotification(v ? "🐾 Animal Health Bars: ENABLED" : "🐾 Animal Health Bars: DISABLED");
-            }, 35f);
+            }, 39f, 15);
 
             // 7. Anti-Shark Protection Toggle
             CreateToggleItem(page.transform, "🦈 Anti-Shark Raft Protection (Bruce will not attack or destroy raft foundations)", Plugin.AntiSharkRaftDamage.Value, v =>
             {
                 Plugin.AntiSharkRaftDamage.Value = v;
                 TeleportManager.SetNotification(v ? "🦈 Anti-Shark: ENABLED" : "🦈 Anti-Shark: DISABLED");
-            }, 35f);
+            }, 39f, 15);
 
             // 8. Infinite Tool Durability Toggle
             CreateToggleItem(page.transform, "🔨 Infinite Tool Durability (Hooks, weapons, tools, gear & armor never break)", Plugin.InfiniteDurability.Value, v =>
             {
                 Plugin.InfiniteDurability.Value = v;
                 TeleportManager.SetNotification(v ? "🔨 Infinite Durability: ENABLED" : "🔨 Infinite Durability: DISABLED");
-            }, 35f);
+            }, 39f, 15);
 
             // 9. Dual Stepper: Crop Growth & Stack Size Limit
             CreateDualStepperRow(page.transform,
                 "🌾 Crop Growth Multiplier", 1.0f, 5.0f, 0.5f, Plugin.CropGrowthMultiplier.Value, "x", v => Plugin.CropGrowthMultiplier.Value = v,
                 "📦 Resource Stack Limit", 20f, 999f, 50f, Plugin.CustomStackSize.Value, "", v => Plugin.CustomStackSize.Value = Mathf.RoundToInt(v),
-                35f);
+                39f);
 
             // 10. Triple Stepper: Hook Reel Speed, Swim Speed, Sprint Speed
             CreateTripleStepperRow(page.transform,
                 "🎣 Hook Reel Speed", 1.0f, 5.0f, 0.5f, Plugin.HookPullSpeedMultiplier.Value, "x", v => Plugin.HookPullSpeedMultiplier.Value = v,
                 "🏊 Swim Speed", 1.0f, 4.0f, 0.2f, Plugin.SwimSpeedMultiplier.Value, "x", v => Plugin.SwimSpeedMultiplier.Value = v,
                 "🏃 Sprint Speed", 1.0f, 3.0f, 0.2f, Plugin.SprintSpeedMultiplier.Value, "x", v => Plugin.SprintSpeedMultiplier.Value = v,
-                35f);
+                39f);
 
             return page;
         }
@@ -378,14 +378,15 @@ namespace SailorsCompanion.UI
             var page = CreateBox(parent, "Page_Cheats", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
             var layout = page.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 8;
+            layout.padding = new RectOffset(6, 6, 4, 4);
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            CreateToggleItem(page.transform, "🛡️ God Mode (Invulnerable to all damage & shark bites)", Plugin.GodMode.Value, v => Plugin.GodMode.Value = v);
-            CreateToggleItem(page.transform, "🤿 Infinite Oxygen (Dive freely without running out of air)", Plugin.InfiniteOxygen.Value, v => Plugin.InfiniteOxygen.Value = v);
-            CreateToggleItem(page.transform, "🥩 Freeze Hunger & Thirst (Never starve or dehydrate)", Plugin.NoHungerThirst.Value, v => Plugin.NoHungerThirst.Value = v);
-            CreateToggleItem(page.transform, "🕊️ Fly / Noclip Mode (Hotkey: [F] | WASD + Space/Shift)", Plugin.EnableFlyMode.Value, v => Plugin.EnableFlyMode.Value = v);
-            CreateToggleItem(page.transform, "🛠️ Free Instant Crafting (Craft any recipe without materials)", Plugin.FreeCrafting.Value, v => Plugin.FreeCrafting.Value = v);
+            CreateToggleItem(page.transform, "🛡️ God Mode (Invulnerable to all damage & shark bites)", Plugin.GodMode.Value, v => Plugin.GodMode.Value = v, 39f, 15);
+            CreateToggleItem(page.transform, "🤿 Infinite Oxygen (Dive freely without running out of air)", Plugin.InfiniteOxygen.Value, v => Plugin.InfiniteOxygen.Value = v, 39f, 15);
+            CreateToggleItem(page.transform, "🥩 Freeze Hunger & Thirst (Never starve or dehydrate)", Plugin.NoHungerThirst.Value, v => Plugin.NoHungerThirst.Value = v, 39f, 15);
+            CreateToggleItem(page.transform, "🕊️ Fly / Noclip Mode (Hotkey: [F] | WASD + Space/Shift)", Plugin.EnableFlyMode.Value, v => Plugin.EnableFlyMode.Value = v, 39f, 15);
+            CreateToggleItem(page.transform, "🛠️ Free Instant Crafting (Craft any recipe without materials)", Plugin.FreeCrafting.Value, v => Plugin.FreeCrafting.Value = v, 39f, 15);
 
             CreateButtonItem(page.transform, "⚡ Instant Max Vitals (Full Health, Food, Water, Oxygen)", () =>
             {
@@ -401,49 +402,49 @@ namespace SailorsCompanion.UI
             });
 
             // Raft Teleportation & Recovery Row
-            var teleRow = CreateBox(page.transform, "TeleportRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
-            EnsureLayout(teleRow, -1, 36);
+            var teleRow = CreateBox(page.transform, "TeleportRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), Color.clear);
+            EnsureLayout(teleRow, -1, 40);
             var teleLayout = teleRow.AddComponent<HorizontalLayoutGroup>();
-            teleLayout.spacing = 8;
+            teleLayout.spacing = 10;
             teleLayout.childForceExpandWidth = true;
 
             CreateButton(teleRow.transform, "Btn_TeleToRaft", "⚡ Recall to Raft [F8]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 TeleportManager.TeleportPlayerToRaft();
-            }, new Color(0.80f, 0.15f, 0.18f, 0.95f), Color.white, 14);
+            }, new Color(0.80f, 0.15f, 0.18f, 0.95f), Color.white, 15);
 
             CreateButton(teleRow.transform, "Btn_SummonRaft", "⛵ Summon Raft Here [F9]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 TeleportManager.TeleportRaftToPlayer();
-            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 15);
 
             CreateButton(teleRow.transform, "Btn_ToggleAnchor", "⚓ Toggle Anchor", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 TeleportManager.ToggleRaftAnchor();
-            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 15);
 
             // Time buttons row
-            var timeRow = CreateBox(page.transform, "TimeRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 34), Color.clear);
-            EnsureLayout(timeRow, -1, 34);
+            var timeRow = CreateBox(page.transform, "TimeRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), Color.clear);
+            EnsureLayout(timeRow, -1, 38);
             var timeLayout = timeRow.AddComponent<HorizontalLayoutGroup>();
-            timeLayout.spacing = 8;
+            timeLayout.spacing = 10;
             timeLayout.childForceExpandWidth = true;
 
-            CreateButton(timeRow.transform, "Btn_Morning", "🌅 Morning (08:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(8f), new Color(0.16f, 0.16f, 0.20f), Color.white, 13);
-            CreateButton(timeRow.transform, "Btn_Noon", "☀️ Noon (12:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(12f), new Color(0.16f, 0.16f, 0.20f), Color.white, 13);
-            CreateButton(timeRow.transform, "Btn_Night", "🌙 Night (22:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(22f), new Color(0.16f, 0.16f, 0.20f), Color.white, 13);
+            CreateButton(timeRow.transform, "Btn_Morning", "🌅 Morning (08:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(8f), new Color(0.16f, 0.16f, 0.20f), Color.white, 14);
+            CreateButton(timeRow.transform, "Btn_Noon", "☀️ Noon (12:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(12f), new Color(0.16f, 0.16f, 0.20f), Color.white, 14);
+            CreateButton(timeRow.transform, "Btn_Night", "🌙 Night (22:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(22f), new Color(0.16f, 0.16f, 0.20f), Color.white, 14);
 
             // Weather buttons row
-            var weatherRow = CreateBox(page.transform, "WeatherRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 34), Color.clear);
-            EnsureLayout(weatherRow, -1, 34);
+            var weatherRow = CreateBox(page.transform, "WeatherRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), Color.clear);
+            EnsureLayout(weatherRow, -1, 38);
             var weatherLayout = weatherRow.AddComponent<HorizontalLayoutGroup>();
-            weatherLayout.spacing = 8;
+            weatherLayout.spacing = 10;
             weatherLayout.childForceExpandWidth = true;
 
-            CreateButton(weatherRow.transform, "Btn_Sunny", "☀️ Sunny", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Default), new Color(0.16f, 0.16f, 0.20f), Color.white, 13);
-            CreateButton(weatherRow.transform, "Btn_Calm", "🌊 Calm", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Calm), new Color(0.16f, 0.16f, 0.20f), Color.white, 13);
-            CreateButton(weatherRow.transform, "Btn_Rain", "🌧️ Rain", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Rain), new Color(0.16f, 0.16f, 0.20f), Color.white, 13);
-            CreateButton(weatherRow.transform, "Btn_Fog", "🌫️ Fog", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Fog), new Color(0.16f, 0.16f, 0.20f), Color.white, 13);
+            CreateButton(weatherRow.transform, "Btn_Sunny", "☀️ Sunny", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Default), new Color(0.16f, 0.16f, 0.20f), Color.white, 14);
+            CreateButton(weatherRow.transform, "Btn_Calm", "🌊 Calm", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Calm), new Color(0.16f, 0.16f, 0.20f), Color.white, 14);
+            CreateButton(weatherRow.transform, "Btn_Rain", "🌧️ Rain", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Rain), new Color(0.16f, 0.16f, 0.20f), Color.white, 14);
+            CreateButton(weatherRow.transform, "Btn_Fog", "🌫️ Fog", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Fog), new Color(0.16f, 0.16f, 0.20f), Color.white, 14);
 
             return page;
         }
@@ -461,89 +462,89 @@ namespace SailorsCompanion.UI
             var page = CreateBox(parent, "Page_Nav", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
             var layout = page.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 10;
-            layout.padding = new RectOffset(14, 14, 10, 10);
+            layout.padding = new RectOffset(16, 16, 10, 10);
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
             CreateToggleItem(page.transform, "🧭 Show On-Screen HUD Overlay (Hotkey: [F6])", Plugin.EnableHUD.Value, v =>
             {
                 Plugin.EnableHUD.Value = v;
-            });
+            }, 40f, 15);
 
             // HUD Style Selection Row
-            var styleRow = CreateBox(page.transform, "HUDStyleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), new Color(0.10f, 0.10f, 0.13f, 0.95f));
-            EnsureLayout(styleRow, -1, 38);
+            var styleRow = CreateBox(page.transform, "HUDStyleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), new Color(0.10f, 0.10f, 0.13f, 0.95f));
+            EnsureLayout(styleRow, -1, 40);
             var styleLayout = styleRow.AddComponent<HorizontalLayoutGroup>();
-            styleLayout.spacing = 8;
-            styleLayout.padding = new RectOffset(12, 12, 3, 3);
+            styleLayout.spacing = 10;
+            styleLayout.padding = new RectOffset(14, 14, 3, 3);
             styleLayout.childForceExpandHeight = true;
 
-            var styleLabel = CreateText(styleRow.transform, "StyleLabel", "HUD Style:", 14, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
-            EnsureLayout(styleLabel.gameObject, 80, 32, false);
+            var styleLabel = CreateText(styleRow.transform, "StyleLabel", "HUD Style:", 15, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
+            EnsureLayout(styleLabel.gameObject, 90, 34, false);
 
             string[] styleNames = { "Sleek Ribbon", "Compass Bar", "Mini Pill", "Classic Box" };
             for (int s = 0; s < styleNames.Length; s++)
             {
                 int styleIdx = s;
-                var sBtn = CreateButton(styleRow.transform, $"Btn_Style_{s}", styleNames[s], Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(105, 32), () =>
+                var sBtn = CreateButton(styleRow.transform, $"Btn_Style_{s}", styleNames[s], Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(120, 34), () =>
                 {
                     HUDOverlay.SetStyle(styleIdx);
-                }, (Plugin.HUDStyle != null && Plugin.HUDStyle.Value == s) ? new Color(0.85f, 0.15f, 0.20f, 1f) : new Color(0.14f, 0.14f, 0.18f, 0.92f), Color.white, 13);
-                EnsureLayout(sBtn, 105, 32, false);
+                }, (Plugin.HUDStyle != null && Plugin.HUDStyle.Value == s) ? new Color(0.85f, 0.15f, 0.20f, 1f) : new Color(0.14f, 0.14f, 0.18f, 0.92f), Color.white, 14);
+                EnsureLayout(sBtn, 120, 34, false);
             }
 
             // Quick Teleport Row
-            var navTeleRow = CreateBox(page.transform, "NavTeleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
-            EnsureLayout(navTeleRow, -1, 36);
+            var navTeleRow = CreateBox(page.transform, "NavTeleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), Color.clear);
+            EnsureLayout(navTeleRow, -1, 40);
             var navTeleLayout = navTeleRow.AddComponent<HorizontalLayoutGroup>();
-            navTeleLayout.spacing = 8;
+            navTeleLayout.spacing = 10;
             navTeleLayout.childForceExpandWidth = true;
 
             CreateButton(navTeleRow.transform, "Btn_NavTeleToRaft", "⚡ Recall to Raft [F8]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 TeleportManager.TeleportPlayerToRaft();
-            }, new Color(0.80f, 0.15f, 0.18f, 0.95f), Color.white, 14);
+            }, new Color(0.80f, 0.15f, 0.18f, 0.95f), Color.white, 15);
 
             CreateButton(navTeleRow.transform, "Btn_NavSummonRaft", "⛵ Summon Raft Here [F9]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 TeleportManager.TeleportRaftToPlayer();
-            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 15);
 
             CreateButton(navTeleRow.transform, "Btn_NavAnchor", "⚓ Toggle Anchor", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 TeleportManager.ToggleRaftAnchor();
-            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 15);
 
             // Live Navigation Data Box
-            var statusBox = CreateBox(page.transform, "StatusBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 150), new Color(0.10f, 0.10f, 0.13f, 0.95f));
-            EnsureLayout(statusBox, -1, 150);
+            var statusBox = CreateBox(page.transform, "StatusBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 180), new Color(0.10f, 0.10f, 0.13f, 0.95f));
+            EnsureLayout(statusBox, -1, 180);
             var boxLayout = statusBox.AddComponent<VerticalLayoutGroup>();
-            boxLayout.padding = new RectOffset(16, 16, 10, 10);
-            boxLayout.spacing = 6;
+            boxLayout.padding = new RectOffset(18, 18, 12, 12);
+            boxLayout.spacing = 8;
             boxLayout.childForceExpandWidth = true;
 
-            var title = CreateText(statusBox.transform, "NavTitle", "<b>🧭 <color=#EF4444>Live Navigation</color> & Shark Radar Data</b>", 16, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
-            EnsureLayout(title.gameObject, -1, 24);
+            var title = CreateText(statusBox.transform, "NavTitle", "<b>🧭 <color=#EF4444>Live Navigation</color> & Shark Radar Data</b>", 17, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
+            EnsureLayout(title.gameObject, -1, 26);
 
-            _navStatusText = CreateText(statusBox.transform, "NavStatus", "Loading live navigation data...", 14, FontStyle.Normal, Color.white, TextAnchor.UpperLeft);
-            EnsureLayout(_navStatusText.gameObject, -1, 100);
+            _navStatusText = CreateText(statusBox.transform, "NavStatus", "Loading live navigation data...", 15, FontStyle.Normal, Color.white, TextAnchor.UpperLeft);
+            EnsureLayout(_navStatusText.gameObject, -1, 120);
 
             // Version & Update Check Row
-            var verRow = CreateBox(page.transform, "VerRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), new Color(0.09f, 0.09f, 0.12f, 0.95f));
-            EnsureLayout(verRow, -1, 36);
+            var verRow = CreateBox(page.transform, "VerRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), new Color(0.09f, 0.09f, 0.12f, 0.95f));
+            EnsureLayout(verRow, -1, 40);
             var verLayout = verRow.AddComponent<HorizontalLayoutGroup>();
-            verLayout.padding = new RectOffset(14, 14, 2, 2);
-            verLayout.spacing = 10;
+            verLayout.padding = new RectOffset(16, 16, 3, 3);
+            verLayout.spacing = 12;
             verLayout.childForceExpandHeight = true;
 
-            CreateText(verRow.transform, "VerLabel", $"⚓ Sailor's Companion <b>v{PluginInfo.PLUGIN_VERSION}</b>", 13, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
+            CreateText(verRow.transform, "VerLabel", $"⚓ Sailor's Companion <b>v{PluginInfo.PLUGIN_VERSION}</b>", 14, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
 
-            CreateButton(verRow.transform, "Btn_CheckUpdates", "🔄 Check for Updates", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(170, 30), () =>
+            CreateButton(verRow.transform, "Btn_CheckUpdates", "🔄 Check for Updates", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(180, 34), () =>
             {
                 UpdateChecker.Dismissed = false;
                 UpdateChecker.Instance?.TriggerCheck();
                 TeleportManager.SetNotification("Checking GitHub for mod updates...");
-            }, new Color(0.80f, 0.15f, 0.18f, 0.95f), Color.white, 13);
+            }, new Color(0.80f, 0.15f, 0.18f, 0.95f), Color.white, 14);
 
             return page;
         }
@@ -560,28 +561,28 @@ namespace SailorsCompanion.UI
         {
             var page = CreateBox(parent, "Page_Research", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
             var layout = page.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 14;
-            layout.padding = new RectOffset(14, 14, 12, 12);
+            layout.spacing = 16;
+            layout.padding = new RectOffset(16, 16, 14, 14);
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            var infoBox = CreateBox(page.transform, "InfoBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 130), new Color(0.10f, 0.10f, 0.13f, 0.95f));
-            EnsureLayout(infoBox, -1, 130);
+            var infoBox = CreateBox(page.transform, "InfoBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 150), new Color(0.10f, 0.10f, 0.13f, 0.95f));
+            EnsureLayout(infoBox, -1, 150);
             var boxLayout = infoBox.AddComponent<VerticalLayoutGroup>();
-            boxLayout.padding = new RectOffset(18, 18, 12, 12);
-            boxLayout.spacing = 8;
+            boxLayout.padding = new RectOffset(20, 20, 14, 14);
+            boxLayout.spacing = 10;
             boxLayout.childForceExpandWidth = true;
 
-            var title = CreateText(infoBox.transform, "Title", "🔬 <b><color=#EF4444>Research Table</color> & Blueprint Automation (R&D)</b>", 17, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
-            EnsureLayout(title.gameObject, -1, 26);
+            var title = CreateText(infoBox.transform, "Title", "🔬 <b><color=#EF4444>Research Table</color> & Blueprint Automation (R&D)</b>", 18, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
+            EnsureLayout(title.gameObject, -1, 28);
 
-            var desc = CreateText(infoBox.transform, "Desc", "Instantly researches and learns all crafting recipes, tools, weapons, furniture, engines, and blueprint items in the game without requiring you to find or sacrifice materials at the Research Table.", 14, FontStyle.Normal, new Color(0.88f, 0.90f, 0.94f), TextAnchor.UpperLeft);
-            EnsureLayout(desc.gameObject, -1, 60);
+            var desc = CreateText(infoBox.transform, "Desc", "Instantly researches and learns all crafting recipes, tools, weapons, furniture, engines, and blueprint items in the game without requiring you to find or sacrifice materials at the Research Table.", 15, FontStyle.Normal, new Color(0.88f, 0.90f, 0.94f), TextAnchor.UpperLeft);
+            EnsureLayout(desc.gameObject, -1, 70);
 
-            _researchStatusText = CreateText(page.transform, "Status", "<color=#CBD5E1>Status: Ready. Click below to unlock all items.</color>", 14, FontStyle.Italic, Color.white, TextAnchor.MiddleCenter);
-            EnsureLayout(_researchStatusText.gameObject, -1, 26);
+            _researchStatusText = CreateText(page.transform, "Status", "<color=#CBD5E1>Status: Ready. Click below to unlock all items.</color>", 15, FontStyle.Italic, Color.white, TextAnchor.MiddleCenter);
+            EnsureLayout(_researchStatusText.gameObject, -1, 28);
 
-            var unlockBtn = CreateButton(page.transform, "Btn_UnlockAllRD", "⚡ UNLOCK ALL R&D RECIPES & BLUEPRINTS NOW", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 50), () =>
+            var unlockBtn = CreateButton(page.transform, "Btn_UnlockAllRD", "⚡ UNLOCK ALL R&D RECIPES & BLUEPRINTS NOW", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 54), () =>
             {
                 try
                 {
@@ -605,8 +606,8 @@ namespace SailorsCompanion.UI
                     }
                     Debug.LogError("[Sailor's Companion] R&D error: " + ex);
                 }
-            }, new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 15);
-            EnsureLayout(unlockBtn, -1, 50);
+            }, new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 16);
+            EnsureLayout(unlockBtn, -1, 54);
 
             return page;
         }
@@ -624,13 +625,13 @@ namespace SailorsCompanion.UI
             var page = CreateBox(parent, "Page_Spawner", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
             var layout = page.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 8;
-            layout.padding = new RectOffset(14, 14, 10, 10);
+            layout.padding = new RectOffset(14, 14, 8, 8);
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
             var banner = CreateBox(page.transform, "Banner", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), new Color(0.10f, 0.10f, 0.13f, 0.95f));
             EnsureLayout(banner, -1, 38);
-            var bannerTxt = CreateText(banner.transform, "Txt", "📦 <b>Item Spawner:</b> Search any item in Raft and add stacks directly into your inventory.", 14, FontStyle.Normal, Color.white, TextAnchor.MiddleCenter);
+            var bannerTxt = CreateText(banner.transform, "Txt", "📦 <b>Item Spawner:</b> Search any item in Raft and add stacks directly into your inventory.", 15, FontStyle.Normal, Color.white, TextAnchor.MiddleCenter);
 
             // Search row
             var searchRow = CreateBox(page.transform, "SearchRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), Color.clear);
@@ -638,27 +639,27 @@ namespace SailorsCompanion.UI
             var searchLayout = searchRow.AddComponent<HorizontalLayoutGroup>();
             searchLayout.spacing = 8;
 
-            var inputGO = CreateBox(searchRow.transform, "InputSearch", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(480, 36), new Color(0.12f, 0.12f, 0.16f));
-            EnsureLayout(inputGO, 480, 36, false);
+            var inputGO = CreateBox(searchRow.transform, "InputSearch", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(620, 36), new Color(0.12f, 0.12f, 0.16f));
+            EnsureLayout(inputGO, 620, 36, false);
             var inputTxt = CreateText(inputGO.transform, "Text", "", 15, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
             inputTxt.rectTransform.offsetMin = new Vector2(12, 0);
             _itemSearchInput = inputGO.AddComponent<InputField>();
             _itemSearchInput.textComponent = inputTxt;
             _itemSearchInput.onValueChanged.AddListener(s => RefreshItemSpawnerList(s));
 
-            var clearBtn = CreateButton(searchRow.transform, "Btn_Clear", "✕ Clear", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(90, 36), () =>
+            var clearBtn = CreateButton(searchRow.transform, "Btn_Clear", "✕ Clear", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(100, 36), () =>
             {
                 if (_itemSearchInput != null) _itemSearchInput.text = "";
                 RefreshItemSpawnerList("");
             }, new Color(0.80f, 0.15f, 0.18f, 0.95f), Color.white, 14);
-            EnsureLayout(clearBtn, 90, 36, false);
+            EnsureLayout(clearBtn, 100, 36, false);
 
-            var refreshBtn = CreateButton(searchRow.transform, "Btn_Refresh", "🔄 Refresh", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(110, 36), () => RefreshItemSpawnerList(_itemSearchInput?.text ?? ""), new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
-            EnsureLayout(refreshBtn, 110, 36, false);
+            var refreshBtn = CreateButton(searchRow.transform, "Btn_Refresh", "🔄 Refresh", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(120, 36), () => RefreshItemSpawnerList(_itemSearchInput?.text ?? ""), new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+            EnsureLayout(refreshBtn, 120, 36, false);
 
             // Scroll View with RectMask2D (Reliable 2D clipping without stencil mask alpha bug)
-            var scrollGO = CreateBox(page.transform, "ScrollView", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 310), new Color(0.06f, 0.06f, 0.08f, 0.75f));
-            EnsureLayout(scrollGO, -1, 310);
+            var scrollGO = CreateBox(page.transform, "ScrollView", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 400), new Color(0.06f, 0.06f, 0.08f, 0.75f));
+            EnsureLayout(scrollGO, -1, 400);
             var scrollRect = scrollGO.AddComponent<ScrollRect>();
             scrollRect.horizontal = false;
             scrollRect.vertical = true;
@@ -680,7 +681,7 @@ namespace SailorsCompanion.UI
             cRt.anchorMin = new Vector2(0, 1);
             cRt.anchorMax = new Vector2(1, 1);
             cRt.pivot = new Vector2(0.5f, 1);
-            cRt.sizeDelta = new Vector2(0, 310);
+            cRt.sizeDelta = new Vector2(0, 400);
             var contentLayout = contentGO.AddComponent<VerticalLayoutGroup>();
             contentLayout.spacing = 4;
             contentLayout.padding = new RectOffset(4, 4, 4, 4);
@@ -754,30 +755,30 @@ namespace SailorsCompanion.UI
 
             foreach (var item in filtered)
             {
-                var row = CreateBox(_itemScrollContent, $"Item_{item.UniqueIndex}", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), new Color(0.11f, 0.11f, 0.15f, 0.92f));
-                EnsureLayout(row, -1, 40);
+                var row = CreateBox(_itemScrollContent, $"Item_{item.UniqueIndex}", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), new Color(0.11f, 0.11f, 0.15f, 0.92f));
+                EnsureLayout(row, -1, 42);
                 var rowLayout = row.AddComponent<HorizontalLayoutGroup>();
                 rowLayout.spacing = 8;
-                rowLayout.padding = new RectOffset(12, 12, 0, 0);
+                rowLayout.padding = new RectOffset(14, 14, 0, 0);
                 rowLayout.childForceExpandHeight = false;
 
                 string disp = item.settings_Inventory?.DisplayName;
                 if (string.IsNullOrEmpty(disp)) disp = item.UniqueName;
 
                 var nameTxt = CreateText(row.transform, "Name", $"<b>{disp}</b> <size=13><color=#94A3B8>({item.UniqueName})</color></size>", 15, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
-                EnsureLayout(nameTxt.gameObject, 460, 32, true);
+                EnsureLayout(nameTxt.gameObject, 640, 34, true);
 
                 string uniqueName = item.UniqueName;
                 int stack = item.settings_Inventory != null ? item.settings_Inventory.StackSize : 20;
 
-                var btn1 = CreateButton(row.transform, "Btn_1", "+1", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(52, 30), () => GiveItem(uniqueName, 1), new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
-                EnsureLayout(btn1, 52, 30, false);
+                var btn1 = CreateButton(row.transform, "Btn_1", "+1", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(56, 32), () => GiveItem(uniqueName, 1), new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+                EnsureLayout(btn1, 56, 32, false);
 
-                var btn10 = CreateButton(row.transform, "Btn_10", "+10", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(52, 30), () => GiveItem(uniqueName, 10), new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
-                EnsureLayout(btn10, 52, 30, false);
+                var btn10 = CreateButton(row.transform, "Btn_10", "+10", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(56, 32), () => GiveItem(uniqueName, 10), new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+                EnsureLayout(btn10, 56, 32, false);
 
-                var btnStack = CreateButton(row.transform, "Btn_Stack", $"+{stack}", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(70, 30), () => GiveItem(uniqueName, stack), new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 14);
-                EnsureLayout(btnStack, 70, 30, false);
+                var btnStack = CreateButton(row.transform, "Btn_Stack", $"+{stack}", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(76, 32), () => GiveItem(uniqueName, stack), new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 14);
+                EnsureLayout(btnStack, 76, 32, false);
             }
 
             Canvas.ForceUpdateCanvases();
@@ -903,23 +904,23 @@ namespace SailorsCompanion.UI
         // ============================================================================
         // [START] UI TOGGLE ITEM WITH DUAL ON/OFF BUTTONS
         // ============================================================================
-        private void CreateToggleItem(Transform parent, string label, bool initialValue, Action<bool> onToggle, float rowHeight = 35f, int fontSize = 14)
+        private void CreateToggleItem(Transform parent, string label, bool initialValue, Action<bool> onToggle, float rowHeight = 39f, int fontSize = 15)
         {
             var row = CreateBox(parent, "ToggleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), new Color(0.11f, 0.11f, 0.15f, 0.90f));
             EnsureLayout(row, -1, rowHeight);
             var layout = row.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 10;
-            layout.padding = new RectOffset(14, 14, 2, 2);
+            layout.spacing = 12;
+            layout.padding = new RectOffset(16, 16, 2, 2);
             layout.childForceExpandHeight = false;
             layout.childForceExpandWidth = false;
 
             // Feature Label
             var t = CreateText(row.transform, "Label", label, fontSize, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
-            EnsureLayout(t.gameObject, 660, rowHeight - 4, true);
+            EnsureLayout(t.gameObject, 820, rowHeight - 4, true);
 
             // Container for ON / OFF Buttons
-            var btnGroup = CreateBox(row.transform, "BtnGroup", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(136, rowHeight - 6), Color.clear);
-            EnsureLayout(btnGroup, 136, rowHeight - 6, false);
+            var btnGroup = CreateBox(row.transform, "BtnGroup", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(148, rowHeight - 6), Color.clear);
+            EnsureLayout(btnGroup, 148, rowHeight - 6, false);
             var bgLayout = btnGroup.AddComponent<HorizontalLayoutGroup>();
             bgLayout.spacing = 6;
             bgLayout.childForceExpandWidth = true;
@@ -931,8 +932,8 @@ namespace SailorsCompanion.UI
             Color inactiveColor = new Color(0.16f, 0.16f, 0.20f, 0.95f); // Dark Slate Charcoal
             Color activeOffColor = new Color(0.35f, 0.12f, 0.15f, 0.95f); // Muted Dark Burgundy
 
-            var onBtn = CreateButton(btnGroup.transform, "Btn_ON", "ON", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, null, state ? activeOnColor : inactiveColor, state ? Color.white : new Color(0.6f, 0.6f, 0.7f), 13);
-            var offBtn = CreateButton(btnGroup.transform, "Btn_OFF", "OFF", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, null, !state ? activeOffColor : inactiveColor, !state ? Color.white : new Color(0.6f, 0.6f, 0.7f), 13);
+            var onBtn = CreateButton(btnGroup.transform, "Btn_ON", "ON", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, null, state ? activeOnColor : inactiveColor, state ? Color.white : new Color(0.6f, 0.6f, 0.7f), 14);
+            var offBtn = CreateButton(btnGroup.transform, "Btn_OFF", "OFF", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, null, !state ? activeOffColor : inactiveColor, !state ? Color.white : new Color(0.6f, 0.6f, 0.7f), 14);
 
             var onImg = onBtn.GetComponent<Image>();
             var onTxt = onBtn.GetComponentInChildren<Text>();
@@ -1017,12 +1018,12 @@ namespace SailorsCompanion.UI
         private void CreateDualStepperRow(Transform parent,
             string label1, float min1, float max1, float step1, float initial1, string unit1, Action<float> cb1,
             string label2, float min2, float max2, float step2, float initial2, string unit2, Action<float> cb2,
-            float rowHeight = 35f)
+            float rowHeight = 39f)
         {
             var row = CreateBox(parent, "DualStepperRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), Color.clear);
             EnsureLayout(row, -1, rowHeight);
             var layout = row.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 8;
+            layout.spacing = 10;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = true;
 
@@ -1036,37 +1037,37 @@ namespace SailorsCompanion.UI
             EnsureLayout(box, -1, height);
             var layout = box.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = 8;
-            layout.padding = new RectOffset(12, 8, 2, 2);
+            layout.padding = new RectOffset(14, 10, 2, 2);
             layout.childForceExpandHeight = false;
 
             float currentVal = initialVal;
             string format = (step < 1f) ? "F1" : "F0";
 
-            var labelTxt = CreateText(box.transform, "Label", $"{label}: <b>{currentVal.ToString(format)}{unit}</b>", 13, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
-            EnsureLayout(labelTxt.gameObject, 240, height - 6, true);
+            var labelTxt = CreateText(box.transform, "Label", $"{label}: <b>{currentVal.ToString(format)}{unit}</b>", 14, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
+            EnsureLayout(labelTxt.gameObject, 340, height - 6, true);
 
-            var minusBtn = CreateButton(box.transform, "Btn_Minus", " - ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(40, height - 8), () =>
+            var minusBtn = CreateButton(box.transform, "Btn_Minus", " - ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(46, height - 8), () =>
             {
                 currentVal = Mathf.Max(min, currentVal - step);
                 labelTxt.text = $"{label}: <b>{currentVal.ToString(format)}{unit}</b>";
                 onChange?.Invoke(currentVal);
-            }, new Color(0.18f, 0.18f, 0.22f), Color.white, 16);
-            EnsureLayout(minusBtn, 40, height - 8, false);
+            }, new Color(0.18f, 0.18f, 0.22f), Color.white, 17);
+            EnsureLayout(minusBtn, 46, height - 8, false);
 
-            var plusBtn = CreateButton(box.transform, "Btn_Plus", " + ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(40, height - 8), () =>
+            var plusBtn = CreateButton(box.transform, "Btn_Plus", " + ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(46, height - 8), () =>
             {
                 currentVal = Mathf.Min(max, currentVal + step);
                 labelTxt.text = $"{label}: <b>{currentVal.ToString(format)}{unit}</b>";
                 onChange?.Invoke(currentVal);
-            }, new Color(0.85f, 0.15f, 0.20f), Color.white, 16);
-            EnsureLayout(plusBtn, 40, height - 8, false);
+            }, new Color(0.85f, 0.15f, 0.20f), Color.white, 17);
+            EnsureLayout(plusBtn, 46, height - 8, false);
         }
 
         private void CreateTripleStepperRow(Transform parent,
             string label1, float min1, float max1, float step1, float initial1, string unit1, Action<float> cb1,
             string label2, float min2, float max2, float step2, float initial2, string unit2, Action<float> cb2,
             string label3, float min3, float max3, float step3, float initial3, string unit3, Action<float> cb3,
-            float rowHeight = 35f)
+            float rowHeight = 39f)
         {
             var row = CreateBox(parent, "TripleStepperRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), Color.clear);
             EnsureLayout(row, -1, rowHeight);
@@ -1086,30 +1087,30 @@ namespace SailorsCompanion.UI
             EnsureLayout(box, -1, height);
             var layout = box.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = 6;
-            layout.padding = new RectOffset(8, 6, 2, 2);
+            layout.padding = new RectOffset(10, 8, 2, 2);
             layout.childForceExpandHeight = false;
 
             float currentVal = initialVal;
             string format = (step < 1f) ? "F1" : "F0";
 
             var labelTxt = CreateText(box.transform, "Label", $"{label}: <b>{currentVal.ToString(format)}{unit}</b>", 13, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
-            EnsureLayout(labelTxt.gameObject, 140, height - 6, true);
+            EnsureLayout(labelTxt.gameObject, 190, height - 6, true);
 
-            var minusBtn = CreateButton(box.transform, "Btn_Minus", " - ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(34, height - 8), () =>
+            var minusBtn = CreateButton(box.transform, "Btn_Minus", " - ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(38, height - 8), () =>
             {
                 currentVal = Mathf.Max(min, currentVal - step);
                 labelTxt.text = $"{label}: <b>{currentVal.ToString(format)}{unit}</b>";
                 onChange?.Invoke(currentVal);
-            }, new Color(0.18f, 0.18f, 0.22f), Color.white, 15);
-            EnsureLayout(minusBtn, 34, height - 8, false);
+            }, new Color(0.18f, 0.18f, 0.22f), Color.white, 16);
+            EnsureLayout(minusBtn, 38, height - 8, false);
 
-            var plusBtn = CreateButton(box.transform, "Btn_Plus", " + ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(34, height - 8), () =>
+            var plusBtn = CreateButton(box.transform, "Btn_Plus", " + ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(38, height - 8), () =>
             {
                 currentVal = Mathf.Min(max, currentVal + step);
                 labelTxt.text = $"{label}: <b>{currentVal.ToString(format)}{unit}</b>";
                 onChange?.Invoke(currentVal);
-            }, new Color(0.85f, 0.15f, 0.20f), Color.white, 15);
-            EnsureLayout(plusBtn, 34, height - 8, false);
+            }, new Color(0.85f, 0.15f, 0.20f), Color.white, 16);
+            EnsureLayout(plusBtn, 38, height - 8, false);
         }
         // ============================================================================
         // [END] UI COMPONENT BUILDERS
