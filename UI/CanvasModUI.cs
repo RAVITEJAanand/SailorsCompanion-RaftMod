@@ -188,6 +188,9 @@ namespace SailorsCompanion.UI
             var titleText = CreateText(titleBar.transform, "TitleText", "⚓ Sailor's Companion — Quality of Life & Utilities", 18, FontStyle.Bold, new Color(0.38f, 0.85f, 0.98f), TextAnchor.MiddleLeft);
             titleText.rectTransform.offsetMin = new Vector2(18, 0);
 
+            // Discord button in title bar
+            CreateButton(titleBar.transform, "Btn_Discord", "💬 Discord", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-60, 0), new Vector2(96, 32), () => Application.OpenURL("https://discord.gg/B4EMrR5Vrf"), new Color(0.35f, 0.40f, 0.95f, 0.95f), Color.white, 13);
+
             // Close button in title bar
             CreateButton(titleBar.transform, "Btn_Close", "✕", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-12, 0), new Vector2(36, 34), () => ToggleModWindow(), new Color(0.8f, 0.2f, 0.2f, 0.9f), Color.white, 16);
 

@@ -81,5 +81,16 @@
 
 ---
 
+## 💬 Community & Support
+
+Have questions, suggestions, or need help? Join our official community Discord!
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B4EMrR5Vrf)
+
+- 📢 Get the latest updates and sneak peeks of upcoming features.
+- 💡 Suggest new ideas for future updates (v1.1.0).
+- 🐛 Report bugs or get direct troubleshooting support.
+
+---
+
 ## 📜 License
 Released under the **MIT License**. Free for personal and community use.

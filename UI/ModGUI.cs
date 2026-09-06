@@ -260,6 +260,10 @@ namespace SailorsCompanion.UI
             GUILayout.BeginHorizontal();
             GUILayout.Label("<size=11><color=#64748B>Press F5 or ESC to close. Settings persist across sessions.</color></size>", GUI.skin.label);
             GUILayout.FlexibleSpace();
+            if (GUILayout.Button("💬 Discord", GUILayout.Width(90), GUILayout.Height(26)))
+            {
+                Application.OpenURL("https://discord.gg/B4EMrR5Vrf");
+            }
             if (GUILayout.Button("Close [ESC]", GUILayout.Width(100), GUILayout.Height(26)))
             {
                 IsOpen = false;
