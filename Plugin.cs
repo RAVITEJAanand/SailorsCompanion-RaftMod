@@ -109,41 +109,28 @@ namespace SailorsCompanion
         private void RegisterHarmonyPatches()
         {
             _harmony = new Harmony(PluginInfo.PLUGIN_GUID);
-            Type[] patchClasses = new[]
+            try
             {
-                typeof(Patches.SlotDurabilityPatch),
-                typeof(Patches.ArmorDurabilityPatch),
-                typeof(Patches.SharkFindBlockPatch),
-                typeof(Patches.SharkDealDamagePatch),
-                typeof(Patches.SharkInitiateAttackPatch),
-                typeof(Patches.StackSizePatch),
-                typeof(Patches.CraftingHasEnoughPatch),
-                typeof(Patches.CraftingRemoveCostPatch),
-                typeof(Patches.CraftingRemoveCostSecPatch),
-                typeof(Patches.PlayerStatsDamagePatch),
-                typeof(Patches.HookStartPatch),
-                typeof(Patches.StartMenuScreenStartPatch),
-                typeof(Patches.StartMenuScreenLateStartPatch),
-                typeof(Patches.StartMenuScreenUpdatePatch),
-                typeof(Patches.PauseMenuStartPatch),
-                typeof(Patches.PauseMenuUpdatePatch),
-                typeof(Patches.GameManagerUpdatePatch),
-                typeof(Patches.HelperSetCursorVisibleAndLockStatePatch),
-                typeof(Patches.HelperSetCursorLockStatePatch),
-                typeof(Patches.HelperSetCursorVisiblePatch),
-            };
-
-            foreach (var patchClass in patchClasses)
+                var types = Assembly.GetExecutingAssembly().GetTypes();
+                foreach (var type in types)
+                {
+                    if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
+                    {
+                        try
+                        {
+                            _harmony.CreateClassProcessor(type).Patch();
+                            Logger.LogInfo($"[{PluginInfo.PLUGIN_NAME}] Applied patch: {type.Name}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogError($"[{PluginInfo.PLUGIN_NAME}] Failed patch {type.Name}: {ex.Message}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
             {
-                try
-                {
-                    _harmony.CreateClassProcessor(patchClass).Patch();
-                    Logger.LogInfo($"[{PluginInfo.PLUGIN_NAME}] Applied patch: {patchClass.Name}");
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError($"[{PluginInfo.PLUGIN_NAME}] Failed patch {patchClass.Name}: {ex.Message}");
-                }
+                Logger.LogError($"[{PluginInfo.PLUGIN_NAME}] Critical error discovering Harmony patches: {ex.Message}");
             }
         }
         // ============================================================================

@@ -52,6 +52,21 @@ namespace SailorsCompanion.Patches
         }
     }
 
+    [HarmonyPatch(typeof(ItemInstance_Recipe), "get_CanCraft")]
+    public static class RecipeCanCraftPatch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(ref bool __result)
+        {
+            if (Plugin.FreeCrafting.Value || Cheat.UnlockAllCrafting)
+            {
+                __result = true;
+                return false;
+            }
+            return true;
+        }
+    }
+
     [HarmonyPatch(typeof(SelectedRecipeBox), "Update")]
     public static class SelectedRecipeBoxUpdatePatch
     {
