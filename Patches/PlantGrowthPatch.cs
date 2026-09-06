@@ -21,7 +21,11 @@ namespace SailorsCompanion.Patches
             {
                 if (Plugin.EnableCropGrowthBoost != null && Plugin.EnableCropGrowthBoost.Value)
                 {
-                    float mult = Plugin.CropGrowthMultiplier != null ? Plugin.CropGrowthMultiplier.Value : 2.0f;
+                    float mult = Plugin.CropGrowthMultiplier != null ? Plugin.CropGrowthMultiplier.Value : 1.5f;
+                    if (Plugin.IsSurvivalMode)
+                    {
+                        mult = Mathf.Clamp(mult, 1.0f, 2.0f);
+                    }
                     if (mult > 0.1f)
                     {
                         amount *= mult;

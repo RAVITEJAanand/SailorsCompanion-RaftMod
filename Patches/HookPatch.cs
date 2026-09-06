@@ -14,12 +14,19 @@ namespace SailorsCompanion.Patches
         [HarmonyPostfix]
         public static void Postfix(Hook __instance)
         {
-            if (__instance != null && Plugin.HookPullSpeedMultiplier.Value > 1f)
+            if (__instance != null && Plugin.HookPullSpeedMultiplier != null)
             {
-                __instance.pullSpeed *= Plugin.HookPullSpeedMultiplier.Value;
-                if (Plugin.HookPullSpeedMultiplier.Value >= 2f)
+                float mult = Plugin.IsSurvivalMode
+                    ? Mathf.Clamp(Plugin.HookPullSpeedMultiplier.Value, 1.0f, 2.0f)
+                    : Plugin.HookPullSpeedMultiplier.Value;
+
+                if (mult > 1f)
                 {
-                    __instance.gatherTime = Mathf.Max(0.05f, __instance.gatherTime / Plugin.HookPullSpeedMultiplier.Value);
+                    __instance.pullSpeed *= mult;
+                    if (mult >= 1.5f)
+                    {
+                        __instance.gatherTime = Mathf.Max(0.05f, __instance.gatherTime / mult);
+                    }
                 }
             }
         }

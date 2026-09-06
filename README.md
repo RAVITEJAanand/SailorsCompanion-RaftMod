@@ -8,42 +8,58 @@
 
 ## 🌟 Key Features
 
-### ⚡ 1. Intelligent Raft Teleportation & Recall (Never Lose Your Raft!)
-- **Recall Player to Raft (`[F8]` or UI Button)**: Teleport safely back onto the raft deck from anywhere in the ocean or distant islands. Automatically snaps you to the nearest walkable deck block, parents your movement to the raft pivot (so you never glitch or fall through), and resets falling inertia.
-- **Summon Raft to Player (`[F9]` or UI Button)**: Calls your raft directly in front of you on the water surface (~18m ahead) and automatically drops the anchor so it cannot drift away.
+### 🟢 1. Dual Mode System: Survival vs Creative
+- **🟢 Survival Mode (Default)**: Authentic survival experience. Cheats (God Mode, Free Craft, Fly, Unlimited Vitals) and Item Spawner are strictly **LOCKED** to prevent accidental cheating. Recall to Raft `[F8]` has a balanced 3-minute cooldown with live countdown timer. Multipliers are soft-capped to authentic survival ranges with dynamic safety badges (`🟢 Balanced`, `🟡 Boosted`, `🔴 High`).
+- **⚡ Creative Mode**: Full unrestricted sandbox power. Instant 1-click unlocks, unlimited item spawner, god mode, fly/noclip `[F]`, weather controller, summon raft `[F9]`, and uncapped multipliers.
+
+### 🎮 2. Gameplay Presets & Save Profiles
+Switch instant configurations with 1-click at the top of the menu:
+- **`🌿 Vanilla+`**: Authentic Raft survival balance (Stack 40, normal 1.0x speeds, craft-from-storage, creature health bars, standard tools wear down).
+- **`🌾 Cozy Farming`**: Relaxed island life (Stack 60, automated watering & nets, 1.5x crop growth, anti-shark raft protection).
+- **`🔨 Master Builder`**: Architect mode for large projects (Stack 100, unbreakable tools, 2.0x reel speed, full automation).
+- **`⚙️ Custom`**: Fine-tune any toggle or slider to your exact personal taste.
+
+### ⚡ 3. Intelligent Raft Teleportation & Recall (Never Lose Your Raft!)
+- **Recall Player to Raft (`[F8]` or UI Button)**: Teleport safely back onto the raft deck from anywhere in the ocean or distant islands. Automatically snaps you to the nearest walkable deck block, parents your movement to the raft pivot, and resets falling inertia. (3-minute emergency cooldown in Survival Mode).
+- **Summon Raft to Player (`[F9]` in Creative)**: Calls your raft directly in front of you on the water surface (~18m ahead) and automatically drops the anchor so it cannot drift away.
 - **Remote Anchor Toggle**: Drop or raise the anchor remotely from anywhere in the world.
 
-### 🧭 2. Real-Time Navigation HUD & Shark Radar
+### 🧭 4. Real-Time Navigation HUD & Shark Radar
 - Real-time compass heading (degrees + cardinal directions N/NE/E/SE/S/SW/W/NW).
 - Live player XYZ coordinates & world clock.
 - **Raft Distance & Drift Tracker**: Dynamic directional arrow pointing toward your raft, distance in meters, drift speed in knots, and anchored status.
 - **Shark Bruce Radar**: Live proximity tracker showing Bruce's distance with red warning alerts when he approaches attack range (<25m).
+- **Animal & Enemy Health Bars**: Floating overhead health bars and distance meters over creatures (automatically hidden during loading screens).
 - **4 Customizable HUD Styles (`[Shift + F6]` to cycle)**:
   1. *Sleek Ribbon* (Default, compact top-left glass bar).
   2. *Compass Bar* (Skyrim/Subnautica style top-center scrolling tape).
   3. *Mini Pill* (Minimalist one-line badge).
   4. *Classic Box* (Detailed stacked metrics).
 
-### 🔬 3. Research Table & Blueprint Automation (R&D)
-- One-click **"Unlock All R&D Recipes & Blueprints"**: Instantly learns every crafting recipe, tool, engine, weapon, furniture, and story blueprint in the game without sacrificing materials or searching for blueprints.
+### 🔬 5. Progressive Research Table & Blueprints (R&D)
+- **Survival Mode**: Progressive chapter-by-chapter unlocks:
+  - *Base Research*: Learns all standard table recipes from wood/scrap/plastic.
+  - *Chapter 1*: Radio Tower & Vasagatan story blueprints (Receiver, Antenna, Engine, Steering Wheel).
+  - *Chapter 2*: Balboa Island, Caravan Town & Tangaroa (Biofuel, Machete, Zipline, Water Pipes).
+  - *Chapter 3*: Varuna Point, Temperance & Utopia (Electric Smelter, Advanced Anchor, Titanium Tools).
+- **Creative Mode**: Instant 1-click **"Unlock All 100+ Blueprints"**.
 
-### 🦈 4. Raft & World Protection
+### 🦈 6. Raft & World Protection
 - **Anti-Shark Raft Protection**: Stops Bruce the Shark from ever biting or destroying your raft foundations.
-- **Free Instant Crafting**: Craft any recipe in the crafting menu without consuming materials.
-- **Debris Hook Reel Speed Multiplier**: Reel in floating barrels and plastic up to 5x faster with reduced gather times.
-- **Custom Stack Size (up to 999)**: Stack raw materials up to 999 per slot.
-- **Time & Weather Controller**: Set time to Morning, Noon, or Night, and change weather to Sunny, Calm, Rain, or Fog.
+- **Auto-Water Crops & Livestock Grass**: Keeps crops and animals thriving without endless bucket filling.
+- **Auto-Empty Collection Nets**: Continuously sweeps captured flotsam into your backpack.
+- **Craft from Nearby Storage**: Auto-pulls crafting materials from chests within 22m.
+- **Debris Hook Reel Speed Multiplier**: Reel in floating barrels and plastic faster with dynamic safety badges.
+- **Custom Stack Size**: Stack raw materials up to 100 in Survival Mode (up to 999 in Creative).
+- **Time & Weather Controller (Creative)**: Set time to Morning, Noon, or Night, and change weather to Sunny, Calm, Rain, or Fog.
 
-### 🛡️ 5. Survival & God Mode
+### 🛡️ 7. Creative & Sandbox Suite
 - **God Mode**: Full invulnerability to animal attacks, drowning, and environmental hazards.
 - **Infinite Oxygen**: Dive deep underwater as long as you want without drowning.
 - **Freeze Hunger & Thirst**: Keep food and hydration meters locked at 100%.
 - **Infinite Tool Durability**: Tools, weapons, armor, and hooks never break or lose durability.
-- **Speed Multipliers**: Customizable swimming and sprinting speed multipliers (1x to 4x).
 - **Fly / Noclip Mode (`[F]` or `[F7]`)**: Fly freely through the air and underwater with WASD + Space/Shift + Alt turbo boost.
-
-### 📦 6. In-Game Item Spawner
-- Browse and search all 300+ items in Raft with instant `+1`, `+10`, and `+Full Stack` buttons directly into your inventory.
+- **In-Game Item Spawner**: Browse and search all 300+ items in Raft with instant `+1`, `+10`, and `+Full Stack` buttons directly into your inventory.
 
 ---
 

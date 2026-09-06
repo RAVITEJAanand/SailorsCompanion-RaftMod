@@ -53,6 +53,7 @@ namespace SailorsCompanion
         public static ConfigEntry<float> CropGrowthMultiplier;
         public static ConfigEntry<bool> ShowAnimalHealthBars;
         public static ConfigEntry<string> ModGameMode;
+        public static ConfigEntry<string> ActiveProfile;
 
         public static bool IsCreativeMode => ModGameMode != null && ModGameMode.Value == "Creative";
         public static bool IsSurvivalMode => !IsCreativeMode;
@@ -80,8 +81,9 @@ namespace SailorsCompanion
             KeyTeleportToRaft = Config.Bind("General.Hotkeys", "KeyTeleportToRaft", KeyCode.F8, "Hotkey to instantly recall/teleport player back onto the raft.");
             KeyTeleportRaftToPlayer = Config.Bind("General.Hotkeys", "KeyTeleportRaftToPlayer", KeyCode.F9, "Hotkey to summon raft to player's current location.");
 
-            // Bind Profile Mode
+            // Bind Profile Mode & Presets
             ModGameMode = Config.Bind("General.Profile", "ModGameMode", "Survival", "Mod mode: 'Survival' for balanced QoL, 'Creative' for unrestricted sandbox cheats.");
+            ActiveProfile = Config.Bind("General.Profile", "ActiveProfile", "Custom", "Active gameplay preset profile: 'VanillaPlus', 'CozyFarming', 'MasterBuilder', or 'Custom'.");
 
             // Bind Navigation Settings
             EnableHUD = Config.Bind("Features.Navigation", "EnableHUD", true, "Show the real-time compass, coordinates, raft tracker, and shark radar.");
@@ -94,19 +96,19 @@ namespace SailorsCompanion
             InfiniteOxygen = Config.Bind("Features.Survival", "InfiniteOxygen", true, "Allows diving freely without running out of oxygen.");
             GodMode = Config.Bind("Features.Survival", "GodMode", false, "Invulnerable to all damage.");
             NoHungerThirst = Config.Bind("Features.Survival", "NoHungerThirst", false, "Freeze hunger and thirst meters at maximum.");
-            CustomStackSize = Config.Bind("Features.Inventory", "CustomStackSize", 99, "Maximum stack size for stackable resources.");
+            CustomStackSize = Config.Bind("Features.Inventory", "CustomStackSize", 40, "Maximum stack size for stackable resources.");
 
             // Bind QoL Automation & Crafting
             CraftFromStorage = Config.Bind("Features.Crafting", "CraftFromStorage", true, "Craft items directly using materials stored in nearby storage chests (22m).");
             AutoEmptyCollectionNets = Config.Bind("Features.World", "AutoEmptyCollectionNets", false, "Continuously auto-empty all raft collection nets into inventory.");
             AutoWaterCrops = Config.Bind("Features.Farming", "AutoWaterCrops", false, "Continuously auto-water all crop plots and animal grass.");
             EnableCropGrowthBoost = Config.Bind("Features.Farming", "EnableCropGrowthBoost", true, "Accelerate crop, flower, and tree growth speed.");
-            CropGrowthMultiplier = Config.Bind("Features.Farming", "CropGrowthMultiplier", 2.0f, "Crop growth speed multiplier (e.g. 2.0 = twice as fast).");
+            CropGrowthMultiplier = Config.Bind("Features.Farming", "CropGrowthMultiplier", 1.5f, "Crop growth speed multiplier (e.g. 1.5 = 50% faster).");
 
             // Bind Movement & Speeds
-            SwimSpeedMultiplier = Config.Bind("Features.Movement", "SwimSpeedMultiplier", 1.8f, "Multiplier for player swimming speed.");
-            SprintSpeedMultiplier = Config.Bind("Features.Movement", "SprintSpeedMultiplier", 1.4f, "Multiplier for player sprinting speed.");
-            HookPullSpeedMultiplier = Config.Bind("Features.World", "HookPullSpeedMultiplier", 2.2f, "Multiplier for hook debris reeling speed.");
+            SwimSpeedMultiplier = Config.Bind("Features.Movement", "SwimSpeedMultiplier", 1.2f, "Multiplier for player swimming speed.");
+            SprintSpeedMultiplier = Config.Bind("Features.Movement", "SprintSpeedMultiplier", 1.1f, "Multiplier for player sprinting speed.");
+            HookPullSpeedMultiplier = Config.Bind("Features.World", "HookPullSpeedMultiplier", 1.5f, "Multiplier for hook debris reeling speed.");
             FreeCrafting = Config.Bind("Features.World", "FreeCrafting", false, "Craft any item without consuming materials.");
             EnableFlyMode = Config.Bind("Features.Movement", "EnableFlyMode", false, "Fly / Noclip mode.");
             FlySpeed = Config.Bind("Features.Movement", "FlySpeed", 14f, "Flight speed in m/s.");
@@ -261,14 +263,22 @@ namespace SailorsCompanion
                 _baseSprintSpeed = pc.sprintSpeed;
             }
 
-            // Apply multipliers
+            // Apply multipliers (strictly clamped to balanced survival ranges in Survival Mode)
+            float swimMult = SwimSpeedMultiplier != null ? SwimSpeedMultiplier.Value : 1.0f;
+            float sprintMult = SprintSpeedMultiplier != null ? SprintSpeedMultiplier.Value : 1.0f;
+            if (IsSurvivalMode)
+            {
+                swimMult = UnityEngine.Mathf.Clamp(swimMult, 1.0f, 1.4f);
+                sprintMult = UnityEngine.Mathf.Clamp(sprintMult, 1.0f, 1.3f);
+            }
+
             if (_baseSwimSpeed > 0f)
             {
-                pc.swimSpeed = _baseSwimSpeed * SwimSpeedMultiplier.Value;
+                pc.swimSpeed = _baseSwimSpeed * swimMult;
             }
             if (_baseSprintSpeed > 0f)
             {
-                pc.sprintSpeed = _baseSprintSpeed * SprintSpeedMultiplier.Value;
+                pc.sprintSpeed = _baseSprintSpeed * sprintMult;
             }
         }
 

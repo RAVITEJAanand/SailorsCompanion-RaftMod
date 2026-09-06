@@ -15,9 +15,16 @@ namespace SailorsCompanion.Patches
         {
             // Only adjust stackable items (items that normally stack > 1, like resources, food, materials)
             // Keep single-use tools/equipment at stack size 1
-            if (Plugin.CustomStackSize.Value > 1 && __result > 1)
+            if (__result > 1 && Plugin.CustomStackSize != null)
             {
-                __result = Plugin.CustomStackSize.Value;
+                int maxStack = Plugin.IsSurvivalMode
+                    ? UnityEngine.Mathf.Clamp(Plugin.CustomStackSize.Value, 20, 100)
+                    : Plugin.CustomStackSize.Value;
+
+                if (maxStack > 1)
+                {
+                    __result = maxStack;
+                }
             }
         }
     }

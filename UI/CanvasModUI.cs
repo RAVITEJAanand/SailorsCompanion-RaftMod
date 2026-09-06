@@ -45,6 +45,11 @@ namespace SailorsCompanion.UI
         private Text _btnModeCreativeTxt;
         private Text _navRecallBtnText;
 
+        // Preset Profile Controls & Tooltip
+        private Image[] _profileButtonImgs = new Image[4];
+        private Text[] _profileButtonTexts = new Text[4];
+        private Text _qolTooltipText;
+
         // Update Banner
         private GameObject _updateBannerGO;
         private Text _updateBannerText;
@@ -331,11 +336,125 @@ namespace SailorsCompanion.UI
                 _btnModeCreativeTxt.color = isCreative ? Color.white : new Color(0.70f, 0.75f, 0.82f);
         }
 
-        private GameObject CreateCategoryHeader(Transform parent, string title)
+        private void ApplyProfile(string profileName)
         {
-            var headerGO = CreateBox(parent, "Header_" + title, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 24), new Color(0.11f, 0.11f, 0.15f, 0.90f));
-            EnsureLayout(headerGO, -1, 24);
-            var txt = CreateText(headerGO.transform, "Txt", title, 13, FontStyle.Bold, new Color(0.95f, 0.70f, 0.22f), TextAnchor.MiddleLeft);
+            if (Plugin.ActiveProfile != null)
+                Plugin.ActiveProfile.Value = profileName;
+
+            if (profileName == "VanillaPlus")
+            {
+                Plugin.CustomStackSize.Value = 40;
+                Plugin.EnableCropGrowthBoost.Value = false;
+                Plugin.CropGrowthMultiplier.Value = 1.0f;
+                Plugin.HookPullSpeedMultiplier.Value = 1.0f;
+                Plugin.SwimSpeedMultiplier.Value = 1.0f;
+                Plugin.SprintSpeedMultiplier.Value = 1.0f;
+                Plugin.AutoWaterCrops.Value = false;
+                Plugin.AutoEmptyCollectionNets.Value = false;
+                Plugin.CraftFromStorage.Value = true;
+                Plugin.AntiSharkRaftDamage.Value = false;
+                Plugin.InfiniteDurability.Value = false;
+                Plugin.ShowAnimalHealthBars.Value = true;
+                SetQoLTooltip("🌿 <b>Vanilla+ Profile:</b> Authentic Raft survival balance with handy craft-from-storage & creature health bars.");
+                TeleportManager.SetNotification("🌿 Activated 'Vanilla+' Preset Profile");
+            }
+            else if (profileName == "CozyFarming")
+            {
+                Plugin.CustomStackSize.Value = 60;
+                Plugin.EnableCropGrowthBoost.Value = true;
+                Plugin.CropGrowthMultiplier.Value = 1.5f;
+                Plugin.HookPullSpeedMultiplier.Value = 1.5f;
+                Plugin.SwimSpeedMultiplier.Value = 1.2f;
+                Plugin.SprintSpeedMultiplier.Value = 1.1f;
+                Plugin.AutoWaterCrops.Value = true;
+                Plugin.AutoEmptyCollectionNets.Value = true;
+                Plugin.CraftFromStorage.Value = true;
+                Plugin.AntiSharkRaftDamage.Value = true;
+                Plugin.InfiniteDurability.Value = false;
+                Plugin.ShowAnimalHealthBars.Value = true;
+                SetQoLTooltip("🌾 <b>Cozy Farming Profile:</b> Automated watering & nets with 1.5x growth and shark protection for peaceful farming.");
+                TeleportManager.SetNotification("🌾 Activated 'Cozy Farming' Preset Profile");
+            }
+            else if (profileName == "MasterBuilder")
+            {
+                Plugin.CustomStackSize.Value = 100;
+                Plugin.EnableCropGrowthBoost.Value = true;
+                Plugin.CropGrowthMultiplier.Value = 2.0f;
+                Plugin.HookPullSpeedMultiplier.Value = 2.0f;
+                Plugin.SwimSpeedMultiplier.Value = 1.3f;
+                Plugin.SprintSpeedMultiplier.Value = 1.2f;
+                Plugin.AutoWaterCrops.Value = true;
+                Plugin.AutoEmptyCollectionNets.Value = true;
+                Plugin.CraftFromStorage.Value = true;
+                Plugin.AntiSharkRaftDamage.Value = true;
+                Plugin.InfiniteDurability.Value = true;
+                Plugin.ShowAnimalHealthBars.Value = true;
+                SetQoLTooltip("🔨 <b>Master Builder Profile:</b> 100 stack size, unbreakable tools & 2.0x reel speed for monumental raft builds.");
+                TeleportManager.SetNotification("🔨 Activated 'Master Builder' Preset Profile");
+            }
+
+            try
+            {
+                Plugin.Instance?.Config?.Save();
+            }
+            catch {}
+
+            UpdateProfileButtonsVisuals();
+
+            // Rebuild Tab 0 so all UI controls visually reflect the new profile values
+            if (_contentAreaTransform != null && _tabPages[0] != null)
+            {
+                Destroy(_tabPages[0]);
+                _tabPages[0] = BuildSurvivalQoLTab(_contentAreaTransform);
+                if (_activeTab == 0)
+                {
+                    _tabPages[0].SetActive(true);
+                }
+            }
+        }
+
+        private void UpdateProfileButtonsVisuals()
+        {
+            string active = Plugin.ActiveProfile != null ? Plugin.ActiveProfile.Value : "Custom";
+            string[] profileKeys = { "VanillaPlus", "CozyFarming", "MasterBuilder", "Custom" };
+            Color activeColor = new Color(0.85f, 0.15f, 0.20f, 1f); // Vibrant Crimson
+            Color inactiveColor = new Color(0.14f, 0.14f, 0.18f, 0.90f); // Slate charcoal
+
+            for (int i = 0; i < _profileButtonImgs.Length; i++)
+            {
+                if (_profileButtonImgs[i] == null) continue;
+                bool isSel = (profileKeys[i] == active);
+                _profileButtonImgs[i].color = isSel ? activeColor : inactiveColor;
+                if (_profileButtonTexts[i] != null)
+                {
+                    _profileButtonTexts[i].color = isSel ? Color.white : new Color(0.70f, 0.75f, 0.82f);
+                    _profileButtonTexts[i].fontStyle = isSel ? FontStyle.Bold : FontStyle.Normal;
+                }
+            }
+        }
+
+        private void MarkProfileCustom()
+        {
+            if (Plugin.ActiveProfile != null && Plugin.ActiveProfile.Value != "Custom")
+            {
+                Plugin.ActiveProfile.Value = "Custom";
+                UpdateProfileButtonsVisuals();
+            }
+        }
+
+        public void SetQoLTooltip(string text)
+        {
+            if (_qolTooltipText != null)
+            {
+                _qolTooltipText.text = text;
+            }
+        }
+
+        private GameObject CreateCategoryHeader(Transform parent, string title, float height = 21f)
+        {
+            var headerGO = CreateBox(parent, "Header_" + title, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, height), new Color(0.11f, 0.11f, 0.15f, 0.90f));
+            EnsureLayout(headerGO, -1, height);
+            var txt = CreateText(headerGO.transform, "Txt", title, 12, FontStyle.Bold, new Color(0.95f, 0.70f, 0.22f), TextAnchor.MiddleLeft);
             txt.rectTransform.offsetMin = new Vector2(12, 0);
             return headerGO;
         }
@@ -374,108 +493,157 @@ namespace SailorsCompanion.UI
 
         #region [START] TAB 0: SURVIVAL QOL
         // ============================================================================
-        // [START] TAB 0: SURVIVAL QUALITY OF LIFE (Full Dashboard with Categorized Groups & Clamped Balances)
+        // [START] TAB 0: SURVIVAL QUALITY OF LIFE (Preset Profiles, Categorized Groups & Clamped Balances)
         // ============================================================================
         private GameObject BuildSurvivalQoLTab(Transform parent)
         {
             var page = CreateBox(parent, "Page_SurvivalQoL", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
             var layout = page.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 5;
+            layout.spacing = 3;
             layout.padding = new RectOffset(6, 6, 2, 2);
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
+            // 0. Preset Profiles Selector Row
+            var profileRow = CreateBox(page.transform, "ProfileSelectorRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 30), Color.clear);
+            EnsureLayout(profileRow, -1, 30);
+            var profLayout = profileRow.AddComponent<HorizontalLayoutGroup>();
+            profLayout.spacing = 6;
+            profLayout.childForceExpandWidth = true;
+            profLayout.childForceExpandHeight = true;
+
+            string[] profNames = { "🌿 Vanilla+", "🌾 Cozy Farming", "🔨 Master Builder", "⚙️ Custom" };
+            string[] profKeys = { "VanillaPlus", "CozyFarming", "MasterBuilder", "Custom" };
+            string[] profTooltips = {
+                "🌿 <b>Vanilla+ Profile:</b> Default game balance with handy craft-from-storage & creature health bars.",
+                "🌾 <b>Cozy Farming Profile:</b> Automated watering & nets with 1.5x growth and shark protection for peaceful farming.",
+                "🔨 <b>Master Builder Profile:</b> 100 stack size, unbreakable tools & 2.0x reel speed for monumental raft builds.",
+                "⚙️ <b>Custom Profile:</b> User-defined fine-tuned configuration."
+            };
+
+            for (int i = 0; i < 4; i++)
+            {
+                int pIdx = i;
+                var btn = CreateButton(profileRow.transform, $"Btn_Profile_{i}", profNames[i], Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+                {
+                    if (profKeys[pIdx] == "Custom")
+                    {
+                        if (Plugin.ActiveProfile != null) Plugin.ActiveProfile.Value = "Custom";
+                        UpdateProfileButtonsVisuals();
+                        SetQoLTooltip(profTooltips[pIdx]);
+                    }
+                    else
+                    {
+                        ApplyProfile(profKeys[pIdx]);
+                    }
+                }, new Color(0.14f, 0.14f, 0.18f, 0.90f), new Color(0.70f, 0.75f, 0.82f), 13);
+                _profileButtonImgs[i] = btn.GetComponent<Image>();
+                _profileButtonTexts[i] = btn.GetComponentInChildren<Text>();
+            }
+            UpdateProfileButtonsVisuals();
+
             // 1. Quick Action Bar: 3 Primary Utility Buttons
-            var actionRow = CreateBox(page.transform, "QuickActionBar", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), Color.clear);
-            EnsureLayout(actionRow, -1, 40);
+            var actionRow = CreateBox(page.transform, "QuickActionBar", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 32), Color.clear);
+            EnsureLayout(actionRow, -1, 32);
             var actionLayout = actionRow.AddComponent<HorizontalLayoutGroup>();
-            actionLayout.spacing = 10;
+            actionLayout.spacing = 8;
             actionLayout.childForceExpandWidth = true;
 
             CreateButton(actionRow.transform, "Btn_QuickStack", "📦 Quick Stack to Chests (22m)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 ChestSorter.QuickStackToNearbyChests();
-            }, new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 15);
+                SetQoLTooltip("📦 <b>Quick Stack:</b> Deposited backpack items into matching nearby chests.");
+            }, new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 14);
 
             CreateButton(actionRow.transform, "Btn_EmptyNets", "🕸️ Empty All Collection Nets", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 NetsHelper.EmptyAllNets(silent: false);
-            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 15);
+                SetQoLTooltip("🕸️ <b>Empty Nets:</b> Scooped all trapped flotsam from collection nets into your inventory.");
+            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
 
             CreateButton(actionRow.transform, "Btn_WaterPlots", "🌱 Water All Crops & Grass", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 FarmingHelper.WaterAllPlots(silent: false);
-            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 15);
+                SetQoLTooltip("🌱 <b>Water Plots:</b> Hydrated all crop plots, grass plots, and tree planters.");
+            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
 
             // CATEGORY 1: INVENTORY & STORAGE AUTOMATION
-            CreateCategoryHeader(page.transform, "📦 INVENTORY & STORAGE AUTOMATION");
+            CreateCategoryHeader(page.transform, "📦 INVENTORY & STORAGE AUTOMATION", 21f);
 
             CreateToggleItem(page.transform, "🛠️ Craft from Nearby Storage (Auto-pulls materials from chests within 22m)", Plugin.CraftFromStorage.Value, v =>
             {
                 Plugin.CraftFromStorage.Value = v;
                 TeleportManager.SetNotification(v ? "🛠️ Craft from Storage: ENABLED" : "🛠️ Craft from Storage: DISABLED");
-            }, 38f, 15);
+            }, 31f, 14, "🛠️ <b>Craft from Storage:</b> Automatically pulls needed ingredients from nearby storage containers when crafting.");
 
             CreateToggleItem(page.transform, "🕸️ Auto-Empty Collection Nets (Continuously gathers trapped items into inventory)", Plugin.AutoEmptyCollectionNets.Value, v =>
             {
                 Plugin.AutoEmptyCollectionNets.Value = v;
                 TeleportManager.SetNotification(v ? "🕸️ Auto-Empty Nets: ENABLED" : "🕸️ Auto-Empty Nets: DISABLED");
-            }, 38f, 15);
+            }, 31f, 14, "🕸️ <b>Auto-Empty Nets:</b> Periodically sweeps collection nets so they never get clogged.");
 
             // CATEGORY 2: FARMING & SUSTENANCE
-            CreateCategoryHeader(page.transform, "🌱 FARMING & SUSTENANCE");
+            CreateCategoryHeader(page.transform, "🌱 FARMING & SUSTENANCE", 21f);
 
             CreateToggleItem(page.transform, "🌱 Auto-Water Crops Continually (Never let crop plots or livestock grass dry out)", Plugin.AutoWaterCrops.Value, v =>
             {
                 Plugin.AutoWaterCrops.Value = v;
                 TeleportManager.SetNotification(v ? "🌱 Auto-Watering: ENABLED" : "🌱 Auto-Watering: DISABLED");
-            }, 38f, 15);
+            }, 31f, 14, "🌱 <b>Auto-Water:</b> Continuously maintains full hydration on crop plots and livestock grass.");
 
             CreateToggleItem(page.transform, "🌾 Accelerate Crop & Tree Growth (Speeds up farming & tree growth cycles)", Plugin.EnableCropGrowthBoost.Value, v =>
             {
                 Plugin.EnableCropGrowthBoost.Value = v;
                 TeleportManager.SetNotification(v ? "🌾 Crop Growth Boost: ENABLED" : "🌾 Crop Growth Boost: DISABLED");
-            }, 38f, 15);
+            }, 31f, 14, "🌾 <b>Crop Growth Boost:</b> Toggles custom growth multiplier for farming plots and tree planters.");
 
             // CATEGORY 3: RAFT & CREATURE DEFENSE
-            CreateCategoryHeader(page.transform, "🦈 RAFT & CREATURE DEFENSE");
+            CreateCategoryHeader(page.transform, "🦈 RAFT & CREATURE DEFENSE", 21f);
 
             CreateToggleItem(page.transform, "🐾 Animal & Enemy Health Bars (Floating HP bars and distance meters over creatures)", Plugin.ShowAnimalHealthBars.Value, v =>
             {
                 Plugin.ShowAnimalHealthBars.Value = v;
                 TeleportManager.SetNotification(v ? "🐾 Animal Health Bars: ENABLED" : "🐾 Animal Health Bars: DISABLED");
-            }, 38f, 15);
+            }, 31f, 14, "🐾 <b>Creature Health Bars:</b> Displays overhead health bars and distance meters on animals and predators.");
 
             CreateToggleItem(page.transform, "🦈 Anti-Shark Raft Protection (Bruce will not attack or destroy raft foundations)", Plugin.AntiSharkRaftDamage.Value, v =>
             {
                 Plugin.AntiSharkRaftDamage.Value = v;
                 TeleportManager.SetNotification(v ? "🦈 Anti-Shark: ENABLED" : "🦈 Anti-Shark: DISABLED");
-            }, 38f, 15);
+            }, 31f, 14, "🦈 <b>Anti-Shark Protection:</b> Bruce the shark will ignore raft foundations and focus only on players in water.");
 
             CreateToggleItem(page.transform, "🔨 Infinite Tool Durability (Hooks, weapons, tools, gear & armor never break)", Plugin.InfiniteDurability.Value, v =>
             {
                 Plugin.InfiniteDurability.Value = v;
                 TeleportManager.SetNotification(v ? "🔨 Infinite Durability: ENABLED" : "🔨 Infinite Durability: DISABLED");
-            }, 38f, 15);
+            }, 31f, 14, "🔨 <b>Infinite Durability:</b> Prevents hooks, weapons, tools, and armor from breaking from use.");
 
             // CATEGORY 4: BALANCED MULTIPLIERS & SPEEDS
-            CreateCategoryHeader(page.transform, "🏃 BALANCED MULTIPLIERS & SPEEDS");
+            CreateCategoryHeader(page.transform, "🏃 BALANCED MULTIPLIERS & SPEEDS", 21f);
 
-            float maxGrowth = Plugin.IsCreativeMode ? 10.0f : 3.0f;
+            float maxGrowth = Plugin.IsCreativeMode ? 10.0f : 2.0f;
             float maxStack = Plugin.IsCreativeMode ? 999f : 100f;
             CreateDualStepperRow(page.transform,
-                "🌾 Crop Growth Multiplier", 1.0f, maxGrowth, 0.5f, Plugin.CropGrowthMultiplier.Value, "x", v => Plugin.CropGrowthMultiplier.Value = v,
-                "📦 Resource Stack Limit", 20f, maxStack, 20f, Plugin.CustomStackSize.Value, "", v => Plugin.CustomStackSize.Value = Mathf.RoundToInt(v),
-                38f);
+                "🌾 Crop Growth", 1.0f, maxGrowth, 0.5f, Plugin.CropGrowthMultiplier.Value, "x", v => Plugin.CropGrowthMultiplier.Value = v, "🌾 <b>Crop Growth:</b> Multiplies crop and tree growth speed (1.0x–2.0x recommended).",
+                "📦 Stack Limit", 20f, maxStack, 20f, Plugin.CustomStackSize.Value, "", v => Plugin.CustomStackSize.Value = Mathf.RoundToInt(v), "📦 <b>Stack Limit:</b> Maximum item capacity per inventory slot (20-100 recommended).",
+                32f);
 
-            float maxReel = Plugin.IsCreativeMode ? 5.0f : 2.5f;
-            float maxSwim = Plugin.IsCreativeMode ? 4.0f : 1.6f;
-            float maxSprint = Plugin.IsCreativeMode ? 3.0f : 1.5f;
+            float maxReel = Plugin.IsCreativeMode ? 5.0f : 2.0f;
+            float maxSwim = Plugin.IsCreativeMode ? 4.0f : 1.4f;
+            float maxSprint = Plugin.IsCreativeMode ? 3.0f : 1.3f;
             CreateTripleStepperRow(page.transform,
-                "🎣 Hook Reel Speed", 1.0f, maxReel, 0.5f, Plugin.HookPullSpeedMultiplier.Value, "x", v => Plugin.HookPullSpeedMultiplier.Value = v,
-                "🏊 Swim Speed", 1.0f, maxSwim, 0.2f, Plugin.SwimSpeedMultiplier.Value, "x", v => Plugin.SwimSpeedMultiplier.Value = v,
-                "🏃 Sprint Speed", 1.0f, maxSprint, 0.2f, Plugin.SprintSpeedMultiplier.Value, "x", v => Plugin.SprintSpeedMultiplier.Value = v,
-                38f);
+                "🎣 Hook Reel", 1.0f, maxReel, 0.5f, Plugin.HookPullSpeedMultiplier.Value, "x", v => Plugin.HookPullSpeedMultiplier.Value = v, "🎣 <b>Reel Speed:</b> Accelerates pulling hooks from the water (1.0x–2.0x recommended).",
+                "🏊 Swim Speed", 1.0f, maxSwim, 0.1f, Plugin.SwimSpeedMultiplier.Value, "x", v => Plugin.SwimSpeedMultiplier.Value = v, "🏊 <b>Swim Speed:</b> Enhances water mobility without glitching collisions (1.0x–1.4x recommended).",
+                "🏃 Sprint Speed", 1.0f, maxSprint, 0.1f, Plugin.SprintSpeedMultiplier.Value, "x", v => Plugin.SprintSpeedMultiplier.Value = v, "🏃 <b>Sprint Speed:</b> Subtle movement speed increase across raft and land (1.0x–1.3x recommended).",
+                32f);
+
+            // Tooltip / Hint Box
+            var hintBox = CreateBox(page.transform, "QoLHintBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 26), new Color(0.08f, 0.08f, 0.11f, 0.95f));
+            EnsureLayout(hintBox, -1, 26);
+            CreateBox(hintBox.transform, "HintAccent", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 1), new Color(0.25f, 0.25f, 0.32f, 0.8f));
+            _qolTooltipText = CreateText(hintBox.transform, "HintText", "💡 <b>Hint:</b> Choose a preset profile above or toggle individual survival options.", 12, FontStyle.Normal, new Color(0.80f, 0.84f, 0.90f), TextAnchor.MiddleLeft);
+            _qolTooltipText.rectTransform.offsetMin = new Vector2(10, 0);
+            _qolTooltipText.rectTransform.offsetMax = new Vector2(-10, 0);
 
             return page;
         }
@@ -1164,13 +1332,13 @@ namespace SailorsCompanion.UI
         // ============================================================================
         // [START] UI TOGGLE ITEM WITH DUAL ON/OFF BUTTONS
         // ============================================================================
-        private void CreateToggleItem(Transform parent, string label, bool initialValue, Action<bool> onToggle, float rowHeight = 39f, int fontSize = 15)
+        private void CreateToggleItem(Transform parent, string label, bool initialValue, Action<bool> onToggle, float rowHeight = 31f, int fontSize = 14, string tooltip = null)
         {
             var row = CreateBox(parent, "ToggleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), new Color(0.11f, 0.11f, 0.15f, 0.90f));
             EnsureLayout(row, -1, rowHeight);
             var layout = row.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 12;
-            layout.padding = new RectOffset(16, 16, 2, 2);
+            layout.spacing = 10;
+            layout.padding = new RectOffset(14, 14, 2, 2);
             layout.childForceExpandHeight = false;
             layout.childForceExpandWidth = false;
 
@@ -1192,8 +1360,8 @@ namespace SailorsCompanion.UI
             Color inactiveColor = new Color(0.16f, 0.16f, 0.20f, 0.95f); // Dark Slate Charcoal
             Color activeOffColor = new Color(0.35f, 0.12f, 0.15f, 0.95f); // Muted Dark Burgundy
 
-            var onBtn = CreateButton(btnGroup.transform, "Btn_ON", "ON", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, null, state ? activeOnColor : inactiveColor, state ? Color.white : new Color(0.6f, 0.6f, 0.7f), 14);
-            var offBtn = CreateButton(btnGroup.transform, "Btn_OFF", "OFF", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, null, !state ? activeOffColor : inactiveColor, !state ? Color.white : new Color(0.6f, 0.6f, 0.7f), 14);
+            var onBtn = CreateButton(btnGroup.transform, "Btn_ON", "ON", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, null, state ? activeOnColor : inactiveColor, state ? Color.white : new Color(0.6f, 0.6f, 0.7f), 13);
+            var offBtn = CreateButton(btnGroup.transform, "Btn_OFF", "OFF", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, null, !state ? activeOffColor : inactiveColor, !state ? Color.white : new Color(0.6f, 0.6f, 0.7f), 13);
 
             var onImg = onBtn.GetComponent<Image>();
             var onTxt = onBtn.GetComponentInChildren<Text>();
@@ -1219,6 +1387,8 @@ namespace SailorsCompanion.UI
                 {
                     state = true;
                     UpdateVisuals(state);
+                    MarkProfileCustom();
+                    if (!string.IsNullOrEmpty(tooltip)) SetQoLTooltip(tooltip);
                     onToggle?.Invoke(true);
                 }
             });
@@ -1229,6 +1399,8 @@ namespace SailorsCompanion.UI
                 {
                     state = false;
                     UpdateVisuals(state);
+                    MarkProfileCustom();
+                    if (!string.IsNullOrEmpty(tooltip)) SetQoLTooltip(tooltip);
                     onToggle?.Invoke(false);
                 }
             });
@@ -1275,102 +1447,156 @@ namespace SailorsCompanion.UI
             EnsureLayout(plusBtn, 54, 32, false);
         }
 
+        private string FormatMultiplierBadge(string label, float val, string format, string unit)
+        {
+            string valStr = val.ToString(format);
+            string badge;
+            if (label.Contains("Stack"))
+            {
+                if (val <= 20.5f)
+                    badge = "<color=#22C55E><size=11>[🟢 Vanilla 20]</size></color>";
+                else if (val <= 60.5f)
+                    badge = "<color=#38BDF8><size=11>[🟢 Balanced]</size></color>";
+                else if (val <= 100.5f)
+                    badge = "<color=#EAB308><size=11>[🟡 Boosted]</size></color>";
+                else
+                    badge = "<color=#EF4444><size=11>[🔴 High]</size></color>";
+            }
+            else if (label.Contains("Swim"))
+            {
+                if (val <= 1.05f)
+                    badge = "<color=#22C55E><size=11>[🟢 Normal]</size></color>";
+                else if (val <= 1.25f)
+                    badge = "<color=#EAB308><size=11>[🟡 Boosted]</size></color>";
+                else
+                    badge = "<color=#EF4444><size=11>[🔴 High]</size></color>";
+            }
+            else if (label.Contains("Sprint"))
+            {
+                if (val <= 1.05f)
+                    badge = "<color=#22C55E><size=11>[🟢 Normal]</size></color>";
+                else if (val <= 1.25f)
+                    badge = "<color=#EAB308><size=11>[🟡 Boosted]</size></color>";
+                else
+                    badge = "<color=#EF4444><size=11>[🔴 High]</size></color>";
+            }
+            else // Crop Growth, Reel Speed, etc.
+            {
+                if (val <= 1.05f)
+                    badge = "<color=#22C55E><size=11>[🟢 Normal]</size></color>";
+                else if (val <= 1.55f)
+                    badge = "<color=#EAB308><size=11>[🟡 Boosted]</size></color>";
+                else
+                    badge = "<color=#EF4444><size=11>[🔴 High]</size></color>";
+            }
+
+            return $"{label}: <b>{valStr}{unit}</b> {badge}";
+        }
+
         private void CreateDualStepperRow(Transform parent,
-            string label1, float min1, float max1, float step1, float initial1, string unit1, Action<float> cb1,
-            string label2, float min2, float max2, float step2, float initial2, string unit2, Action<float> cb2,
-            float rowHeight = 39f)
+            string label1, float min1, float max1, float step1, float initial1, string unit1, Action<float> cb1, string tooltip1,
+            string label2, float min2, float max2, float step2, float initial2, string unit2, Action<float> cb2, string tooltip2,
+            float rowHeight = 32f)
         {
             var row = CreateBox(parent, "DualStepperRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), Color.clear);
             EnsureLayout(row, -1, rowHeight);
             var layout = row.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 10;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = true;
-
-            CreateHalfStepper(row.transform, label1, min1, max1, step1, initial1, unit1, cb1, rowHeight);
-            CreateHalfStepper(row.transform, label2, min2, max2, step2, initial2, unit2, cb2, rowHeight);
-        }
-
-        private void CreateHalfStepper(Transform parent, string label, float min, float max, float step, float initialVal, string unit, Action<float> onChange, float height)
-        {
-            var box = CreateBox(parent, "StepperBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, height), new Color(0.11f, 0.11f, 0.15f, 0.90f));
-            EnsureLayout(box, -1, height);
-            var layout = box.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 8;
-            layout.padding = new RectOffset(14, 10, 2, 2);
-            layout.childForceExpandHeight = false;
-
-            float currentVal = initialVal;
-            string format = (step < 1f) ? "F1" : "F0";
-
-            var labelTxt = CreateText(box.transform, "Label", $"{label}: <b>{currentVal.ToString(format)}{unit}</b>", 14, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
-            EnsureLayout(labelTxt.gameObject, 340, height - 6, true);
-
-            var minusBtn = CreateButton(box.transform, "Btn_Minus", " - ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(46, height - 8), () =>
-            {
-                currentVal = Mathf.Max(min, currentVal - step);
-                labelTxt.text = $"{label}: <b>{currentVal.ToString(format)}{unit}</b>";
-                onChange?.Invoke(currentVal);
-            }, new Color(0.18f, 0.18f, 0.22f), Color.white, 17);
-            EnsureLayout(minusBtn, 46, height - 8, false);
-
-            var plusBtn = CreateButton(box.transform, "Btn_Plus", " + ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(46, height - 8), () =>
-            {
-                currentVal = Mathf.Min(max, currentVal + step);
-                labelTxt.text = $"{label}: <b>{currentVal.ToString(format)}{unit}</b>";
-                onChange?.Invoke(currentVal);
-            }, new Color(0.85f, 0.15f, 0.20f), Color.white, 17);
-            EnsureLayout(plusBtn, 46, height - 8, false);
-        }
-
-        private void CreateTripleStepperRow(Transform parent,
-            string label1, float min1, float max1, float step1, float initial1, string unit1, Action<float> cb1,
-            string label2, float min2, float max2, float step2, float initial2, string unit2, Action<float> cb2,
-            string label3, float min3, float max3, float step3, float initial3, string unit3, Action<float> cb3,
-            float rowHeight = 39f)
-        {
-            var row = CreateBox(parent, "TripleStepperRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), Color.clear);
-            EnsureLayout(row, -1, rowHeight);
-            var layout = row.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = 8;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = true;
 
-            CreateThirdStepper(row.transform, label1, min1, max1, step1, initial1, unit1, cb1, rowHeight);
-            CreateThirdStepper(row.transform, label2, min2, max2, step2, initial2, unit2, cb2, rowHeight);
-            CreateThirdStepper(row.transform, label3, min3, max3, step3, initial3, unit3, cb3, rowHeight);
+            CreateHalfStepper(row.transform, label1, min1, max1, step1, initial1, unit1, cb1, rowHeight, tooltip1);
+            CreateHalfStepper(row.transform, label2, min2, max2, step2, initial2, unit2, cb2, rowHeight, tooltip2);
         }
 
-        private void CreateThirdStepper(Transform parent, string label, float min, float max, float step, float initialVal, string unit, Action<float> onChange, float height)
+        private void CreateHalfStepper(Transform parent, string label, float min, float max, float step, float initialVal, string unit, Action<float> onChange, float height, string tooltip = null)
         {
             var box = CreateBox(parent, "StepperBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, height), new Color(0.11f, 0.11f, 0.15f, 0.90f));
             EnsureLayout(box, -1, height);
             var layout = box.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = 6;
-            layout.padding = new RectOffset(10, 8, 2, 2);
+            layout.padding = new RectOffset(12, 8, 2, 2);
             layout.childForceExpandHeight = false;
 
             float currentVal = initialVal;
             string format = (step < 1f) ? "F1" : "F0";
 
-            var labelTxt = CreateText(box.transform, "Label", $"{label}: <b>{currentVal.ToString(format)}{unit}</b>", 13, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
-            EnsureLayout(labelTxt.gameObject, 190, height - 6, true);
+            var labelTxt = CreateText(box.transform, "Label", FormatMultiplierBadge(label, currentVal, format, unit), 13, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
+            EnsureLayout(labelTxt.gameObject, 330, height - 4, true);
 
-            var minusBtn = CreateButton(box.transform, "Btn_Minus", " - ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(38, height - 8), () =>
+            var minusBtn = CreateButton(box.transform, "Btn_Minus", " - ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(40, height - 6), () =>
             {
                 currentVal = Mathf.Max(min, currentVal - step);
-                labelTxt.text = $"{label}: <b>{currentVal.ToString(format)}{unit}</b>";
+                labelTxt.text = FormatMultiplierBadge(label, currentVal, format, unit);
+                MarkProfileCustom();
+                if (!string.IsNullOrEmpty(tooltip)) SetQoLTooltip(tooltip);
                 onChange?.Invoke(currentVal);
             }, new Color(0.18f, 0.18f, 0.22f), Color.white, 16);
-            EnsureLayout(minusBtn, 38, height - 8, false);
+            EnsureLayout(minusBtn, 40, height - 6, false);
 
-            var plusBtn = CreateButton(box.transform, "Btn_Plus", " + ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(38, height - 8), () =>
+            var plusBtn = CreateButton(box.transform, "Btn_Plus", " + ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(40, height - 6), () =>
             {
                 currentVal = Mathf.Min(max, currentVal + step);
-                labelTxt.text = $"{label}: <b>{currentVal.ToString(format)}{unit}</b>";
+                labelTxt.text = FormatMultiplierBadge(label, currentVal, format, unit);
+                MarkProfileCustom();
+                if (!string.IsNullOrEmpty(tooltip)) SetQoLTooltip(tooltip);
                 onChange?.Invoke(currentVal);
             }, new Color(0.85f, 0.15f, 0.20f), Color.white, 16);
-            EnsureLayout(plusBtn, 38, height - 8, false);
+            EnsureLayout(plusBtn, 40, height - 6, false);
+        }
+
+        private void CreateTripleStepperRow(Transform parent,
+            string label1, float min1, float max1, float step1, float initial1, string unit1, Action<float> cb1, string tooltip1,
+            string label2, float min2, float max2, float step2, float initial2, string unit2, Action<float> cb2, string tooltip2,
+            string label3, float min3, float max3, float step3, float initial3, string unit3, Action<float> cb3, string tooltip3,
+            float rowHeight = 32f)
+        {
+            var row = CreateBox(parent, "TripleStepperRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), Color.clear);
+            EnsureLayout(row, -1, rowHeight);
+            var layout = row.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 6;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = true;
+
+            CreateThirdStepper(row.transform, label1, min1, max1, step1, initial1, unit1, cb1, rowHeight, tooltip1);
+            CreateThirdStepper(row.transform, label2, min2, max2, step2, initial2, unit2, cb2, rowHeight, tooltip2);
+            CreateThirdStepper(row.transform, label3, min3, max3, step3, initial3, unit3, cb3, rowHeight, tooltip3);
+        }
+
+        private void CreateThirdStepper(Transform parent, string label, float min, float max, float step, float initialVal, string unit, Action<float> onChange, float height, string tooltip = null)
+        {
+            var box = CreateBox(parent, "StepperBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, height), new Color(0.11f, 0.11f, 0.15f, 0.90f));
+            EnsureLayout(box, -1, height);
+            var layout = box.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 4;
+            layout.padding = new RectOffset(8, 6, 2, 2);
+            layout.childForceExpandHeight = false;
+
+            float currentVal = initialVal;
+            string format = (step < 1f) ? "F1" : "F0";
+
+            var labelTxt = CreateText(box.transform, "Label", FormatMultiplierBadge(label, currentVal, format, unit), 12, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
+            EnsureLayout(labelTxt.gameObject, 195, height - 4, true);
+
+            var minusBtn = CreateButton(box.transform, "Btn_Minus", " - ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(34, height - 6), () =>
+            {
+                currentVal = Mathf.Max(min, currentVal - step);
+                labelTxt.text = FormatMultiplierBadge(label, currentVal, format, unit);
+                MarkProfileCustom();
+                if (!string.IsNullOrEmpty(tooltip)) SetQoLTooltip(tooltip);
+                onChange?.Invoke(currentVal);
+            }, new Color(0.18f, 0.18f, 0.22f), Color.white, 15);
+            EnsureLayout(minusBtn, 34, height - 6, false);
+
+            var plusBtn = CreateButton(box.transform, "Btn_Plus", " + ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(34, height - 6), () =>
+            {
+                currentVal = Mathf.Min(max, currentVal + step);
+                labelTxt.text = FormatMultiplierBadge(label, currentVal, format, unit);
+                MarkProfileCustom();
+                if (!string.IsNullOrEmpty(tooltip)) SetQoLTooltip(tooltip);
+                onChange?.Invoke(currentVal);
+            }, new Color(0.85f, 0.15f, 0.20f), Color.white, 15);
+            EnsureLayout(plusBtn, 34, height - 6, false);
         }
         // ============================================================================
         // [END] UI COMPONENT BUILDERS
