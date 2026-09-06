@@ -18,7 +18,7 @@ namespace SailorsCompanion.Patches
             if (__result > 1 && Plugin.CustomStackSize != null)
             {
                 int maxStack = Plugin.IsSurvivalMode
-                    ? UnityEngine.Mathf.Clamp(Plugin.CustomStackSize.Value, 20, 100)
+                    ? UnityEngine.Mathf.Clamp(Plugin.CustomStackSize.Value, 20, 200)
                     : Plugin.CustomStackSize.Value;
 
                 if (maxStack > 1)

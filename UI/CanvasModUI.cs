@@ -358,30 +358,13 @@ namespace SailorsCompanion.UI
                 SetQoLTooltip("🌿 <b>Vanilla+ Profile:</b> Authentic Raft survival balance with handy craft-from-storage & creature health bars.");
                 TeleportManager.SetNotification("🌿 Activated 'Vanilla+' Preset Profile");
             }
-            else if (profileName == "CozyFarming")
+            else if (profileName == "BalancedOP" || profileName == "CozyFarming")
             {
-                Plugin.CustomStackSize.Value = 60;
+                Plugin.CustomStackSize.Value = 100;
                 Plugin.EnableCropGrowthBoost.Value = true;
                 Plugin.CropGrowthMultiplier.Value = 1.5f;
                 Plugin.HookPullSpeedMultiplier.Value = 1.5f;
                 Plugin.SwimSpeedMultiplier.Value = 1.2f;
-                Plugin.SprintSpeedMultiplier.Value = 1.1f;
-                Plugin.AutoWaterCrops.Value = true;
-                Plugin.AutoEmptyCollectionNets.Value = true;
-                Plugin.CraftFromStorage.Value = true;
-                Plugin.AntiSharkRaftDamage.Value = true;
-                Plugin.InfiniteDurability.Value = false;
-                Plugin.ShowAnimalHealthBars.Value = true;
-                SetQoLTooltip("🌾 <b>Cozy Farming Profile:</b> Automated watering & nets with 1.5x growth and shark protection for peaceful farming.");
-                TeleportManager.SetNotification("🌾 Activated 'Cozy Farming' Preset Profile");
-            }
-            else if (profileName == "MasterBuilder")
-            {
-                Plugin.CustomStackSize.Value = 100;
-                Plugin.EnableCropGrowthBoost.Value = true;
-                Plugin.CropGrowthMultiplier.Value = 2.0f;
-                Plugin.HookPullSpeedMultiplier.Value = 2.0f;
-                Plugin.SwimSpeedMultiplier.Value = 1.3f;
                 Plugin.SprintSpeedMultiplier.Value = 1.2f;
                 Plugin.AutoWaterCrops.Value = true;
                 Plugin.AutoEmptyCollectionNets.Value = true;
@@ -389,8 +372,25 @@ namespace SailorsCompanion.UI
                 Plugin.AntiSharkRaftDamage.Value = true;
                 Plugin.InfiniteDurability.Value = true;
                 Plugin.ShowAnimalHealthBars.Value = true;
-                SetQoLTooltip("🔨 <b>Master Builder Profile:</b> 100 stack size, unbreakable tools & 2.0x reel speed for monumental raft builds.");
-                TeleportManager.SetNotification("🔨 Activated 'Master Builder' Preset Profile");
+                SetQoLTooltip("⚖️ <b>Balanced OP Profile:</b> 100 stack, 1.5x crop/hook, 1.2x speeds, all QoL & automations enabled.");
+                TeleportManager.SetNotification("⚖️ Activated 'Balanced OP' Preset Profile");
+            }
+            else if (profileName == "EasyMode" || profileName == "MasterBuilder")
+            {
+                Plugin.CustomStackSize.Value = 200;
+                Plugin.EnableCropGrowthBoost.Value = true;
+                Plugin.CropGrowthMultiplier.Value = 2.0f;
+                Plugin.HookPullSpeedMultiplier.Value = 2.0f;
+                Plugin.SwimSpeedMultiplier.Value = 1.5f;
+                Plugin.SprintSpeedMultiplier.Value = 1.5f;
+                Plugin.AutoWaterCrops.Value = true;
+                Plugin.AutoEmptyCollectionNets.Value = true;
+                Plugin.CraftFromStorage.Value = true;
+                Plugin.AntiSharkRaftDamage.Value = true;
+                Plugin.InfiniteDurability.Value = true;
+                Plugin.ShowAnimalHealthBars.Value = true;
+                SetQoLTooltip("⚡ <b>Easy Mode Profile:</b> 200 stack, 2.0x crop/hook, 1.5x swim/sprint speeds for relaxed easy gameplay.");
+                TeleportManager.SetNotification("⚡ Activated 'Easy Mode' Preset Profile");
             }
 
             try
@@ -416,14 +416,14 @@ namespace SailorsCompanion.UI
         private void UpdateProfileButtonsVisuals()
         {
             string active = Plugin.ActiveProfile != null ? Plugin.ActiveProfile.Value : "Custom";
-            string[] profileKeys = { "VanillaPlus", "CozyFarming", "MasterBuilder", "Custom" };
+            string[] profileKeys = { "VanillaPlus", "BalancedOP", "EasyMode", "Custom" };
             Color activeColor = new Color(0.85f, 0.15f, 0.20f, 1f); // Vibrant Crimson
             Color inactiveColor = new Color(0.14f, 0.14f, 0.18f, 0.90f); // Slate charcoal
 
             for (int i = 0; i < _profileButtonImgs.Length; i++)
             {
                 if (_profileButtonImgs[i] == null) continue;
-                bool isSel = (profileKeys[i] == active);
+                bool isSel = (profileKeys[i] == active || (profileKeys[i] == "BalancedOP" && active == "CozyFarming") || (profileKeys[i] == "EasyMode" && active == "MasterBuilder"));
                 _profileButtonImgs[i].color = isSel ? activeColor : inactiveColor;
                 if (_profileButtonTexts[i] != null)
                 {
@@ -512,12 +512,12 @@ namespace SailorsCompanion.UI
             profLayout.childForceExpandWidth = true;
             profLayout.childForceExpandHeight = true;
 
-            string[] profNames = { "🌿 Vanilla+", "🌾 Cozy Farming", "🔨 Master Builder", "⚙️ Custom" };
-            string[] profKeys = { "VanillaPlus", "CozyFarming", "MasterBuilder", "Custom" };
+            string[] profNames = { "🌿 Vanilla+", "⚖️ Balanced OP", "⚡ Easy Mode", "⚙️ Custom" };
+            string[] profKeys = { "VanillaPlus", "BalancedOP", "EasyMode", "Custom" };
             string[] profTooltips = {
                 "🌿 <b>Vanilla+ Profile:</b> Default game balance with handy craft-from-storage & creature health bars.",
-                "🌾 <b>Cozy Farming Profile:</b> Automated watering & nets with 1.5x growth and shark protection for peaceful farming.",
-                "🔨 <b>Master Builder Profile:</b> 100 stack size, unbreakable tools & 2.0x reel speed for monumental raft builds.",
+                "⚖️ <b>Balanced OP Profile:</b> Best balanced settings: 100 stack, 1.5x crop/hook, 1.2x speeds, all QoL & automations enabled.",
+                "⚡ <b>Easy Mode Profile:</b> More OP experience: 200 stack, 2.0x crop/hook, 1.5x swim/sprint speeds.",
                 "⚙️ <b>Custom Profile:</b> User-defined fine-tuned configuration."
             };
 
@@ -622,19 +622,19 @@ namespace SailorsCompanion.UI
             CreateCategoryHeader(page.transform, "🏃 BALANCED MULTIPLIERS & SPEEDS", 21f);
 
             float maxGrowth = Plugin.IsCreativeMode ? 10.0f : 2.0f;
-            float maxStack = Plugin.IsCreativeMode ? 999f : 100f;
+            float maxStack = Plugin.IsCreativeMode ? 999f : 200f;
             CreateDualStepperRow(page.transform,
                 "🌾 Crop Growth", 1.0f, maxGrowth, 0.5f, Plugin.CropGrowthMultiplier.Value, "x", v => Plugin.CropGrowthMultiplier.Value = v, "🌾 <b>Crop Growth:</b> Multiplies crop and tree growth speed (1.0x–2.0x recommended).",
-                "📦 Stack Limit", 20f, maxStack, 20f, Plugin.CustomStackSize.Value, "", v => Plugin.CustomStackSize.Value = Mathf.RoundToInt(v), "📦 <b>Stack Limit:</b> Maximum item capacity per inventory slot (20-100 recommended).",
+                "📦 Stack Limit", 20f, maxStack, 20f, Plugin.CustomStackSize.Value, "", v => Plugin.CustomStackSize.Value = Mathf.RoundToInt(v), "📦 <b>Stack Limit:</b> Maximum item capacity per inventory slot (20-200 recommended).",
                 32f);
 
             float maxReel = Plugin.IsCreativeMode ? 5.0f : 2.0f;
-            float maxSwim = Plugin.IsCreativeMode ? 4.0f : 1.4f;
-            float maxSprint = Plugin.IsCreativeMode ? 3.0f : 1.3f;
+            float maxSwim = Plugin.IsCreativeMode ? 4.0f : 1.5f;
+            float maxSprint = Plugin.IsCreativeMode ? 3.0f : 1.5f;
             CreateTripleStepperRow(page.transform,
                 "🎣 Hook Reel", 1.0f, maxReel, 0.5f, Plugin.HookPullSpeedMultiplier.Value, "x", v => Plugin.HookPullSpeedMultiplier.Value = v, "🎣 <b>Reel Speed:</b> Accelerates pulling hooks from the water (1.0x–2.0x recommended).",
-                "🏊 Swim Speed", 1.0f, maxSwim, 0.1f, Plugin.SwimSpeedMultiplier.Value, "x", v => Plugin.SwimSpeedMultiplier.Value = v, "🏊 <b>Swim Speed:</b> Enhances water mobility without glitching collisions (1.0x–1.4x recommended).",
-                "🏃 Sprint Speed", 1.0f, maxSprint, 0.1f, Plugin.SprintSpeedMultiplier.Value, "x", v => Plugin.SprintSpeedMultiplier.Value = v, "🏃 <b>Sprint Speed:</b> Subtle movement speed increase across raft and land (1.0x–1.3x recommended).",
+                "🏊 Swim Speed", 1.0f, maxSwim, 0.1f, Plugin.SwimSpeedMultiplier.Value, "x", v => Plugin.SwimSpeedMultiplier.Value = v, "🏊 <b>Swim Speed:</b> Enhances water mobility without glitching collisions (1.0x–1.5x recommended).",
+                "🏃 Sprint Speed", 1.0f, maxSprint, 0.1f, Plugin.SprintSpeedMultiplier.Value, "x", v => Plugin.SprintSpeedMultiplier.Value = v, "🏃 <b>Sprint Speed:</b> Subtle movement speed increase across raft and land (1.0x–1.5x recommended).",
                 32f);
 
             // Tooltip / Hint Box
@@ -796,7 +796,7 @@ namespace SailorsCompanion.UI
             }, new Color(0.80f, 0.15f, 0.18f, 0.95f), Color.white, 15);
             _navRecallBtnText = teleBtnGO.GetComponentInChildren<Text>();
 
-            string summonLabel = Plugin.IsSurvivalMode ? "⛵ Summon Raft [F9] (Creative Only)" : "⛵ Summon Raft Here [F9]";
+            string summonLabel = "⛵ Summon Raft Here [F9]";
             CreateButton(navTeleRow.transform, "Btn_NavSummonRaft", summonLabel, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 TeleportManager.TeleportRaftToPlayer();
@@ -1455,28 +1455,32 @@ namespace SailorsCompanion.UI
             {
                 if (val <= 20.5f)
                     badge = "<color=#22C55E><size=11>[🟢 Vanilla 20]</size></color>";
-                else if (val <= 60.5f)
-                    badge = "<color=#38BDF8><size=11>[🟢 Balanced]</size></color>";
                 else if (val <= 100.5f)
-                    badge = "<color=#EAB308><size=11>[🟡 Boosted]</size></color>";
+                    badge = "<color=#38BDF8><size=11>[🟢 Balanced OP]</size></color>";
+                else if (val <= 200.5f)
+                    badge = "<color=#EAB308><size=11>[🟡 Easy Mode]</size></color>";
                 else
-                    badge = "<color=#EF4444><size=11>[🔴 High]</size></color>";
+                    badge = "<color=#EF4444><size=11>[🔴 Creative]</size></color>";
             }
             else if (label.Contains("Swim"))
             {
                 if (val <= 1.05f)
                     badge = "<color=#22C55E><size=11>[🟢 Normal]</size></color>";
                 else if (val <= 1.25f)
-                    badge = "<color=#EAB308><size=11>[🟡 Boosted]</size></color>";
+                    badge = "<color=#38BDF8><size=11>[🟢 Balanced OP]</size></color>";
+                else if (val <= 1.55f)
+                    badge = "<color=#EAB308><size=11>[🟡 Easy Mode]</size></color>";
                 else
-                    badge = "<color=#EF4444><size=11>[🔴 High]</size></color>";
+                    badge = "<color=#EF4444><size=11>[🔴 Creative]</size></color>";
             }
             else if (label.Contains("Sprint"))
             {
                 if (val <= 1.05f)
                     badge = "<color=#22C55E><size=11>[🟢 Normal]</size></color>";
                 else if (val <= 1.25f)
-                    badge = "<color=#EAB308><size=11>[🟡 Boosted]</size></color>";
+                    badge = "<color=#38BDF8><size=11>[🟢 Balanced OP]</size></color>";
+                else if (val <= 1.55f)
+                    badge = "<color=#EAB308><size=11>[🟡 Easy Mode]</size></color>";
                 else
                     badge = "<color=#EF4444><size=11>[🔴 High]</size></color>";
             }
@@ -1485,7 +1489,9 @@ namespace SailorsCompanion.UI
                 if (val <= 1.05f)
                     badge = "<color=#22C55E><size=11>[🟢 Normal]</size></color>";
                 else if (val <= 1.55f)
-                    badge = "<color=#EAB308><size=11>[🟡 Boosted]</size></color>";
+                    badge = "<color=#38BDF8><size=11>[🟢 Balanced OP]</size></color>";
+                else if (val <= 2.05f)
+                    badge = "<color=#EAB308><size=11>[🟡 Easy Mode]</size></color>";
                 else
                     badge = "<color=#EF4444><size=11>[🔴 High]</size></color>";
             }

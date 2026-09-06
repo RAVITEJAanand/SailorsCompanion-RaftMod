@@ -15,13 +15,13 @@
 ### 🎮 2. Gameplay Presets & Save Profiles
 Switch instant configurations with 1-click at the top of the menu:
 - **`🌿 Vanilla+`**: Authentic Raft survival balance (Stack 40, normal 1.0x speeds, craft-from-storage, creature health bars, standard tools wear down).
-- **`🌾 Cozy Farming`**: Relaxed island life (Stack 60, automated watering & nets, 1.5x crop growth, anti-shark raft protection).
-- **`🔨 Master Builder`**: Architect mode for large projects (Stack 100, unbreakable tools, 2.0x reel speed, full automation).
+- **`⚖️ Balanced OP`**: Best all-around experience (Stack 100, 1.5x crop growth, 1.5x hook reel speed, 1.2x swim & sprint speeds, all QoL automations enabled).
+- **`⚡ Easy Mode`**: More overpowered for relaxed play (Stack 200, 2.0x crop growth, 2.0x hook reel speed, 1.5x swim & sprint speeds).
 - **`⚙️ Custom`**: Fine-tune any toggle or slider to your exact personal taste.
 
 ### ⚡ 3. Intelligent Raft Teleportation & Recall (Never Lose Your Raft!)
 - **Recall Player to Raft (`[F8]` or UI Button)**: Teleport safely back onto the raft deck from anywhere in the ocean or distant islands. Automatically snaps you to the nearest walkable deck block, parents your movement to the raft pivot, and resets falling inertia. (3-minute emergency cooldown in Survival Mode).
-- **Summon Raft to Player (`[F9]` in Creative)**: Calls your raft directly in front of you on the water surface (~18m ahead) and automatically drops the anchor so it cannot drift away.
+- **Summon Raft to Player (`[F9]`)**: Calls your raft directly in front of you on the water surface (~18m ahead) and automatically drops the anchor so it cannot drift away. (Use anytime!).
 - **Remote Anchor Toggle**: Drop or raise the anchor remotely from anywhere in the world.
 
 ### 🧭 4. Real-Time Navigation HUD & Shark Radar
@@ -60,6 +60,40 @@ Switch instant configurations with 1-click at the top of the menu:
 - **Infinite Tool Durability**: Tools, weapons, armor, and hooks never break or lose durability.
 - **Fly / Noclip Mode (`[F]` or `[F7]`)**: Fly freely through the air and underwater with WASD + Space/Shift + Alt turbo boost.
 - **In-Game Item Spawner**: Browse and search all 300+ items in Raft with instant `+1`, `+10`, and `+Full Stack` buttons directly into your inventory.
+
+---
+
+## 🎯 Recommended Configurations & Presets
+
+### 🏆 Best Settings: Balanced OP (Recommended)
+- **Preset**: `⚖️ Balanced OP` (or `Custom`)
+- **Quick Stack to Chests**: `ON`
+- **Craft from Nearby Storage**: `ON`
+- **Auto-Empty Collection Nets**: `ON`
+- **Auto-Water Crops**: `ON`
+- **Accelerate Crop & Tree Growth**: `ON` (1.5x)
+- **Animal & Enemy Health Bars**: `ON`
+- **Anti-Shark Raft Protection**: `ON`
+- **Infinite Tool Durability**: `ON`
+- **Resource Stack Limit**: `100`
+- **Hook Reel Speed**: `1.5x`
+- **Swim Speed**: `1.2x` | **Sprint Speed**: `1.2x`
+
+### ⚡ More OP: Easy Mode (For Maximum Relaxation)
+- **Preset**: `⚡ Easy Mode`
+- **Crop Growth Multiplier**: `2.0x`
+- **Resource Stack Limit**: `200`
+- **Hook Reel Speed**: `2.0x`
+- **Swim Speed**: `1.5x` | **Sprint Speed**: `1.5x`
+
+### 🧭 Navigation Setup
+- **Show Navigation HUD**: `ON` (`[F6]`)
+- **HUD Style**: `Compass Bar` (Style 1)
+- **Recall to Raft (`[F8]`)**: Use when far out or stuck on islands.
+- **Summon Raft (`[F9]`)**: Use anytime to call your raft to your position.
+
+> [!IMPORTANT]
+> - **Item Spawner & Cheats**: Only available in **Creative Mode** to protect genuine survival gameplay.
 
 ---
 

@@ -87,7 +87,7 @@ namespace SailorsCompanion
 
             // Bind Navigation Settings
             EnableHUD = Config.Bind("Features.Navigation", "EnableHUD", true, "Show the real-time compass, coordinates, raft tracker, and shark radar.");
-            HUDStyle = Config.Bind("Features.Navigation", "HUDStyle", 0, "HUD Style: 0=Sleek Ribbon, 1=Top Compass Bar, 2=Minimalist Pill, 3=Compact Box.");
+            HUDStyle = Config.Bind("Features.Navigation", "HUDStyle", 1, "HUD Style: 0=Sleek Ribbon, 1=Top Compass Bar, 2=Minimalist Pill, 3=Compact Box.");
             ShowAnimalHealthBars = Config.Bind("Features.Navigation", "ShowAnimalHealthBars", true, "Render floating health bars and distance tags above animals and enemies.");
 
             // Bind Survival & World Settings
@@ -268,8 +268,8 @@ namespace SailorsCompanion
             float sprintMult = SprintSpeedMultiplier != null ? SprintSpeedMultiplier.Value : 1.0f;
             if (IsSurvivalMode)
             {
-                swimMult = UnityEngine.Mathf.Clamp(swimMult, 1.0f, 1.4f);
-                sprintMult = UnityEngine.Mathf.Clamp(sprintMult, 1.0f, 1.3f);
+                swimMult = UnityEngine.Mathf.Clamp(swimMult, 1.0f, 1.5f);
+                sprintMult = UnityEngine.Mathf.Clamp(sprintMult, 1.0f, 1.5f);
             }
 
             if (_baseSwimSpeed > 0f)

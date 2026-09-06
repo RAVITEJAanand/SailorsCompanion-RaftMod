@@ -163,12 +163,6 @@ namespace SailorsCompanion.Features
         // ============================================================================
         public static bool TeleportRaftToPlayer()
         {
-            if (Plugin.IsSurvivalMode)
-            {
-                SetNotification("🔒 Summoning the Raft is restricted to Creative Mode.");
-                return false;
-            }
-
             var player = PlayerHelper.GetLocalPlayer();
             if (player == null)
             {
