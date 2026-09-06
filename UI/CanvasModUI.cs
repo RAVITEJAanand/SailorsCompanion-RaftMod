@@ -37,6 +37,14 @@ namespace SailorsCompanion.UI
         // Font
         private Font _gameFont;
 
+        // Mode Switcher Controls
+        private Transform _contentAreaTransform;
+        private Image _btnModeSurvivalImg;
+        private Image _btnModeCreativeImg;
+        private Text _btnModeSurvivalTxt;
+        private Text _btnModeCreativeTxt;
+        private Text _navRecallBtnText;
+
         // Update Banner
         private GameObject _updateBannerGO;
         private Text _updateBannerText;
@@ -191,14 +199,24 @@ namespace SailorsCompanion.UI
             var titleBar = CreateBox(_modWindowGO.transform, "TitleBar", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 54), new Color(0.09f, 0.09f, 0.12f, 1f));
             CreateBox(titleBar.transform, "TitleAccent", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(0, 2), new Color(0.85f, 0.15f, 0.20f, 1f));
 
-            var titleText = CreateText(titleBar.transform, "TitleText", $"⚓ <color=#EF4444>Sailor's Companion</color> <size=15><color=#FFFFFF>v{PluginInfo.PLUGIN_VERSION}</color></size> — <color=#E2E8F0>Quality of Life & Utilities</color>", 20, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
-            titleText.rectTransform.offsetMin = new Vector2(22, 0);
+            var titleText = CreateText(titleBar.transform, "TitleText", $"⚓ <color=#EF4444>Sailor's Companion</color> <size=14><color=#94A3B8>v{PluginInfo.PLUGIN_VERSION}</color></size> — <size=14><color=#E2E8F0>Quality of Life & Utilities</color></size>", 19, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
+            titleText.rectTransform.offsetMin = new Vector2(20, 0);
+            titleText.rectTransform.offsetMax = new Vector2(-410, 0);
+
+            // Mode Switcher in title bar: [ 🟢 Survival Mode ] [ ⚡ Creative ]
+            var btnSurvGO = CreateButton(titleBar.transform, "Btn_Mode_Survival", "🟢 Survival Mode", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-280, 0), new Vector2(128, 32), () => SetModMode("Survival"), new Color(0.12f, 0.65f, 0.35f, 0.95f), Color.white, 13);
+            _btnModeSurvivalImg = btnSurvGO.GetComponent<Image>();
+            _btnModeSurvivalTxt = btnSurvGO.GetComponentInChildren<Text>();
+
+            var btnCreatGO = CreateButton(titleBar.transform, "Btn_Mode_Creative", "⚡ Creative", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-155, 0), new Vector2(115, 32), () => SetModMode("Creative"), new Color(0.14f, 0.14f, 0.18f, 0.90f), new Color(0.70f, 0.75f, 0.82f), 13);
+            _btnModeCreativeImg = btnCreatGO.GetComponent<Image>();
+            _btnModeCreativeTxt = btnCreatGO.GetComponentInChildren<Text>();
 
             // Discord button in title bar
-            CreateButton(titleBar.transform, "Btn_Discord", "💬 Discord", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-64, 0), new Vector2(110, 34), () => Application.OpenURL("https://discord.gg/B4EMrR5Vrf"), new Color(0.80f, 0.16f, 0.20f, 0.95f), Color.white, 14);
+            CreateButton(titleBar.transform, "Btn_Discord", "💬 Discord", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-55, 0), new Vector2(90, 32), () => Application.OpenURL("https://discord.gg/B4EMrR5Vrf"), new Color(0.80f, 0.16f, 0.20f, 0.95f), Color.white, 13);
 
             // Close button in title bar
-            CreateButton(titleBar.transform, "Btn_Close", "✕", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-14, 0), new Vector2(36, 34), () => ToggleModWindow(), new Color(0.18f, 0.18f, 0.22f, 0.95f), Color.white, 17);
+            CreateButton(titleBar.transform, "Btn_Close", "✕", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-12, 0), new Vector2(34, 32), () => ToggleModWindow(), new Color(0.18f, 0.18f, 0.22f, 0.95f), Color.white, 16);
 
             // Tabs Row
             var tabRow = CreateBox(_modWindowGO.transform, "TabRow", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -60), new Vector2(-32, 46), Color.clear);
@@ -207,7 +225,9 @@ namespace SailorsCompanion.UI
             tabLayout.childForceExpandWidth = true;
             tabLayout.childForceExpandHeight = true;
 
-            string[] tabNames = { "🎒 Survival QoL", "⚡ Cheats", "🧭 Navigation", "🔬 R&D / Blueprints", "📦 Item Spawner" };
+            string cheatsTabName = Plugin.IsSurvivalMode ? "🔒 Cheats" : "⚡ Cheats";
+            string spawnerTabName = Plugin.IsSurvivalMode ? "🔒 Item Spawner" : "📦 Item Spawner";
+            string[] tabNames = { "🎒 Survival QoL", cheatsTabName, "🧭 Navigation", "🔬 R&D / Blueprints", spawnerTabName };
             for (int i = 0; i < tabNames.Length; i++)
             {
                 int index = i;
@@ -221,6 +241,9 @@ namespace SailorsCompanion.UI
             var cRt = contentArea.GetComponent<RectTransform>();
             cRt.offsetMin = new Vector2(20, 42);
             cRt.offsetMax = new Vector2(-20, -114);
+            _contentAreaTransform = contentArea.transform;
+
+            UpdateModeButtonsVisuals();
 
             // Build individual tab pages
             _tabPages[0] = BuildSurvivalQoLTab(contentArea.transform);
@@ -260,6 +283,90 @@ namespace SailorsCompanion.UI
 
             SelectTab(0);
         }
+
+        private void SetModMode(string newMode)
+        {
+            if (Plugin.ModGameMode != null && Plugin.ModGameMode.Value == newMode) return;
+            if (Plugin.ModGameMode != null) Plugin.ModGameMode.Value = newMode;
+            UpdateModeButtonsVisuals();
+
+            // Update Tab Titles
+            if (_tabButtonTexts[1] != null)
+                _tabButtonTexts[1].text = Plugin.IsSurvivalMode ? "🔒 Cheats" : "⚡ Cheats";
+            if (_tabButtonTexts[4] != null)
+                _tabButtonTexts[4].text = Plugin.IsSurvivalMode ? "🔒 Item Spawner" : "📦 Item Spawner";
+
+            // Rebuild affected tab pages
+            if (_contentAreaTransform != null)
+            {
+                if (_tabPages[0] != null) Destroy(_tabPages[0]);
+                if (_tabPages[1] != null) Destroy(_tabPages[1]);
+                if (_tabPages[3] != null) Destroy(_tabPages[3]);
+                if (_tabPages[4] != null) Destroy(_tabPages[4]);
+
+                _tabPages[0] = BuildSurvivalQoLTab(_contentAreaTransform);
+                _tabPages[1] = BuildCheatsTab(_contentAreaTransform);
+                _tabPages[3] = BuildResearchTab(_contentAreaTransform);
+                _tabPages[4] = BuildSpawnerTab(_contentAreaTransform);
+
+                SelectTab(_activeTab);
+            }
+
+            TeleportManager.SetNotification(Plugin.IsCreativeMode
+                ? "⚡ Creative Mode Active: Unrestricted cheats & spawner unlocked!"
+                : "🟢 Survival Mode Active: Balanced QoL active, cheats & spawner locked.");
+        }
+
+        private void UpdateModeButtonsVisuals()
+        {
+            bool isCreative = Plugin.IsCreativeMode;
+            if (_btnModeSurvivalImg != null)
+                _btnModeSurvivalImg.color = !isCreative ? new Color(0.12f, 0.65f, 0.35f, 0.95f) : new Color(0.14f, 0.14f, 0.18f, 0.85f);
+            if (_btnModeCreativeImg != null)
+                _btnModeCreativeImg.color = isCreative ? new Color(0.85f, 0.15f, 0.20f, 0.95f) : new Color(0.14f, 0.14f, 0.18f, 0.85f);
+
+            if (_btnModeSurvivalTxt != null)
+                _btnModeSurvivalTxt.color = !isCreative ? Color.white : new Color(0.70f, 0.75f, 0.82f);
+            if (_btnModeCreativeTxt != null)
+                _btnModeCreativeTxt.color = isCreative ? Color.white : new Color(0.70f, 0.75f, 0.82f);
+        }
+
+        private GameObject CreateCategoryHeader(Transform parent, string title)
+        {
+            var headerGO = CreateBox(parent, "Header_" + title, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 24), new Color(0.11f, 0.11f, 0.15f, 0.90f));
+            EnsureLayout(headerGO, -1, 24);
+            var txt = CreateText(headerGO.transform, "Txt", title, 13, FontStyle.Bold, new Color(0.95f, 0.70f, 0.22f), TextAnchor.MiddleLeft);
+            txt.rectTransform.offsetMin = new Vector2(12, 0);
+            return headerGO;
+        }
+
+        private GameObject CreateLockCard(Transform parent, string title, string description, Action onUnlock)
+        {
+            var page = CreateBox(parent, "Page_Locked", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
+            var layout = page.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = 18;
+            layout.padding = new RectOffset(60, 60, 40, 40);
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var card = CreateBox(page.transform, "LockCard", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 260), new Color(0.10f, 0.10f, 0.14f, 0.96f));
+            EnsureLayout(card, -1, 260);
+            var cardLayout = card.AddComponent<VerticalLayoutGroup>();
+            cardLayout.padding = new RectOffset(30, 30, 24, 24);
+            cardLayout.spacing = 16;
+            cardLayout.childForceExpandWidth = true;
+
+            var titleTxt = CreateText(card.transform, "LockTitle", $"🔒 <b><color=#F59E0B>{title} is Locked in Survival Mode</color></b>", 20, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+            EnsureLayout(titleTxt.gameObject, -1, 32);
+
+            var descTxt = CreateText(card.transform, "LockDesc", description, 15, FontStyle.Normal, new Color(0.85f, 0.88f, 0.94f), TextAnchor.MiddleCenter);
+            EnsureLayout(descTxt.gameObject, -1, 80);
+
+            var switchBtn = CreateButton(card.transform, "Btn_SwitchCreative", "⚡ Switch to Creative / Sandbox Mode to Unlock", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 48), onUnlock, new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 15);
+            EnsureLayout(switchBtn, -1, 48);
+
+            return page;
+        }
         // ============================================================================
         // [END] MOD WINDOW FRAME & TABS CONTROLLER
         // ============================================================================
@@ -267,20 +374,20 @@ namespace SailorsCompanion.UI
 
         #region [START] TAB 0: SURVIVAL QOL
         // ============================================================================
-        // [START] TAB 0: SURVIVAL QUALITY OF LIFE (Full Dashboard with Instant Actions & ON/OFF Controls)
+        // [START] TAB 0: SURVIVAL QUALITY OF LIFE (Full Dashboard with Categorized Groups & Clamped Balances)
         // ============================================================================
         private GameObject BuildSurvivalQoLTab(Transform parent)
         {
             var page = CreateBox(parent, "Page_SurvivalQoL", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
             var layout = page.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 6;
-            layout.padding = new RectOffset(6, 6, 4, 4);
+            layout.spacing = 5;
+            layout.padding = new RectOffset(6, 6, 2, 2);
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
             // 1. Quick Action Bar: 3 Primary Utility Buttons
-            var actionRow = CreateBox(page.transform, "QuickActionBar", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), Color.clear);
-            EnsureLayout(actionRow, -1, 42);
+            var actionRow = CreateBox(page.transform, "QuickActionBar", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), Color.clear);
+            EnsureLayout(actionRow, -1, 40);
             var actionLayout = actionRow.AddComponent<HorizontalLayoutGroup>();
             actionLayout.spacing = 10;
             actionLayout.childForceExpandWidth = true;
@@ -300,67 +407,75 @@ namespace SailorsCompanion.UI
                 FarmingHelper.WaterAllPlots(silent: false);
             }, new Color(0.18f, 0.18f, 0.23f), Color.white, 15);
 
-            // 2. Craft from Nearby Storage Toggle
+            // CATEGORY 1: INVENTORY & STORAGE AUTOMATION
+            CreateCategoryHeader(page.transform, "📦 INVENTORY & STORAGE AUTOMATION");
+
             CreateToggleItem(page.transform, "🛠️ Craft from Nearby Storage (Auto-pulls materials from chests within 22m)", Plugin.CraftFromStorage.Value, v =>
             {
                 Plugin.CraftFromStorage.Value = v;
                 TeleportManager.SetNotification(v ? "🛠️ Craft from Storage: ENABLED" : "🛠️ Craft from Storage: DISABLED");
-            }, 39f, 15);
+            }, 38f, 15);
 
-            // 3. Collection Nets Auto-Empty Toggle
             CreateToggleItem(page.transform, "🕸️ Auto-Empty Collection Nets (Continuously gathers trapped items into inventory)", Plugin.AutoEmptyCollectionNets.Value, v =>
             {
                 Plugin.AutoEmptyCollectionNets.Value = v;
                 TeleportManager.SetNotification(v ? "🕸️ Auto-Empty Nets: ENABLED" : "🕸️ Auto-Empty Nets: DISABLED");
-            }, 39f, 15);
+            }, 38f, 15);
 
-            // 4. Farming Helper Auto-Water Toggle
+            // CATEGORY 2: FARMING & SUSTENANCE
+            CreateCategoryHeader(page.transform, "🌱 FARMING & SUSTENANCE");
+
             CreateToggleItem(page.transform, "🌱 Auto-Water Crops Continually (Never let crop plots or livestock grass dry out)", Plugin.AutoWaterCrops.Value, v =>
             {
                 Plugin.AutoWaterCrops.Value = v;
                 TeleportManager.SetNotification(v ? "🌱 Auto-Watering: ENABLED" : "🌱 Auto-Watering: DISABLED");
-            }, 39f, 15);
+            }, 38f, 15);
 
-            // 5. Crop Growth Acceleration Toggle
             CreateToggleItem(page.transform, "🌾 Accelerate Crop & Tree Growth (Speeds up farming & tree growth cycles)", Plugin.EnableCropGrowthBoost.Value, v =>
             {
                 Plugin.EnableCropGrowthBoost.Value = v;
                 TeleportManager.SetNotification(v ? "🌾 Crop Growth Boost: ENABLED" : "🌾 Crop Growth Boost: DISABLED");
-            }, 39f, 15);
+            }, 38f, 15);
 
-            // 6. Animal & Enemy Health Bars Toggle
+            // CATEGORY 3: RAFT & CREATURE DEFENSE
+            CreateCategoryHeader(page.transform, "🦈 RAFT & CREATURE DEFENSE");
+
             CreateToggleItem(page.transform, "🐾 Animal & Enemy Health Bars (Floating HP bars and distance meters over creatures)", Plugin.ShowAnimalHealthBars.Value, v =>
             {
                 Plugin.ShowAnimalHealthBars.Value = v;
                 TeleportManager.SetNotification(v ? "🐾 Animal Health Bars: ENABLED" : "🐾 Animal Health Bars: DISABLED");
-            }, 39f, 15);
+            }, 38f, 15);
 
-            // 7. Anti-Shark Protection Toggle
             CreateToggleItem(page.transform, "🦈 Anti-Shark Raft Protection (Bruce will not attack or destroy raft foundations)", Plugin.AntiSharkRaftDamage.Value, v =>
             {
                 Plugin.AntiSharkRaftDamage.Value = v;
                 TeleportManager.SetNotification(v ? "🦈 Anti-Shark: ENABLED" : "🦈 Anti-Shark: DISABLED");
-            }, 39f, 15);
+            }, 38f, 15);
 
-            // 8. Infinite Tool Durability Toggle
             CreateToggleItem(page.transform, "🔨 Infinite Tool Durability (Hooks, weapons, tools, gear & armor never break)", Plugin.InfiniteDurability.Value, v =>
             {
                 Plugin.InfiniteDurability.Value = v;
                 TeleportManager.SetNotification(v ? "🔨 Infinite Durability: ENABLED" : "🔨 Infinite Durability: DISABLED");
-            }, 39f, 15);
+            }, 38f, 15);
 
-            // 9. Dual Stepper: Crop Growth & Stack Size Limit
+            // CATEGORY 4: BALANCED MULTIPLIERS & SPEEDS
+            CreateCategoryHeader(page.transform, "🏃 BALANCED MULTIPLIERS & SPEEDS");
+
+            float maxGrowth = Plugin.IsCreativeMode ? 10.0f : 3.0f;
+            float maxStack = Plugin.IsCreativeMode ? 999f : 100f;
             CreateDualStepperRow(page.transform,
-                "🌾 Crop Growth Multiplier", 1.0f, 5.0f, 0.5f, Plugin.CropGrowthMultiplier.Value, "x", v => Plugin.CropGrowthMultiplier.Value = v,
-                "📦 Resource Stack Limit", 20f, 999f, 50f, Plugin.CustomStackSize.Value, "", v => Plugin.CustomStackSize.Value = Mathf.RoundToInt(v),
-                39f);
+                "🌾 Crop Growth Multiplier", 1.0f, maxGrowth, 0.5f, Plugin.CropGrowthMultiplier.Value, "x", v => Plugin.CropGrowthMultiplier.Value = v,
+                "📦 Resource Stack Limit", 20f, maxStack, 20f, Plugin.CustomStackSize.Value, "", v => Plugin.CustomStackSize.Value = Mathf.RoundToInt(v),
+                38f);
 
-            // 10. Triple Stepper: Hook Reel Speed, Swim Speed, Sprint Speed
+            float maxReel = Plugin.IsCreativeMode ? 5.0f : 2.5f;
+            float maxSwim = Plugin.IsCreativeMode ? 4.0f : 1.6f;
+            float maxSprint = Plugin.IsCreativeMode ? 3.0f : 1.5f;
             CreateTripleStepperRow(page.transform,
-                "🎣 Hook Reel Speed", 1.0f, 5.0f, 0.5f, Plugin.HookPullSpeedMultiplier.Value, "x", v => Plugin.HookPullSpeedMultiplier.Value = v,
-                "🏊 Swim Speed", 1.0f, 4.0f, 0.2f, Plugin.SwimSpeedMultiplier.Value, "x", v => Plugin.SwimSpeedMultiplier.Value = v,
-                "🏃 Sprint Speed", 1.0f, 3.0f, 0.2f, Plugin.SprintSpeedMultiplier.Value, "x", v => Plugin.SprintSpeedMultiplier.Value = v,
-                39f);
+                "🎣 Hook Reel Speed", 1.0f, maxReel, 0.5f, Plugin.HookPullSpeedMultiplier.Value, "x", v => Plugin.HookPullSpeedMultiplier.Value = v,
+                "🏊 Swim Speed", 1.0f, maxSwim, 0.2f, Plugin.SwimSpeedMultiplier.Value, "x", v => Plugin.SwimSpeedMultiplier.Value = v,
+                "🏃 Sprint Speed", 1.0f, maxSprint, 0.2f, Plugin.SprintSpeedMultiplier.Value, "x", v => Plugin.SprintSpeedMultiplier.Value = v,
+                38f);
 
             return page;
         }
@@ -375,6 +490,13 @@ namespace SailorsCompanion.UI
         // ============================================================================
         private GameObject BuildCheatsTab(Transform parent)
         {
+            if (Plugin.IsSurvivalMode)
+            {
+                return CreateLockCard(parent, "Cheats & God Mode",
+                    "Survival Mode preserves authentic game balance, hunger/thirst tension, and immersion.\n\nGod Mode, Infinite Oxygen, Fly / Noclip, Free Instant Crafting, and Weather controls are reserved for Creative Mode.\n\nSwitch to Creative / Sandbox Mode at the top or below to unlock all cheats.",
+                    () => SetModMode("Creative"));
+            }
+
             var page = CreateBox(parent, "Page_Cheats", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
             var layout = page.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 8;
@@ -500,12 +622,14 @@ namespace SailorsCompanion.UI
             navTeleLayout.spacing = 10;
             navTeleLayout.childForceExpandWidth = true;
 
-            CreateButton(navTeleRow.transform, "Btn_NavTeleToRaft", "⚡ Recall to Raft [F8]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            var teleBtnGO = CreateButton(navTeleRow.transform, "Btn_NavTeleToRaft", "⚡ Recall to Raft [F8]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 TeleportManager.TeleportPlayerToRaft();
             }, new Color(0.80f, 0.15f, 0.18f, 0.95f), Color.white, 15);
+            _navRecallBtnText = teleBtnGO.GetComponentInChildren<Text>();
 
-            CreateButton(navTeleRow.transform, "Btn_NavSummonRaft", "⛵ Summon Raft Here [F9]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            string summonLabel = Plugin.IsSurvivalMode ? "⛵ Summon Raft [F9] (Creative Only)" : "⛵ Summon Raft Here [F9]";
+            CreateButton(navTeleRow.transform, "Btn_NavSummonRaft", summonLabel, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 TeleportManager.TeleportRaftToPlayer();
             }, new Color(0.18f, 0.18f, 0.23f), Color.white, 15);
@@ -555,61 +679,186 @@ namespace SailorsCompanion.UI
 
         #region [START] TAB 3: RESEARCH & R&D BLUEPRINTS
         // ============================================================================
-        // [START] TAB 3: RESEARCH & R&D BLUEPRINTS (Instant Learn All Recipes)
+        // [START] TAB 3: RESEARCH & R&D BLUEPRINTS (Progressive Chapters & Creative Instant Learn)
         // ============================================================================
         private GameObject BuildResearchTab(Transform parent)
         {
             var page = CreateBox(parent, "Page_Research", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
             var layout = page.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 16;
-            layout.padding = new RectOffset(16, 16, 14, 14);
+            layout.spacing = 10;
+            layout.padding = new RectOffset(16, 16, 8, 8);
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            var infoBox = CreateBox(page.transform, "InfoBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 150), new Color(0.10f, 0.10f, 0.13f, 0.95f));
-            EnsureLayout(infoBox, -1, 150);
-            var boxLayout = infoBox.AddComponent<VerticalLayoutGroup>();
-            boxLayout.padding = new RectOffset(20, 20, 14, 14);
-            boxLayout.spacing = 10;
-            boxLayout.childForceExpandWidth = true;
-
-            var title = CreateText(infoBox.transform, "Title", "🔬 <b><color=#EF4444>Research Table</color> & Blueprint Automation (R&D)</b>", 18, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
-            EnsureLayout(title.gameObject, -1, 28);
-
-            var desc = CreateText(infoBox.transform, "Desc", "Instantly researches and learns all crafting recipes, tools, weapons, furniture, engines, and blueprint items in the game without requiring you to find or sacrifice materials at the Research Table.", 15, FontStyle.Normal, new Color(0.88f, 0.90f, 0.94f), TextAnchor.UpperLeft);
-            EnsureLayout(desc.gameObject, -1, 70);
-
-            _researchStatusText = CreateText(page.transform, "Status", "<color=#CBD5E1>Status: Ready. Click below to unlock all items.</color>", 15, FontStyle.Italic, Color.white, TextAnchor.MiddleCenter);
-            EnsureLayout(_researchStatusText.gameObject, -1, 28);
-
-            var unlockBtn = CreateButton(page.transform, "Btn_UnlockAllRD", "⚡ UNLOCK ALL R&D RECIPES & BLUEPRINTS NOW", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 54), () =>
+            if (Plugin.IsSurvivalMode)
             {
-                try
+                var infoBox = CreateBox(page.transform, "InfoBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 95), new Color(0.10f, 0.10f, 0.13f, 0.95f));
+                EnsureLayout(infoBox, -1, 95);
+                var boxLayout = infoBox.AddComponent<VerticalLayoutGroup>();
+                boxLayout.padding = new RectOffset(18, 18, 10, 10);
+                boxLayout.spacing = 6;
+                boxLayout.childForceExpandWidth = true;
+
+                var title = CreateText(infoBox.transform, "Title", "🔬 <b><color=#EF4444>Progressive Research</color> & Story Blueprints</b>", 17, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
+                EnsureLayout(title.gameObject, -1, 24);
+
+                var desc = CreateText(infoBox.transform, "Desc", "In Survival Mode, unlock crafting knowledge step-by-step or by story chapter to avoid spoiling game progression.", 14, FontStyle.Normal, new Color(0.88f, 0.90f, 0.94f), TextAnchor.UpperLeft);
+                EnsureLayout(desc.gameObject, -1, 46);
+
+                // Progressive Buttons
+                CreateButton(page.transform, "Btn_BaseTech", "🧪 1. Research Base Table Materials (Wood, Plastic, Metal, Scrap, Goo, Bricks)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
                 {
-                    var rt = ComponentManager<Inventory_ResearchTable>.Value ?? FindObjectOfType<Inventory_ResearchTable>();
-                    if (rt != null)
-                    {
-                        rt.LearnAllRecipesInstantly();
-                    }
-                    Cheat.UnlockAllCrafting = true;
-                    if (_researchStatusText != null)
-                    {
-                        _researchStatusText.text = "<color=#34D399><b>✅ SUCCESS: All R&D recipes and blueprints unlocked!</b></color>";
-                    }
-                    Debug.Log("[Sailor's Companion] Unlocked all R&D recipes and blueprints!");
-                }
-                catch (Exception ex)
+                    ResearchBaseMaterials();
+                }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+
+                CreateButton(page.transform, "Btn_Chapter1", "📻 2. Unlock Chapter 1 Blueprints (Radio Tower & Vasagatan)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
                 {
-                    if (_researchStatusText != null)
+                    UnlockChapterBlueprints(1, "Radio Tower & Vasagatan", new[] { "antenna", "receiver", "headlight", "machete", "steering", "engine" });
+                }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+
+                CreateButton(page.transform, "Btn_Chapter2", "🐻 3. Unlock Chapter 2 Blueprints (Balboa, Caravan Island, Tangaroa)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
+                {
+                    UnlockChapterBlueprints(2, "Balboa / Caravan / Tangaroa", new[] { "biofuel", "storage", "charger", "grill", "pipe", "firework" });
+                }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+
+                CreateButton(page.transform, "Btn_Chapter3", "🏙️ 4. Unlock Chapter 3 Blueprints (Varuna Point, Temperance, Utopia)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
+                {
+                    UnlockChapterBlueprints(3, "Varuna / Temperance / Utopia", new[] { "batteryadvanced", "anchorstationaryadvanced", "backpackadvanced", "smelter", "windmill", "titanium", "biofuelextractoradvanced" });
+                }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+
+                _researchStatusText = CreateText(page.transform, "Status", "<color=#CBD5E1>Status: Ready. Select a chapter or base research to learn recipes.</color>", 14, FontStyle.Italic, Color.white, TextAnchor.MiddleCenter);
+                EnsureLayout(_researchStatusText.gameObject, -1, 26);
+            }
+            else
+            {
+                var infoBox = CreateBox(page.transform, "InfoBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 140), new Color(0.10f, 0.10f, 0.13f, 0.95f));
+                EnsureLayout(infoBox, -1, 140);
+                var boxLayout = infoBox.AddComponent<VerticalLayoutGroup>();
+                boxLayout.padding = new RectOffset(20, 20, 14, 14);
+                boxLayout.spacing = 10;
+                boxLayout.childForceExpandWidth = true;
+
+                var title = CreateText(infoBox.transform, "Title", "⚡ <b><color=#EF4444>Creative Sandbox</color> Blueprint Station</b>", 18, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
+                EnsureLayout(title.gameObject, -1, 28);
+
+                var desc = CreateText(infoBox.transform, "Desc", "Creative Mode allows instant learning of every item, engine, weapon, tool, furniture, and story blueprint in the game without requiring materials or visiting islands.", 15, FontStyle.Normal, new Color(0.88f, 0.90f, 0.94f), TextAnchor.UpperLeft);
+                EnsureLayout(desc.gameObject, -1, 60);
+
+                _researchStatusText = CreateText(page.transform, "Status", "<color=#CBD5E1>Status: Ready. Click below to unlock all items.</color>", 15, FontStyle.Italic, Color.white, TextAnchor.MiddleCenter);
+                EnsureLayout(_researchStatusText.gameObject, -1, 28);
+
+                var unlockBtn = CreateButton(page.transform, "Btn_UnlockAllRD", "⚡ UNLOCK ALL R&D RECIPES & BLUEPRINTS NOW", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 54), () =>
+                {
+                    try
                     {
-                        _researchStatusText.text = $"<color=#F87171>Notice: {ex.Message} (Load into world first)</color>";
+                        var rt = ComponentManager<Inventory_ResearchTable>.Value ?? FindObjectOfType<Inventory_ResearchTable>();
+                        if (rt != null)
+                        {
+                            rt.LearnAllRecipesInstantly();
+                        }
+                        Cheat.UnlockAllCrafting = true;
+                        if (_researchStatusText != null)
+                        {
+                            _researchStatusText.text = "<color=#34D399><b>✅ SUCCESS: All R&D recipes and blueprints unlocked!</b></color>";
+                        }
+                        Debug.Log("[Sailor's Companion] Unlocked all R&D recipes and blueprints!");
                     }
-                    Debug.LogError("[Sailor's Companion] R&D error: " + ex);
-                }
-            }, new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 16);
-            EnsureLayout(unlockBtn, -1, 54);
+                    catch (Exception ex)
+                    {
+                        if (_researchStatusText != null)
+                        {
+                            _researchStatusText.text = $"<color=#F87171>Notice: {ex.Message} (Load into world first)</color>";
+                        }
+                        Debug.LogError("[Sailor's Companion] R&D error: " + ex);
+                    }
+                }, new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 16);
+                EnsureLayout(unlockBtn, -1, 54);
+            }
 
             return page;
+        }
+
+        private void ResearchBaseMaterials()
+        {
+            try
+            {
+                var rt = ComponentManager<Inventory_ResearchTable>.Value ?? FindObjectOfType<Inventory_ResearchTable>();
+                var all = ItemManager.GetAllItems();
+                if (all == null || all.Count == 0)
+                {
+                    if (_researchStatusText != null)
+                        _researchStatusText.text = "<color=#F87171>Load into a game world to research items!</color>";
+                    return;
+                }
+
+                string[] baseKeywords = { "plank", "plastic", "scrap", "metal", "copper", "stone", "rope", "brick", "goo", "glass", "hinge", "bolt", "feather", "clay", "sand", "dirt", "leather", "wool" };
+                int count = 0;
+                foreach (var item in all)
+                {
+                    if (item == null || string.IsNullOrEmpty(item.UniqueName)) continue;
+                    string name = item.UniqueName.ToLower();
+                    if (name.StartsWith("blueprint_")) continue;
+                    if (baseKeywords.Any(k => name.Contains(k)))
+                    {
+                        if (rt != null)
+                        {
+                            try { rt.Research(item, true); count++; } catch { }
+                            var p = PlayerHelper.GetLocalPlayer();
+                            if (p != null)
+                            {
+                                try { rt.LearnItem(item, p.steamID); } catch { }
+                            }
+                        }
+                    }
+                }
+
+                if (_researchStatusText != null)
+                    _researchStatusText.text = $"<color=#34D399><b>✅ Researched {count} base materials at the Research Table!</b></color>";
+                TeleportManager.SetNotification($"🔬 Researched {count} base crafting materials!");
+            }
+            catch (Exception ex)
+            {
+                if (_researchStatusText != null)
+                    _researchStatusText.text = $"<color=#F87171>Error: {ex.Message}</color>";
+            }
+        }
+
+        private void UnlockChapterBlueprints(int chapter, string chapterName, string[] keywords)
+        {
+            try
+            {
+                var rt = ComponentManager<Inventory_ResearchTable>.Value ?? FindObjectOfType<Inventory_ResearchTable>();
+                var all = ItemManager.GetAllItems();
+                if (all == null || all.Count == 0)
+                {
+                    if (_researchStatusText != null)
+                        _researchStatusText.text = "<color=#F87171>Load into a game world to unlock blueprints!</color>";
+                    return;
+                }
+
+                int count = 0;
+                foreach (var item in all)
+                {
+                    if (item == null || string.IsNullOrEmpty(item.UniqueName)) continue;
+                    string name = item.UniqueName.ToLower();
+                    if (keywords.Any(k => name.Contains(k)))
+                    {
+                        if (rt != null)
+                        {
+                            try { rt.ResearchBlueprint(item); count++; } catch { }
+                        }
+                    }
+                }
+
+                if (_researchStatusText != null)
+                    _researchStatusText.text = $"<color=#34D399><b>✅ SUCCESS: Chapter {chapter} ({chapterName}) blueprints unlocked!</b></color>";
+                TeleportManager.SetNotification($"📻 Chapter {chapter} Blueprints Unlocked!");
+            }
+            catch (Exception ex)
+            {
+                if (_researchStatusText != null)
+                    _researchStatusText.text = $"<color=#F87171>Error: {ex.Message}</color>";
+            }
         }
         // ============================================================================
         // [END] TAB 3: RESEARCH & R&D BLUEPRINTS
@@ -622,6 +871,13 @@ namespace SailorsCompanion.UI
         // ============================================================================
         private GameObject BuildSpawnerTab(Transform parent)
         {
+            if (Plugin.IsSurvivalMode)
+            {
+                return CreateLockCard(parent, "Item Spawner",
+                    "Gathering resources, fishing for food, and diving for scrap form the core progression loop of Raft.\n\nItem Spawning is disabled in Survival Mode to preserve authentic accomplishment.\n\nSwitch to Creative / Sandbox Mode at the top or below to browse and spawn any of the 300+ items.",
+                    () => SetModMode("Creative"));
+            }
+
             var page = CreateBox(parent, "Page_Spawner", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
             var layout = page.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 8;
@@ -1198,6 +1454,23 @@ namespace SailorsCompanion.UI
 
         private void UpdateNavTabText()
         {
+            if (_navRecallBtnText != null)
+            {
+                float cd = TeleportManager.GetRecallCooldownRemaining();
+                if (cd > 0f)
+                {
+                    int sec = Mathf.CeilToInt(cd);
+                    int mins = sec / 60;
+                    int s = sec % 60;
+                    string cdStr = mins > 0 ? $"{mins}m {s}s" : $"{s}s";
+                    _navRecallBtnText.text = $"⏳ Recall [F8] ({cdStr})";
+                }
+                else
+                {
+                    _navRecallBtnText.text = "⚡ Recall to Raft [F8]";
+                }
+            }
+
             var p = PlayerHelper.GetLocalPlayer();
             if (p == null)
             {

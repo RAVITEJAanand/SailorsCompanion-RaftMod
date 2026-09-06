@@ -52,6 +52,10 @@ namespace SailorsCompanion
         public static ConfigEntry<bool> EnableCropGrowthBoost;
         public static ConfigEntry<float> CropGrowthMultiplier;
         public static ConfigEntry<bool> ShowAnimalHealthBars;
+        public static ConfigEntry<string> ModGameMode;
+
+        public static bool IsCreativeMode => ModGameMode != null && ModGameMode.Value == "Creative";
+        public static bool IsSurvivalMode => !IsCreativeMode;
 
         private Harmony _harmony;
         private float _baseSwimSpeed = -1f;
@@ -75,6 +79,9 @@ namespace SailorsCompanion
             KeyFly = Config.Bind("General.Hotkeys", "KeyFly", KeyCode.F, "Hotkey to toggle Fly / Noclip mode.");
             KeyTeleportToRaft = Config.Bind("General.Hotkeys", "KeyTeleportToRaft", KeyCode.F8, "Hotkey to instantly recall/teleport player back onto the raft.");
             KeyTeleportRaftToPlayer = Config.Bind("General.Hotkeys", "KeyTeleportRaftToPlayer", KeyCode.F9, "Hotkey to summon raft to player's current location.");
+
+            // Bind Profile Mode
+            ModGameMode = Config.Bind("General.Profile", "ModGameMode", "Survival", "Mod mode: 'Survival' for balanced QoL, 'Creative' for unrestricted sandbox cheats.");
 
             // Bind Navigation Settings
             EnableHUD = Config.Bind("Features.Navigation", "EnableHUD", true, "Show the real-time compass, coordinates, raft tracker, and shark radar.");

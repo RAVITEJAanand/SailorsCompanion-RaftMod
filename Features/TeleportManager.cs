@@ -34,8 +34,30 @@ namespace SailorsCompanion.Features
         // Description: Safely teleports the local player back onto the raft deck from
         //              anywhere in the world (deep ocean, island peaks, etc.).
         // ============================================================================
+        private static float _lastRecallTime = -9999f;
+        public const float SURVIVAL_RECALL_COOLDOWN = 180f; // 3 minutes in Survival Mode
+
+        public static float GetRecallCooldownRemaining()
+        {
+            if (Plugin.IsCreativeMode) return 0f;
+            float elapsed = Time.unscaledTime - _lastRecallTime;
+            float rem = SURVIVAL_RECALL_COOLDOWN - elapsed;
+            return rem > 0f ? rem : 0f;
+        }
+
         public static bool TeleportPlayerToRaft(bool autoDropAnchor = false)
         {
+            float cooldownRem = GetRecallCooldownRemaining();
+            if (cooldownRem > 0f)
+            {
+                int sec = Mathf.CeilToInt(cooldownRem);
+                int mins = sec / 60;
+                int remainingSec = sec % 60;
+                string timeStr = mins > 0 ? $"{mins}m {remainingSec}s" : $"{remainingSec}s";
+                SetNotification($"⏳ Recall on cooldown in Survival Mode: {timeStr} remaining.");
+                return false;
+            }
+
             var player = PlayerHelper.GetLocalPlayer();
             if (player == null)
             {
@@ -124,6 +146,7 @@ namespace SailorsCompanion.Features
                 catch { }
             }
 
+            _lastRecallTime = Time.unscaledTime;
             SetNotification($"⚡ Teleported back to Raft! (Traveled {prevDist:F0}m)");
             return true;
         }
@@ -140,6 +163,12 @@ namespace SailorsCompanion.Features
         // ============================================================================
         public static bool TeleportRaftToPlayer()
         {
+            if (Plugin.IsSurvivalMode)
+            {
+                SetNotification("🔒 Summoning the Raft is restricted to Creative Mode.");
+                return false;
+            }
+
             var player = PlayerHelper.GetLocalPlayer();
             if (player == null)
             {
