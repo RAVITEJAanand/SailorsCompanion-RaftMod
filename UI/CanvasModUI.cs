@@ -46,6 +46,16 @@ namespace SailorsCompanion.UI
         private Text _navRecallBtnText;
 
         // Preset Profile Controls & Tooltip
+        private static readonly string[] ProfileKeys = { "VanillaPlus", "BalancedOP", "EasyMode", "Custom" };
+        private static readonly string[] ProfileNames = { "🌿 Vanilla+", "⚖️ Balanced OP", "⚡ Easy Mode", "⚙️ Custom" };
+        private static readonly string[] ProfileTooltips = {
+            "🌿 <b>Vanilla+ Profile:</b> Authentic Raft survival balance with handy craft-from-storage & creature health bars.",
+            "⚖️ <b>Balanced OP Profile:</b> 100 stack, 1.5x crop/hook, 1.2x speeds, all QoL & automations enabled.",
+            "⚡ <b>Easy Mode Profile:</b> 200 stack, 2.0x crop/hook, 1.5x swim/sprint speeds for relaxed easy gameplay.",
+            "⚙️ <b>Custom Profile:</b> User-defined fine-tuned configuration."
+        };
+        private static readonly Color ProfileActiveColor = new Color(0.85f, 0.15f, 0.20f, 1f); // Vibrant Crimson
+        private static readonly Color ProfileInactiveColor = new Color(0.14f, 0.14f, 0.18f, 0.90f); // Slate charcoal
         private Image[] _profileButtonImgs = new Image[4];
         private Text[] _profileButtonTexts = new Text[4];
         private Text _qolTooltipText;
@@ -338,58 +348,68 @@ namespace SailorsCompanion.UI
 
         private void ApplyProfile(string profileName)
         {
+            if (string.IsNullOrEmpty(profileName)) return;
+
             if (Plugin.ActiveProfile != null)
                 Plugin.ActiveProfile.Value = profileName;
 
+            string tooltipText = "💡 <b>Hint:</b> Choose a preset profile above or toggle individual survival options.";
+
             if (profileName == "VanillaPlus")
             {
-                Plugin.CustomStackSize.Value = 40;
-                Plugin.EnableCropGrowthBoost.Value = false;
-                Plugin.CropGrowthMultiplier.Value = 1.0f;
-                Plugin.HookPullSpeedMultiplier.Value = 1.0f;
-                Plugin.SwimSpeedMultiplier.Value = 1.0f;
-                Plugin.SprintSpeedMultiplier.Value = 1.0f;
-                Plugin.AutoWaterCrops.Value = false;
-                Plugin.AutoEmptyCollectionNets.Value = false;
-                Plugin.CraftFromStorage.Value = true;
-                Plugin.AntiSharkRaftDamage.Value = false;
-                Plugin.InfiniteDurability.Value = false;
-                Plugin.ShowAnimalHealthBars.Value = true;
-                SetQoLTooltip("🌿 <b>Vanilla+ Profile:</b> Authentic Raft survival balance with handy craft-from-storage & creature health bars.");
+                SetProfileSettings(
+                    stackSize: 40,
+                    enableGrowthBoost: false,
+                    growthMultiplier: 1.0f,
+                    hookSpeed: 1.0f,
+                    swimSpeed: 1.0f,
+                    sprintSpeed: 1.0f,
+                    autoWater: false,
+                    autoNets: false,
+                    craftFromStorage: true,
+                    antiShark: false,
+                    infiniteDurability: false,
+                    animalHealthBars: true
+                );
+                tooltipText = "🌿 <b>Vanilla+ Profile:</b> Authentic Raft survival balance with handy craft-from-storage & creature health bars.";
                 TeleportManager.SetNotification("🌿 Activated 'Vanilla+' Preset Profile");
             }
             else if (profileName == "BalancedOP" || profileName == "CozyFarming")
             {
-                Plugin.CustomStackSize.Value = 100;
-                Plugin.EnableCropGrowthBoost.Value = true;
-                Plugin.CropGrowthMultiplier.Value = 1.5f;
-                Plugin.HookPullSpeedMultiplier.Value = 1.5f;
-                Plugin.SwimSpeedMultiplier.Value = 1.2f;
-                Plugin.SprintSpeedMultiplier.Value = 1.2f;
-                Plugin.AutoWaterCrops.Value = true;
-                Plugin.AutoEmptyCollectionNets.Value = true;
-                Plugin.CraftFromStorage.Value = true;
-                Plugin.AntiSharkRaftDamage.Value = true;
-                Plugin.InfiniteDurability.Value = true;
-                Plugin.ShowAnimalHealthBars.Value = true;
-                SetQoLTooltip("⚖️ <b>Balanced OP Profile:</b> 100 stack, 1.5x crop/hook, 1.2x speeds, all QoL & automations enabled.");
+                SetProfileSettings(
+                    stackSize: 100,
+                    enableGrowthBoost: true,
+                    growthMultiplier: 1.5f,
+                    hookSpeed: 1.5f,
+                    swimSpeed: 1.2f,
+                    sprintSpeed: 1.2f,
+                    autoWater: true,
+                    autoNets: true,
+                    craftFromStorage: true,
+                    antiShark: true,
+                    infiniteDurability: true,
+                    animalHealthBars: true
+                );
+                tooltipText = "⚖️ <b>Balanced OP Profile:</b> 100 stack, 1.5x crop/hook, 1.2x speeds, all QoL & automations enabled.";
                 TeleportManager.SetNotification("⚖️ Activated 'Balanced OP' Preset Profile");
             }
             else if (profileName == "EasyMode" || profileName == "MasterBuilder")
             {
-                Plugin.CustomStackSize.Value = 200;
-                Plugin.EnableCropGrowthBoost.Value = true;
-                Plugin.CropGrowthMultiplier.Value = 2.0f;
-                Plugin.HookPullSpeedMultiplier.Value = 2.0f;
-                Plugin.SwimSpeedMultiplier.Value = 1.5f;
-                Plugin.SprintSpeedMultiplier.Value = 1.5f;
-                Plugin.AutoWaterCrops.Value = true;
-                Plugin.AutoEmptyCollectionNets.Value = true;
-                Plugin.CraftFromStorage.Value = true;
-                Plugin.AntiSharkRaftDamage.Value = true;
-                Plugin.InfiniteDurability.Value = true;
-                Plugin.ShowAnimalHealthBars.Value = true;
-                SetQoLTooltip("⚡ <b>Easy Mode Profile:</b> 200 stack, 2.0x crop/hook, 1.5x swim/sprint speeds for relaxed easy gameplay.");
+                SetProfileSettings(
+                    stackSize: 200,
+                    enableGrowthBoost: true,
+                    growthMultiplier: 2.0f,
+                    hookSpeed: 2.0f,
+                    swimSpeed: 1.5f,
+                    sprintSpeed: 1.5f,
+                    autoWater: true,
+                    autoNets: true,
+                    craftFromStorage: true,
+                    antiShark: true,
+                    infiniteDurability: true,
+                    animalHealthBars: true
+                );
+                tooltipText = "⚡ <b>Easy Mode Profile:</b> 200 stack, 2.0x crop/hook, 1.5x swim/sprint speeds for relaxed easy gameplay.";
                 TeleportManager.SetNotification("⚡ Activated 'Easy Mode' Preset Profile");
             }
 
@@ -397,34 +417,65 @@ namespace SailorsCompanion.UI
             {
                 Plugin.Instance?.Config?.Save();
             }
-            catch {}
-
-            UpdateProfileButtonsVisuals();
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Sailor's Companion] Error saving profile configuration: " + ex.Message);
+            }
 
             // Rebuild Tab 0 so all UI controls visually reflect the new profile values
-            if (_contentAreaTransform != null && _tabPages[0] != null)
+            if (_contentAreaTransform != null)
             {
-                Destroy(_tabPages[0]);
-                _tabPages[0] = BuildSurvivalQoLTab(_contentAreaTransform);
-                if (_activeTab == 0)
+                if (_tabPages[0] != null)
                 {
-                    _tabPages[0].SetActive(true);
+                    Destroy(_tabPages[0]);
                 }
+                _tabPages[0] = BuildSurvivalQoLTab(_contentAreaTransform, tooltipText);
+                SelectTab(_activeTab);
             }
+
+            UpdateProfileButtonsVisuals();
+        }
+
+        private static void SetProfileSettings(
+            int stackSize,
+            bool enableGrowthBoost,
+            float growthMultiplier,
+            float hookSpeed,
+            float swimSpeed,
+            float sprintSpeed,
+            bool autoWater,
+            bool autoNets,
+            bool craftFromStorage,
+            bool antiShark,
+            bool infiniteDurability,
+            bool animalHealthBars)
+        {
+            if (Plugin.CustomStackSize != null) Plugin.CustomStackSize.Value = stackSize;
+            if (Plugin.EnableCropGrowthBoost != null) Plugin.EnableCropGrowthBoost.Value = enableGrowthBoost;
+            if (Plugin.CropGrowthMultiplier != null) Plugin.CropGrowthMultiplier.Value = growthMultiplier;
+            if (Plugin.HookPullSpeedMultiplier != null) Plugin.HookPullSpeedMultiplier.Value = hookSpeed;
+            if (Plugin.SwimSpeedMultiplier != null) Plugin.SwimSpeedMultiplier.Value = swimSpeed;
+            if (Plugin.SprintSpeedMultiplier != null) Plugin.SprintSpeedMultiplier.Value = sprintSpeed;
+            if (Plugin.AutoWaterCrops != null) Plugin.AutoWaterCrops.Value = autoWater;
+            if (Plugin.AutoEmptyCollectionNets != null) Plugin.AutoEmptyCollectionNets.Value = autoNets;
+            if (Plugin.CraftFromStorage != null) Plugin.CraftFromStorage.Value = craftFromStorage;
+            if (Plugin.AntiSharkRaftDamage != null) Plugin.AntiSharkRaftDamage.Value = antiShark;
+            if (Plugin.InfiniteDurability != null) Plugin.InfiniteDurability.Value = infiniteDurability;
+            if (Plugin.ShowAnimalHealthBars != null) Plugin.ShowAnimalHealthBars.Value = animalHealthBars;
         }
 
         private void UpdateProfileButtonsVisuals()
         {
             string active = Plugin.ActiveProfile != null ? Plugin.ActiveProfile.Value : "Custom";
-            string[] profileKeys = { "VanillaPlus", "BalancedOP", "EasyMode", "Custom" };
-            Color activeColor = new Color(0.85f, 0.15f, 0.20f, 1f); // Vibrant Crimson
-            Color inactiveColor = new Color(0.14f, 0.14f, 0.18f, 0.90f); // Slate charcoal
 
             for (int i = 0; i < _profileButtonImgs.Length; i++)
             {
                 if (_profileButtonImgs[i] == null) continue;
-                bool isSel = (profileKeys[i] == active || (profileKeys[i] == "BalancedOP" && active == "CozyFarming") || (profileKeys[i] == "EasyMode" && active == "MasterBuilder"));
-                _profileButtonImgs[i].color = isSel ? activeColor : inactiveColor;
+                bool isSel = (ProfileKeys[i] == active
+                    || (ProfileKeys[i] == "BalancedOP" && active == "CozyFarming")
+                    || (ProfileKeys[i] == "EasyMode" && active == "MasterBuilder"));
+
+                _profileButtonImgs[i].color = isSel ? ProfileActiveColor : ProfileInactiveColor;
                 if (_profileButtonTexts[i] != null)
                 {
                     _profileButtonTexts[i].color = isSel ? Color.white : new Color(0.70f, 0.75f, 0.82f);
@@ -495,7 +546,7 @@ namespace SailorsCompanion.UI
         // ============================================================================
         // [START] TAB 0: SURVIVAL QUALITY OF LIFE (Preset Profiles, Categorized Groups & Clamped Balances)
         // ============================================================================
-        private GameObject BuildSurvivalQoLTab(Transform parent)
+        private GameObject BuildSurvivalQoLTab(Transform parent, string initialTooltip = null)
         {
             var page = CreateBox(parent, "Page_SurvivalQoL", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
             var layout = page.AddComponent<VerticalLayoutGroup>();
@@ -512,31 +563,22 @@ namespace SailorsCompanion.UI
             profLayout.childForceExpandWidth = true;
             profLayout.childForceExpandHeight = true;
 
-            string[] profNames = { "🌿 Vanilla+", "⚖️ Balanced OP", "⚡ Easy Mode", "⚙️ Custom" };
-            string[] profKeys = { "VanillaPlus", "BalancedOP", "EasyMode", "Custom" };
-            string[] profTooltips = {
-                "🌿 <b>Vanilla+ Profile:</b> Default game balance with handy craft-from-storage & creature health bars.",
-                "⚖️ <b>Balanced OP Profile:</b> Best balanced settings: 100 stack, 1.5x crop/hook, 1.2x speeds, all QoL & automations enabled.",
-                "⚡ <b>Easy Mode Profile:</b> More OP experience: 200 stack, 2.0x crop/hook, 1.5x swim/sprint speeds.",
-                "⚙️ <b>Custom Profile:</b> User-defined fine-tuned configuration."
-            };
-
             for (int i = 0; i < 4; i++)
             {
                 int pIdx = i;
-                var btn = CreateButton(profileRow.transform, $"Btn_Profile_{i}", profNames[i], Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+                var btn = CreateButton(profileRow.transform, $"Btn_Profile_{i}", ProfileNames[i], Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
                 {
-                    if (profKeys[pIdx] == "Custom")
+                    if (ProfileKeys[pIdx] == "Custom")
                     {
                         if (Plugin.ActiveProfile != null) Plugin.ActiveProfile.Value = "Custom";
                         UpdateProfileButtonsVisuals();
-                        SetQoLTooltip(profTooltips[pIdx]);
+                        SetQoLTooltip(ProfileTooltips[pIdx]);
                     }
                     else
                     {
-                        ApplyProfile(profKeys[pIdx]);
+                        ApplyProfile(ProfileKeys[pIdx]);
                     }
-                }, new Color(0.14f, 0.14f, 0.18f, 0.90f), new Color(0.70f, 0.75f, 0.82f), 13);
+                }, ProfileInactiveColor, new Color(0.70f, 0.75f, 0.82f), 13);
                 _profileButtonImgs[i] = btn.GetComponent<Image>();
                 _profileButtonTexts[i] = btn.GetComponentInChildren<Text>();
             }
@@ -570,51 +612,58 @@ namespace SailorsCompanion.UI
             // CATEGORY 1: INVENTORY & STORAGE AUTOMATION
             CreateCategoryHeader(page.transform, "📦 INVENTORY & STORAGE AUTOMATION", 21f);
 
-            CreateToggleItem(page.transform, "🛠️ Craft from Nearby Storage (Auto-pulls materials from chests within 22m)", Plugin.CraftFromStorage.Value, v =>
+            CreateToggleItem(page.transform, "🛠️ Craft from Nearby Storage (Auto-pulls materials from chests within 22m)", Plugin.CraftFromStorage?.Value ?? true, v =>
             {
-                Plugin.CraftFromStorage.Value = v;
+                if (Plugin.CraftFromStorage != null) Plugin.CraftFromStorage.Value = v;
+                MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🛠️ Craft from Storage: ENABLED" : "🛠️ Craft from Storage: DISABLED");
             }, 31f, 14, "🛠️ <b>Craft from Storage:</b> Automatically pulls needed ingredients from nearby storage containers when crafting.");
 
-            CreateToggleItem(page.transform, "🕸️ Auto-Empty Collection Nets (Continuously gathers trapped items into inventory)", Plugin.AutoEmptyCollectionNets.Value, v =>
+            CreateToggleItem(page.transform, "🕸️ Auto-Empty Collection Nets (Continuously gathers trapped items into inventory)", Plugin.AutoEmptyCollectionNets?.Value ?? false, v =>
             {
-                Plugin.AutoEmptyCollectionNets.Value = v;
+                if (Plugin.AutoEmptyCollectionNets != null) Plugin.AutoEmptyCollectionNets.Value = v;
+                MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🕸️ Auto-Empty Nets: ENABLED" : "🕸️ Auto-Empty Nets: DISABLED");
             }, 31f, 14, "🕸️ <b>Auto-Empty Nets:</b> Periodically sweeps collection nets so they never get clogged.");
 
             // CATEGORY 2: FARMING & SUSTENANCE
             CreateCategoryHeader(page.transform, "🌱 FARMING & SUSTENANCE", 21f);
 
-            CreateToggleItem(page.transform, "🌱 Auto-Water Crops Continually (Never let crop plots or livestock grass dry out)", Plugin.AutoWaterCrops.Value, v =>
+            CreateToggleItem(page.transform, "🌱 Auto-Water Crops Continually (Never let crop plots or livestock grass dry out)", Plugin.AutoWaterCrops?.Value ?? false, v =>
             {
-                Plugin.AutoWaterCrops.Value = v;
+                if (Plugin.AutoWaterCrops != null) Plugin.AutoWaterCrops.Value = v;
+                MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🌱 Auto-Watering: ENABLED" : "🌱 Auto-Watering: DISABLED");
             }, 31f, 14, "🌱 <b>Auto-Water:</b> Continuously maintains full hydration on crop plots and livestock grass.");
 
-            CreateToggleItem(page.transform, "🌾 Accelerate Crop & Tree Growth (Speeds up farming & tree growth cycles)", Plugin.EnableCropGrowthBoost.Value, v =>
+            CreateToggleItem(page.transform, "🌾 Accelerate Crop & Tree Growth (Speeds up farming & tree growth cycles)", Plugin.EnableCropGrowthBoost?.Value ?? false, v =>
             {
-                Plugin.EnableCropGrowthBoost.Value = v;
+                if (Plugin.EnableCropGrowthBoost != null) Plugin.EnableCropGrowthBoost.Value = v;
+                MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🌾 Crop Growth Boost: ENABLED" : "🌾 Crop Growth Boost: DISABLED");
             }, 31f, 14, "🌾 <b>Crop Growth Boost:</b> Toggles custom growth multiplier for farming plots and tree planters.");
 
             // CATEGORY 3: RAFT & CREATURE DEFENSE
             CreateCategoryHeader(page.transform, "🦈 RAFT & CREATURE DEFENSE", 21f);
 
-            CreateToggleItem(page.transform, "🐾 Animal & Enemy Health Bars (Floating HP bars and distance meters over creatures)", Plugin.ShowAnimalHealthBars.Value, v =>
+            CreateToggleItem(page.transform, "🐾 Animal & Enemy Health Bars (Floating HP bars and distance meters over creatures)", Plugin.ShowAnimalHealthBars?.Value ?? true, v =>
             {
-                Plugin.ShowAnimalHealthBars.Value = v;
+                if (Plugin.ShowAnimalHealthBars != null) Plugin.ShowAnimalHealthBars.Value = v;
+                MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🐾 Animal Health Bars: ENABLED" : "🐾 Animal Health Bars: DISABLED");
             }, 31f, 14, "🐾 <b>Creature Health Bars:</b> Displays overhead health bars and distance meters on animals and predators.");
 
-            CreateToggleItem(page.transform, "🦈 Anti-Shark Raft Protection (Bruce will not attack or destroy raft foundations)", Plugin.AntiSharkRaftDamage.Value, v =>
+            CreateToggleItem(page.transform, "🦈 Anti-Shark Raft Protection (Bruce will not attack or destroy raft foundations)", Plugin.AntiSharkRaftDamage?.Value ?? false, v =>
             {
-                Plugin.AntiSharkRaftDamage.Value = v;
+                if (Plugin.AntiSharkRaftDamage != null) Plugin.AntiSharkRaftDamage.Value = v;
+                MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🦈 Anti-Shark: ENABLED" : "🦈 Anti-Shark: DISABLED");
             }, 31f, 14, "🦈 <b>Anti-Shark Protection:</b> Bruce the shark will ignore raft foundations and focus only on players in water.");
 
-            CreateToggleItem(page.transform, "🔨 Infinite Tool Durability (Hooks, weapons, tools, gear & armor never break)", Plugin.InfiniteDurability.Value, v =>
+            CreateToggleItem(page.transform, "🔨 Infinite Tool Durability (Hooks, weapons, tools, gear & armor never break)", Plugin.InfiniteDurability?.Value ?? false, v =>
             {
-                Plugin.InfiniteDurability.Value = v;
+                if (Plugin.InfiniteDurability != null) Plugin.InfiniteDurability.Value = v;
+                MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🔨 Infinite Durability: ENABLED" : "🔨 Infinite Durability: DISABLED");
             }, 31f, 14, "🔨 <b>Infinite Durability:</b> Prevents hooks, weapons, tools, and armor from breaking from use.");
 
@@ -623,25 +672,51 @@ namespace SailorsCompanion.UI
 
             float maxGrowth = Plugin.IsCreativeMode ? 10.0f : 2.0f;
             float maxStack = Plugin.IsCreativeMode ? 999f : 200f;
+            float curGrowth = Plugin.CropGrowthMultiplier?.Value ?? 1.0f;
+            float curStack = Plugin.CustomStackSize?.Value ?? 40;
             CreateDualStepperRow(page.transform,
-                "🌾 Crop Growth", 1.0f, maxGrowth, 0.5f, Plugin.CropGrowthMultiplier.Value, "x", v => Plugin.CropGrowthMultiplier.Value = v, "🌾 <b>Crop Growth:</b> Multiplies crop and tree growth speed (1.0x–2.0x recommended).",
-                "📦 Stack Limit", 20f, maxStack, 20f, Plugin.CustomStackSize.Value, "", v => Plugin.CustomStackSize.Value = Mathf.RoundToInt(v), "📦 <b>Stack Limit:</b> Maximum item capacity per inventory slot (20-200 recommended).",
+                "🌾 Crop Growth", 1.0f, maxGrowth, 0.5f, curGrowth, "x", v =>
+                {
+                    if (Plugin.CropGrowthMultiplier != null) Plugin.CropGrowthMultiplier.Value = v;
+                    MarkProfileCustom();
+                }, "🌾 <b>Crop Growth:</b> Multiplies crop and tree growth speed (1.0x–2.0x recommended).",
+                "📦 Stack Limit", 20f, maxStack, 20f, curStack, "", v =>
+                {
+                    if (Plugin.CustomStackSize != null) Plugin.CustomStackSize.Value = Mathf.RoundToInt(v);
+                    MarkProfileCustom();
+                }, "📦 <b>Stack Limit:</b> Maximum item capacity per inventory slot (20-200 recommended).",
                 32f);
 
             float maxReel = Plugin.IsCreativeMode ? 5.0f : 2.0f;
             float maxSwim = Plugin.IsCreativeMode ? 4.0f : 1.5f;
             float maxSprint = Plugin.IsCreativeMode ? 3.0f : 1.5f;
+            float curReel = Plugin.HookPullSpeedMultiplier?.Value ?? 1.0f;
+            float curSwim = Plugin.SwimSpeedMultiplier?.Value ?? 1.0f;
+            float curSprint = Plugin.SprintSpeedMultiplier?.Value ?? 1.0f;
             CreateTripleStepperRow(page.transform,
-                "🎣 Hook Reel", 1.0f, maxReel, 0.5f, Plugin.HookPullSpeedMultiplier.Value, "x", v => Plugin.HookPullSpeedMultiplier.Value = v, "🎣 <b>Reel Speed:</b> Accelerates pulling hooks from the water (1.0x–2.0x recommended).",
-                "🏊 Swim Speed", 1.0f, maxSwim, 0.1f, Plugin.SwimSpeedMultiplier.Value, "x", v => Plugin.SwimSpeedMultiplier.Value = v, "🏊 <b>Swim Speed:</b> Enhances water mobility without glitching collisions (1.0x–1.5x recommended).",
-                "🏃 Sprint Speed", 1.0f, maxSprint, 0.1f, Plugin.SprintSpeedMultiplier.Value, "x", v => Plugin.SprintSpeedMultiplier.Value = v, "🏃 <b>Sprint Speed:</b> Subtle movement speed increase across raft and land (1.0x–1.5x recommended).",
+                "🎣 Hook Reel", 1.0f, maxReel, 0.5f, curReel, "x", v =>
+                {
+                    if (Plugin.HookPullSpeedMultiplier != null) Plugin.HookPullSpeedMultiplier.Value = v;
+                    MarkProfileCustom();
+                }, "🎣 <b>Reel Speed:</b> Accelerates pulling hooks from the water (1.0x–2.0x recommended).",
+                "🏊 Swim Speed", 1.0f, maxSwim, 0.1f, curSwim, "x", v =>
+                {
+                    if (Plugin.SwimSpeedMultiplier != null) Plugin.SwimSpeedMultiplier.Value = v;
+                    MarkProfileCustom();
+                }, "🏊 <b>Swim Speed:</b> Enhances water mobility without glitching collisions (1.0x–1.5x recommended).",
+                "🏃 Sprint Speed", 1.0f, maxSprint, 0.1f, curSprint, "x", v =>
+                {
+                    if (Plugin.SprintSpeedMultiplier != null) Plugin.SprintSpeedMultiplier.Value = v;
+                    MarkProfileCustom();
+                }, "🏃 <b>Sprint Speed:</b> Subtle movement speed increase across raft and land (1.0x–1.5x recommended).",
                 32f);
 
             // Tooltip / Hint Box
             var hintBox = CreateBox(page.transform, "QoLHintBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 26), new Color(0.08f, 0.08f, 0.11f, 0.95f));
             EnsureLayout(hintBox, -1, 26);
             CreateBox(hintBox.transform, "HintAccent", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 1), new Color(0.25f, 0.25f, 0.32f, 0.8f));
-            _qolTooltipText = CreateText(hintBox.transform, "HintText", "💡 <b>Hint:</b> Choose a preset profile above or toggle individual survival options.", 12, FontStyle.Normal, new Color(0.80f, 0.84f, 0.90f), TextAnchor.MiddleLeft);
+            string defaultHint = string.IsNullOrEmpty(initialTooltip) ? "💡 <b>Hint:</b> Choose a preset profile above or toggle individual survival options." : initialTooltip;
+            _qolTooltipText = CreateText(hintBox.transform, "HintText", defaultHint, 12, FontStyle.Normal, new Color(0.80f, 0.84f, 0.90f), TextAnchor.MiddleLeft);
             _qolTooltipText.rectTransform.offsetMin = new Vector2(10, 0);
             _qolTooltipText.rectTransform.offsetMax = new Vector2(-10, 0);
 
