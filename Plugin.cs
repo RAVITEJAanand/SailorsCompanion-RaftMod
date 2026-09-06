@@ -45,6 +45,7 @@ namespace SailorsCompanion
         public static ConfigEntry<bool> FreeCrafting;
         public static ConfigEntry<bool> EnableFlyMode;
         public static ConfigEntry<float> FlySpeed;
+        public static ConfigEntry<bool> CheckForUpdates;
 
         private Harmony _harmony;
         private float _baseSwimSpeed = -1f;
@@ -88,6 +89,7 @@ namespace SailorsCompanion
             FreeCrafting = Config.Bind("Features.World", "FreeCrafting", false, "Craft any item without consuming materials.");
             EnableFlyMode = Config.Bind("Features.Movement", "EnableFlyMode", false, "Fly / Noclip mode.");
             FlySpeed = Config.Bind("Features.Movement", "FlySpeed", 14f, "Flight speed in m/s.");
+            CheckForUpdates = Config.Bind("Features.General", "CheckForUpdates", true, "Check online for mod updates on startup.");
 
             // Register Harmony Patches
             RegisterHarmonyPatches();
@@ -153,6 +155,7 @@ namespace SailorsCompanion
                 ManagerGO.AddComponent<ModGUI>();
                 ManagerGO.AddComponent<HUDOverlay>();
                 ManagerGO.AddComponent<FlyController>();
+                ManagerGO.AddComponent<UpdateChecker>();
                 Debug.Log("[Sailor's Companion] Initialized persistent SailorsCompanion_Manager with HideAndDontSave protection.");
             }
         }

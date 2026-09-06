@@ -37,6 +37,10 @@ namespace SailorsCompanion.UI
         // Font
         private Font _gameFont;
 
+        // Update Banner
+        private GameObject _updateBannerGO;
+        private Text _updateBannerText;
+
         #region [START] LIFECYCLE & AWAKE INITIALIZATION
         // ============================================================================
         // [START] LIFECYCLE & AWAKE INITIALIZATION
@@ -185,7 +189,7 @@ namespace SailorsCompanion.UI
 
             // Title Bar
             var titleBar = CreateBox(_modWindowGO.transform, "TitleBar", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 50), new Color(0.05f, 0.07f, 0.10f, 1f));
-            var titleText = CreateText(titleBar.transform, "TitleText", "⚓ Sailor's Companion — Quality of Life & Utilities", 18, FontStyle.Bold, new Color(0.38f, 0.85f, 0.98f), TextAnchor.MiddleLeft);
+            var titleText = CreateText(titleBar.transform, "TitleText", $"⚓ Sailor's Companion v{PluginInfo.PLUGIN_VERSION} — Quality of Life & Utilities", 18, FontStyle.Bold, new Color(0.38f, 0.85f, 0.98f), TextAnchor.MiddleLeft);
             titleText.rectTransform.offsetMin = new Vector2(18, 0);
 
             // Discord button in title bar
@@ -219,6 +223,30 @@ namespace SailorsCompanion.UI
             _tabPages[2] = BuildResearchTab(contentArea.transform);
             _tabPages[3] = BuildSpawnerTab(contentArea.transform);
             _tabPages[4] = BuildNavTab(contentArea.transform);
+
+            // Update Banner (shown when a newer version is available online)
+            _updateBannerGO = CreateBox(_modWindowGO.transform, "UpdateBanner", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 10), new Vector2(-32, 42), new Color(0.80f, 0.45f, 0.05f, 0.98f));
+            var bannerLayout = _updateBannerGO.AddComponent<HorizontalLayoutGroup>();
+            bannerLayout.spacing = 10;
+            bannerLayout.padding = new RectOffset(16, 12, 4, 4);
+            bannerLayout.childForceExpandHeight = true;
+            bannerLayout.childForceExpandWidth = false;
+
+            _updateBannerText = CreateText(_updateBannerGO.transform, "UpdateTxt", "✨ <b>New Update Available!</b>", 13, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
+            EnsureLayout(_updateBannerText.gameObject, -1, 32, true);
+
+            CreateButton(_updateBannerGO.transform, "Btn_UpdateDownload", "⬇️ Download Update", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(160, 32), () =>
+            {
+                Application.OpenURL(UpdateChecker.DownloadUrl);
+            }, new Color(0.12f, 0.60f, 0.35f, 1f), Color.white, 13);
+
+            CreateButton(_updateBannerGO.transform, "Btn_UpdateDismiss", "✕", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(32, 32), () =>
+            {
+                UpdateChecker.Dismissed = true;
+                _updateBannerGO?.SetActive(false);
+            }, new Color(0.25f, 0.25f, 0.25f, 0.9f), Color.white, 14);
+
+            _updateBannerGO.SetActive(false);
 
             SelectTab(0);
         }
@@ -637,6 +665,23 @@ namespace SailorsCompanion.UI
             _navStatusText = CreateText(statusBox.transform, "NavStatus", "Loading live navigation data...", 14, FontStyle.Normal, Color.white, TextAnchor.UpperLeft);
             EnsureLayout(_navStatusText.gameObject, -1, 120);
 
+            // Version & Update Check Row
+            var verRow = CreateBox(page.transform, "VerRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), new Color(0.08f, 0.11f, 0.16f, 0.9f));
+            EnsureLayout(verRow, -1, 36);
+            var verLayout = verRow.AddComponent<HorizontalLayoutGroup>();
+            verLayout.padding = new RectOffset(16, 16, 2, 2);
+            verLayout.spacing = 10;
+            verLayout.childForceExpandHeight = true;
+
+            CreateText(verRow.transform, "VerLabel", $"⚓ Sailor's Companion <b>v{PluginInfo.PLUGIN_VERSION}</b>", 13, FontStyle.Normal, new Color(0.6f, 0.7f, 0.8f), TextAnchor.MiddleLeft);
+
+            CreateButton(verRow.transform, "Btn_CheckUpdates", "🔄 Check for Updates", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(170, 30), () =>
+            {
+                UpdateChecker.Dismissed = false;
+                UpdateChecker.Instance?.TriggerCheck();
+                TeleportManager.SetNotification("Checking GitHub for mod updates...");
+            }, new Color(0.14f, 0.22f, 0.32f), Color.white, 12);
+
             return page;
         }
 
@@ -923,6 +968,18 @@ namespace SailorsCompanion.UI
                                   $"<size=12><color=#94A3B8>Hotkeys: [F5] Menu  |  [F6] HUD  |  [F] Fly  |  [F8] Recall to Raft  |  [F9] Summon Raft</color></size>";
         }
 
+        public void RefreshUpdateBanner()
+        {
+            if (_updateBannerGO == null) return;
+            bool show = UpdateChecker.IsUpdateAvailable && !UpdateChecker.Dismissed;
+            _updateBannerGO.SetActive(show);
+            if (show && _updateBannerText != null)
+            {
+                string notes = !string.IsNullOrEmpty(UpdateChecker.ReleaseNotes) ? $" — <i>\"{UpdateChecker.ReleaseNotes}\"</i>" : "";
+                _updateBannerText.text = $"✨ <b>New Update v{UpdateChecker.LatestVersion} Available!</b> (Current: v{PluginInfo.PLUGIN_VERSION}){notes}";
+            }
+        }
+
         public static bool IsWindowOpen => Instance != null && Instance._modWindowGO != null && Instance._modWindowGO.activeSelf;
 
         public void ToggleModWindow()
@@ -938,6 +995,7 @@ namespace SailorsCompanion.UI
 
             if (open)
             {
+                RefreshUpdateBanner();
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
                 try
