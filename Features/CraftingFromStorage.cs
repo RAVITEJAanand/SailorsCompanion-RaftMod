@@ -15,6 +15,40 @@ namespace SailorsCompanion.Features
     {
         public const float SCAN_RADIUS = 22f;
 
+        private static readonly List<Storage_Small> _cachedNearbyChests = new List<Storage_Small>();
+        private static float _lastChestScanTime = -10f;
+        private static Vector3 _lastChestScanPos = Vector3.zero;
+        private const float CHEST_SCAN_INTERVAL = 1.0f;
+
+        // ============================================================================
+        // [START] HELPER: CACHED CHEST SCANNER
+        // ============================================================================
+        private static List<Storage_Small> GetNearbyChestsCached(Vector3 playerPos)
+        {
+            if (Time.unscaledTime - _lastChestScanTime > CHEST_SCAN_INTERVAL || Vector3.Distance(playerPos, _lastChestScanPos) > 4f)
+            {
+                _lastChestScanTime = Time.unscaledTime;
+                _lastChestScanPos = playerPos;
+                _cachedNearbyChests.Clear();
+
+                var allChests = UnityEngine.Object.FindObjectsOfType<Storage_Small>();
+                if (allChests != null && allChests.Length > 0)
+                {
+                    foreach (var chest in allChests)
+                    {
+                        if (chest != null && Vector3.Distance(playerPos, chest.transform.position) <= SCAN_RADIUS)
+                        {
+                            _cachedNearbyChests.Add(chest);
+                        }
+                    }
+                }
+            }
+            return _cachedNearbyChests;
+        }
+        // ============================================================================
+        // [END] HELPER: CACHED CHEST SCANNER
+        // ============================================================================
+
         // ============================================================================
         // [START] HELPER: GET ITEM COUNT FROM NEARBY CHESTS
         // ============================================================================
@@ -25,15 +59,13 @@ namespace SailorsCompanion.Features
             var player = PlayerHelper.GetLocalPlayer();
             if (player == null) return 0;
 
-            var playerPos = player.transform.position;
-            var allChests = UnityEngine.Object.FindObjectsOfType<Storage_Small>();
-            if (allChests == null || allChests.Length == 0) return 0;
+            var nearbyChests = GetNearbyChestsCached(player.transform.position);
+            if (nearbyChests.Count == 0) return 0;
 
             int total = 0;
-            foreach (var chest in allChests)
+            foreach (var chest in nearbyChests)
             {
                 if (chest == null) continue;
-                if (Vector3.Distance(playerPos, chest.transform.position) > SCAN_RADIUS) continue;
 
                 var chestInv = chest.GetInventoryReference();
                 if (chestInv == null) continue;
@@ -63,9 +95,8 @@ namespace SailorsCompanion.Features
             var player = PlayerHelper.GetLocalPlayer();
             if (player == null) return;
 
-            var playerPos = player.transform.position;
-            var allChests = UnityEngine.Object.FindObjectsOfType<Storage_Small>();
-            if (allChests == null || allChests.Length == 0) return;
+            var nearbyChests = GetNearbyChestsCached(player.transform.position);
+            if (nearbyChests.Count == 0) return;
 
             foreach (var cost in costMultiples)
             {
@@ -82,10 +113,9 @@ namespace SailorsCompanion.Features
                 if (needed <= 0) continue; // Player already has enough
 
                 // Pull needed amount from nearby chests
-                foreach (var chest in allChests)
+                foreach (var chest in nearbyChests)
                 {
                     if (chest == null) continue;
-                    if (Vector3.Distance(playerPos, chest.transform.position) > SCAN_RADIUS) continue;
 
                     var chestInv = chest.GetInventoryReference();
                     if (chestInv == null || chestInv.allSlots == null) continue;

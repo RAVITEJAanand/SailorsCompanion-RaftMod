@@ -280,6 +280,7 @@ namespace SailorsCompanion.UI
         // ============================================================================
         private void OnGUI()
         {
+            if (Event.current.type != EventType.Repaint) return;
             if (!Plugin.EnableHUD.Value) return;
 
             var player = PlayerHelper.GetLocalPlayer();

@@ -194,20 +194,10 @@ namespace SailorsCompanion.UI
         // ============================================================================
         private void OnGUI()
         {
+            if (!IsOpen) return;
+
             EnsureStyles();
             GUI.depth = -2000; // Always top render depth
-
-            // Corner toggle button in gameplay
-            if (!CanvasModUI.IsWindowOpen && !IsOpen && PlayerHelper.GetLocalPlayer() != null)
-            {
-                Rect btnRect = new Rect(Screen.width - 180f, 14f, 166f, 32f);
-                if (GUI.Button(btnRect, "⚓ Mod Menu [F5]", _cornerBtnStyle))
-                {
-                    CanvasModUI.Instance?.ToggleModWindow();
-                }
-            }
-
-            if (!IsOpen) return;
 
             // Keep window on screen
             _windowRect.x = Mathf.Clamp(_windowRect.x, 10f, Screen.width - _windowRect.width - 10f);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using SailorsCompanion.UI;
 
@@ -47,20 +48,37 @@ namespace SailorsCompanion.Features
         // [END] PERIODIC AUTO-WATER LOOP
         // ============================================================================
 
+        private static readonly List<Cropplot> _cachedPlots = new List<Cropplot>();
+        private static float _lastPlotsScanTime = -30f;
+
         // ============================================================================
         // [START] ACTION: WATER ALL PLOTS
         // ============================================================================
         public static int WaterAllPlots(bool silent = false)
         {
-            var plots = UnityEngine.Object.FindObjectsOfType<Cropplot>();
-            if (plots == null || plots.Length == 0)
+            if (Time.unscaledTime - _lastPlotsScanTime > 20f || _cachedPlots.Count == 0)
+            {
+                _lastPlotsScanTime = Time.unscaledTime;
+                _cachedPlots.Clear();
+                var found = UnityEngine.Object.FindObjectsOfType<Cropplot>();
+                if (found != null && found.Length > 0)
+                {
+                    _cachedPlots.AddRange(found);
+                }
+            }
+            else
+            {
+                _cachedPlots.RemoveAll(p => p == null);
+            }
+
+            if (_cachedPlots.Count == 0)
             {
                 if (!silent) TeleportManager.SetNotification("🌱 No crop or grass plots found on the raft!");
                 return 0;
             }
 
             int wateredCount = 0;
-            foreach (var plot in plots)
+            foreach (var plot in _cachedPlots)
             {
                 if (plot == null) continue;
 

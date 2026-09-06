@@ -14,13 +14,8 @@ namespace SailorsCompanion.Patches
     {
         public static bool ShouldForceCursorFree()
         {
-            // 1. Always free cursor when Mod Menu or IMGUI is open
-            if (CanvasModUI.IsWindowOpen || ModGUI.IsOpen) return true;
-
-            // 2. Always free cursor when in Main Menu, Title Screen, or Scene Loading (no local player)
-            if (PlayerHelper.GetLocalPlayer() == null) return true;
-
-            return false;
+            // Only force free when Mod Menu is open
+            return CanvasModUI.IsWindowOpen || ModGUI.IsOpen;
         }
     }
 

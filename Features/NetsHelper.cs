@@ -49,6 +49,9 @@ namespace SailorsCompanion.Features
         // [END] PER-FRAME BACKGROUND AUTO-EMPTY LOOP
         // ============================================================================
 
+        private static readonly List<ItemCollector> _cachedCollectors = new List<ItemCollector>();
+        private static float _lastCollectorsScanTime = -30f;
+
         // ============================================================================
         // [START] ACTION: EMPTY ALL COLLECTION NETS
         // ============================================================================
@@ -61,8 +64,22 @@ namespace SailorsCompanion.Features
                 return 0;
             }
 
-            var allCollectors = UnityEngine.Object.FindObjectsOfType<ItemCollector>();
-            if (allCollectors == null || allCollectors.Length == 0)
+            if (Time.unscaledTime - _lastCollectorsScanTime > 20f || _cachedCollectors.Count == 0)
+            {
+                _lastCollectorsScanTime = Time.unscaledTime;
+                _cachedCollectors.Clear();
+                var found = UnityEngine.Object.FindObjectsOfType<ItemCollector>();
+                if (found != null && found.Length > 0)
+                {
+                    _cachedCollectors.AddRange(found);
+                }
+            }
+            else
+            {
+                _cachedCollectors.RemoveAll(c => c == null);
+            }
+
+            if (_cachedCollectors.Count == 0)
             {
                 if (!silent) TeleportManager.SetNotification("🕸️ No collection nets found on the raft!");
                 return 0;
@@ -71,7 +88,7 @@ namespace SailorsCompanion.Features
             int totalItemsCollected = 0;
             int netsEmptied = 0;
 
-            foreach (var collector in allCollectors)
+            foreach (var collector in _cachedCollectors)
             {
                 if (collector == null || collector.collectedItems == null) continue;
 

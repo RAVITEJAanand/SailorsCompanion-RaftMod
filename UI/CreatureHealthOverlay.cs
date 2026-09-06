@@ -21,8 +21,10 @@ namespace SailorsCompanion.UI
 
         // Cached search list to avoid heavy GC allocation per frame
         private float _lastScanTime = 0f;
-        private const float SCAN_INTERVAL = 0.5f; // re-scan entities twice a second
+        private const float SCAN_INTERVAL = 1.5f; // re-scan entities every 1.5 seconds
         private readonly List<Network_Entity> _cachedEntities = new List<Network_Entity>();
+        private static Camera _cachedCamera = null;
+        private static readonly Dictionary<string, string> _nameCache = new Dictionary<string, string>();
 
         // ============================================================================
         // [START] LIFECYCLE INITIALIZATION
@@ -66,26 +68,39 @@ namespace SailorsCompanion.UI
         // ============================================================================
         private void Update()
         {
-            if (Plugin.ShowAnimalHealthBars == null || !Plugin.ShowAnimalHealthBars.Value) return;
-
-            if (Time.time - _lastScanTime >= SCAN_INTERVAL)
+            if (Plugin.ShowAnimalHealthBars == null || !Plugin.ShowAnimalHealthBars.Value)
             {
-                _lastScanTime = Time.time;
+                if (_cachedEntities.Count > 0) _cachedEntities.Clear();
+                return;
+            }
+
+            // Clean up any destroyed or dead entities continuously
+            if (_cachedEntities.Count > 0)
+            {
+                _cachedEntities.RemoveAll(e => e == null || e.gameObject == null || e.stat_health == null || e.stat_health.IsZero || e.stat_health.Value <= 0f);
+            }
+
+            if (Time.unscaledTime - _lastScanTime >= SCAN_INTERVAL)
+            {
+                _lastScanTime = Time.unscaledTime;
                 ScanNearbyEntities();
             }
         }
 
         private void ScanNearbyEntities()
         {
-            _cachedEntities.Clear();
-
             var player = PlayerHelper.GetLocalPlayer();
-            if (player == null) return;
+            if (player == null)
+            {
+                _cachedEntities.Clear();
+                return;
+            }
 
             var playerPos = player.transform.position;
             var entities = FindObjectsOfType<Network_Entity>();
             if (entities == null || entities.Length == 0) return;
 
+            _cachedEntities.Clear();
             foreach (var ent in entities)
             {
                 if (ent == null || ent.gameObject == null) continue;
@@ -108,15 +123,19 @@ namespace SailorsCompanion.UI
         // ============================================================================
         private void OnGUI()
         {
+            // CRITICAL: Only render during Repaint event to eliminate 75% redundant CPU work and garbage allocation
+            if (Event.current.type != EventType.Repaint) return;
+
             try
             {
                 if (Plugin.ShowAnimalHealthBars == null || !Plugin.ShowAnimalHealthBars.Value) return;
+                if (_cachedEntities.Count == 0) return;
 
                 var player = PlayerHelper.GetLocalPlayer();
                 if (player == null) return;
 
-                var cam = Camera.main;
-                if (cam == null) return;
+                if (_cachedCamera == null) _cachedCamera = Camera.main;
+                if (_cachedCamera == null) return;
 
                 if (_nameStyle == null)
                 {
@@ -136,14 +155,14 @@ namespace SailorsCompanion.UI
 
                     // Compute height offset according to creature height
                     float headHeight = 1.4f;
-                    string rawName = ent.gameObject.name.ToLower();
-                    if (rawName.Contains("bear") || rawName.Contains("mama")) headHeight = 2.4f;
-                    else if (rawName.Contains("shark")) headHeight = 0.8f;
-                    else if (rawName.Contains("bird") || rawName.Contains("screecher") || rawName.Contains("seagull")) headHeight = 1.1f;
-                    else if (rawName.Contains("puffer")) headHeight = 0.9f;
+                    string rawName = ent.gameObject.name;
+                    if (rawName.IndexOf("bear", StringComparison.OrdinalIgnoreCase) >= 0 || rawName.IndexOf("mama", StringComparison.OrdinalIgnoreCase) >= 0) headHeight = 2.4f;
+                    else if (rawName.IndexOf("shark", StringComparison.OrdinalIgnoreCase) >= 0) headHeight = 0.8f;
+                    else if (rawName.IndexOf("bird", StringComparison.OrdinalIgnoreCase) >= 0 || rawName.IndexOf("screecher", StringComparison.OrdinalIgnoreCase) >= 0 || rawName.IndexOf("seagull", StringComparison.OrdinalIgnoreCase) >= 0) headHeight = 1.1f;
+                    else if (rawName.IndexOf("puffer", StringComparison.OrdinalIgnoreCase) >= 0) headHeight = 0.9f;
 
                     Vector3 worldPos = ent.transform.position + (Vector3.up * headHeight);
-                    Vector3 screenPos = cam.WorldToScreenPoint(worldPos);
+                    Vector3 screenPos = _cachedCamera.WorldToScreenPoint(worldPos);
 
                     // Only render if in front of camera
                     if (screenPos.z <= 0.5f || screenPos.z > 35f) continue;
@@ -161,7 +180,7 @@ namespace SailorsCompanion.UI
                     float barX = screenX - (barWidth / 2f);
                     float barY = screenY;
 
-                    string displayName = GetFriendlyCreatureName(ent.gameObject.name);
+                    string displayName = GetFriendlyCreatureName(rawName);
 
                     // Draw Name and HP label
                     string label = $"{displayName}  <color=#F8FAFC>[{curHp:F0}/{maxHp:F0}]</color>  <size=10><color=#94A3B8>{screenPos.z:F0}m</color></size>";
@@ -207,26 +226,31 @@ namespace SailorsCompanion.UI
 
         private static string GetFriendlyCreatureName(string goName)
         {
-            string lower = goName.ToLower();
-            if (lower.Contains("shark")) return "🦈 Bruce the Shark";
-            if (lower.Contains("mamabear") || lower.Contains("mama_bear")) return "🐻 Mama Bear";
-            if (lower.Contains("bear")) return "🐻 Bear";
-            if (lower.Contains("boar") || lower.Contains("warthog")) return "🐗 Boar";
-            if (lower.Contains("hyenaboss") || lower.Contains("hyena_boss")) return "🐺 Alpha Hyena";
-            if (lower.Contains("hyena")) return "🐺 Hyena";
-            if (lower.Contains("puffer")) return "🐡 Poison Pufferfish";
-            if (lower.Contains("rat") || lower.Contains("lurker")) return "🐀 Lurker";
-            if (lower.Contains("screecher") || lower.Contains("stonebird")) return "🦅 Screecher";
-            if (lower.Contains("seagull") || lower.Contains("bird")) return "🕊️ Seagull";
-            if (lower.Contains("llama")) return "🦙 Llama";
-            if (lower.Contains("goat")) return "🐐 Goat";
-            if (lower.Contains("clucker") || lower.Contains("chicken")) return "🐔 Clucker";
-            if (lower.Contains("butler") || lower.Contains("bot")) return "🤖 Butler Bot";
-            if (lower.Contains("dolphin")) return "🐬 Dolphin";
-            if (lower.Contains("angler")) return "🐟 Anglerfish";
+            if (string.IsNullOrEmpty(goName)) return "Creature";
+            if (_nameCache.TryGetValue(goName, out var cached)) return cached;
 
-            // Fallback: clean up Unity clone naming
-            return goName.Replace("(Clone)", "").Trim();
+            string lower = goName.ToLower();
+            string result;
+            if (lower.Contains("shark")) result = "🦈 Bruce the Shark";
+            else if (lower.Contains("mamabear") || lower.Contains("mama_bear")) result = "🐻 Mama Bear";
+            else if (lower.Contains("bear")) result = "🐻 Bear";
+            else if (lower.Contains("boar") || lower.Contains("warthog")) result = "🐗 Boar";
+            else if (lower.Contains("hyenaboss") || lower.Contains("hyena_boss")) result = "🐺 Alpha Hyena";
+            else if (lower.Contains("hyena")) result = "🐺 Hyena";
+            else if (lower.Contains("puffer")) result = "🐡 Poison Pufferfish";
+            else if (lower.Contains("rat") || lower.Contains("lurker")) result = "🐀 Lurker";
+            else if (lower.Contains("screecher") || lower.Contains("stonebird")) result = "🦅 Screecher";
+            else if (lower.Contains("seagull") || lower.Contains("bird")) result = "🕊️ Seagull";
+            else if (lower.Contains("llama")) result = "🦙 Llama";
+            else if (lower.Contains("goat")) result = "🐐 Goat";
+            else if (lower.Contains("clucker") || lower.Contains("chicken")) result = "🐔 Clucker";
+            else if (lower.Contains("butler") || lower.Contains("bot")) result = "🤖 Butler Bot";
+            else if (lower.Contains("dolphin")) result = "🐬 Dolphin";
+            else if (lower.Contains("angler")) result = "🐟 Anglerfish";
+            else result = goName.Replace("(Clone)", "").Trim();
+
+            _nameCache[goName] = result;
+            return result;
         }
         // ============================================================================
         // [END] IMGUI HEALTH BAR RENDERING

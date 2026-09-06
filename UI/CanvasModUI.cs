@@ -1064,8 +1064,8 @@ namespace SailorsCompanion.UI
                     TeleportManager.TeleportRaftToPlayer();
                 }
 
-                // Free and unlock cursor every frame when mod window is open or in Main Menu
-                if (IsWindowOpen || PlayerHelper.GetLocalPlayer() == null)
+                // Free and unlock cursor only when mod window is open
+                if (IsWindowOpen)
                 {
                     Cursor.lockState = CursorLockMode.None;
                     Cursor.visible = true;
@@ -1077,9 +1077,10 @@ namespace SailorsCompanion.UI
                     catch {}
                 }
 
-                // Update live Navigation tab data if visible
-                if (_activeTab == 2 && _navStatusText != null)
+                // Update live Navigation tab data if visible (throttled to 5Hz to prevent frame lag)
+                if (_activeTab == 2 && _navStatusText != null && Time.unscaledTime - _lastNavTabUpdate > 0.2f)
                 {
+                    _lastNavTabUpdate = Time.unscaledTime;
                     UpdateNavTabText();
                 }
             }
@@ -1088,6 +1089,11 @@ namespace SailorsCompanion.UI
                 Debug.LogWarning("[Sailor's Companion] Error in CanvasModUI.Update: " + ex.Message);
             }
         }
+
+        private float _lastNavTabUpdate = 0f;
+        private static Raft _cachedNavRaft = null;
+        private static AI_StateMachine_Shark _cachedNavShark = null;
+        private static Camera _cachedNavCamera = null;
 
         private void UpdateNavTabText()
         {
@@ -1098,25 +1104,31 @@ namespace SailorsCompanion.UI
                 return;
             }
 
-            var cam = Camera.main;
-            float yaw = cam != null ? cam.transform.eulerAngles.y : p.transform.eulerAngles.y;
+            if (_cachedNavCamera == null) _cachedNavCamera = Camera.main;
+            float yaw = _cachedNavCamera != null ? _cachedNavCamera.transform.eulerAngles.y : p.transform.eulerAngles.y;
             string[] cardinals = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
             int cIndex = Mathf.RoundToInt(yaw / 45f) % 8;
             if (cIndex < 0) cIndex += 8;
 
             string raftStr = "Raft: Not detected";
-            var raft = ComponentManager<Raft>.Value ?? FindObjectOfType<Raft>();
-            if (raft != null)
+            if (_cachedNavRaft == null || !_cachedNavRaft.gameObject.activeInHierarchy)
             {
-                float dist = Vector3.Distance(p.transform.position, raft.transform.position);
-                raftStr = $"Raft: <b>{dist:F0}m</b> away  |  State: <b>{(raft.IsAnchored ? "Anchored" : "Drifting")}</b>  |  Speed: <b>{raft.Velocity.magnitude * 1.94f:F1} knots</b>";
+                _cachedNavRaft = ComponentManager<Raft>.Value ?? FindObjectOfType<Raft>();
+            }
+            if (_cachedNavRaft != null)
+            {
+                float dist = Vector3.Distance(p.transform.position, _cachedNavRaft.transform.position);
+                raftStr = $"Raft: <b>{dist:F0}m</b> away  |  State: <b>{(_cachedNavRaft.IsAnchored ? "Anchored" : "Drifting")}</b>  |  Speed: <b>{_cachedNavRaft.Velocity.magnitude * 1.94f:F1} knots</b>";
             }
 
             string sharkStr = "Bruce: Peaceful";
-            var shark = FindObjectOfType<AI_StateMachine_Shark>();
-            if (shark != null && shark.gameObject.activeInHierarchy)
+            if (_cachedNavShark == null || !_cachedNavShark.gameObject.activeInHierarchy)
             {
-                float sDist = Vector3.Distance(p.transform.position, shark.transform.position);
+                _cachedNavShark = FindObjectOfType<AI_StateMachine_Shark>();
+            }
+            if (_cachedNavShark != null && _cachedNavShark.gameObject.activeInHierarchy)
+            {
+                float sDist = Vector3.Distance(p.transform.position, _cachedNavShark.transform.position);
                 sharkStr = $"Bruce the Shark: <b>{sDist:F0}m</b> away";
             }
 
