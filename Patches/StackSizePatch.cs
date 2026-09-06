@@ -21,5 +21,8 @@ namespace SailorsCompanion.Patches
             }
         }
     }
-    #endregion // [END] PATCH: CUSTOM RESOURCE STACK SIZE
+    // ============================================================================
+    // [END] PATCH: CUSTOM RESOURCE STACK SIZE
+    // ============================================================================
+    #endregion
 }

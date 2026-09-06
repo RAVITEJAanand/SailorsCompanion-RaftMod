@@ -35,6 +35,9 @@ namespace SailorsCompanion.Patches
             }
             return true;
         }
+        // ============================================================================
+        // [END] PATCH: INFINITE TOOL & ARMOR DURABILITY
+        // ============================================================================
+        #endregion
     }
-    #endregion // [END] PATCH: INFINITE TOOL & ARMOR DURABILITY
 }

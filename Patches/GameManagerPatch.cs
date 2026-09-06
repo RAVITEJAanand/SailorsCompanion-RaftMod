@@ -26,5 +26,8 @@ namespace SailorsCompanion.Patches
             }
         }
     }
-    #endregion // [END] PATCH: GAMEMANAGER TICK HOOK
+    // ============================================================================
+    // [END] PATCH: GAMEMANAGER TICK HOOK
+    // ============================================================================
+    #endregion
 }

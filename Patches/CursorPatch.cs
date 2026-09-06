@@ -60,5 +60,8 @@ namespace SailorsCompanion.Patches
             }
         }
     }
-    #endregion // [END] PATCH: CURSOR UNLOCKING & VISIBILITY
+    // ============================================================================
+    // [END] PATCH: CURSOR UNLOCKING & VISIBILITY
+    // ============================================================================
+    #endregion
 }

@@ -16,13 +16,22 @@ namespace SailorsCompanion.Features
         private float _lastAutoWaterTime = 0f;
         private const float AUTO_WATER_INTERVAL = 8f; // check every 8 seconds
 
+        // ============================================================================
+        // [START] LIFECYCLE INITIALIZATION
+        // ============================================================================
         private void Awake()
         {
             Instance = this;
             gameObject.hideFlags = HideFlags.HideAndDontSave;
             DontDestroyOnLoad(gameObject);
         }
+        // ============================================================================
+        // [END] LIFECYCLE INITIALIZATION
+        // ============================================================================
 
+        // ============================================================================
+        // [START] PERIODIC AUTO-WATER LOOP
+        // ============================================================================
         private void Update()
         {
             if (Plugin.AutoWaterCrops != null && Plugin.AutoWaterCrops.Value)
@@ -34,7 +43,13 @@ namespace SailorsCompanion.Features
                 }
             }
         }
+        // ============================================================================
+        // [END] PERIODIC AUTO-WATER LOOP
+        // ============================================================================
 
+        // ============================================================================
+        // [START] ACTION: WATER ALL PLOTS
+        // ============================================================================
         public static int WaterAllPlots(bool silent = false)
         {
             var plots = UnityEngine.Object.FindObjectsOfType<Cropplot>();
@@ -77,6 +92,9 @@ namespace SailorsCompanion.Features
 
             return wateredCount;
         }
+        // ============================================================================
+        // [END] ACTION: WATER ALL PLOTS
+        // ============================================================================
     }
     // ============================================================================
     // [END] MODULE: FARMING HELPER & AUTOMATIC CROP WATERING

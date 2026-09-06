@@ -91,6 +91,9 @@ namespace SailorsCompanion
 
             return null;
         }
-        #endregion // [END] PLAYER HELPER: LOCAL PLAYER RESOLUTION ENGINE
+        // ============================================================================
+        // [END] PLAYER HELPER: LOCAL PLAYER RESOLUTION ENGINE
+        // ============================================================================
+        #endregion
     }
 }

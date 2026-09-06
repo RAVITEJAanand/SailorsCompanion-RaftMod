@@ -14,6 +14,9 @@ namespace SailorsCompanion.Features
     {
         public const float SCAN_RADIUS = 22f; // 22 meter radius around player
 
+        // ============================================================================
+        // [START] ACTION: QUICK STACK TO NEARBY CHESTS
+        // ============================================================================
         public static void QuickStackToNearbyChests()
         {
             var player = PlayerHelper.GetLocalPlayer();
@@ -146,6 +149,9 @@ namespace SailorsCompanion.Features
                 TeleportManager.SetNotification("📦 No matching items found to quick stack.");
             }
         }
+        // ============================================================================
+        // [END] ACTION: QUICK STACK TO NEARBY CHESTS
+        // ============================================================================
     }
     // ============================================================================
     // [END] MODULE: STORAGE CHEST AUTO-SORTER & QUICK STACK

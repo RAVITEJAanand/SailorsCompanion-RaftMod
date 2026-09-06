@@ -121,6 +121,9 @@ namespace SailorsCompanion.Patches
             }
             return true;
         }
+        // ============================================================================
+        // [END] PATCH: FREE INSTANT CRAFTING
+        // ============================================================================
+        #endregion
     }
-    #endregion // [END] PATCH: FREE INSTANT CRAFTING
 }

@@ -11,5 +11,8 @@ namespace SailorsCompanion
         public const string PLUGIN_NAME = "Sailor's Companion";
         public const string PLUGIN_VERSION = "1.0.1";
     }
-    #endregion // [END] MOD METADATA & CONSTANTS
+    // ============================================================================
+    // [END] MOD METADATA & CONSTANTS
+    // ============================================================================
+    #endregion
 }

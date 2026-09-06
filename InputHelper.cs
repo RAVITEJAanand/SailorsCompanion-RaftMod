@@ -81,6 +81,9 @@ namespace SailorsCompanion
 
             return false;
         }
-        #endregion // [END] INPUT HELPER: KEY HELD CONTINUOUS POLLING
+        // ============================================================================
+        // [END] INPUT HELPER: KEY HELD CONTINUOUS POLLING
+        // ============================================================================
+        #endregion
     }
 }

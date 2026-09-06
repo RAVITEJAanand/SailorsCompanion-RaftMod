@@ -47,6 +47,11 @@ namespace SailorsCompanion
         public static ConfigEntry<float> FlySpeed;
         public static ConfigEntry<bool> CheckForUpdates;
         public static ConfigEntry<bool> AutoWaterCrops;
+        public static ConfigEntry<bool> CraftFromStorage;
+        public static ConfigEntry<bool> AutoEmptyCollectionNets;
+        public static ConfigEntry<bool> EnableCropGrowthBoost;
+        public static ConfigEntry<float> CropGrowthMultiplier;
+        public static ConfigEntry<bool> ShowAnimalHealthBars;
 
         private Harmony _harmony;
         private float _baseSwimSpeed = -1f;
@@ -74,6 +79,7 @@ namespace SailorsCompanion
             // Bind Navigation Settings
             EnableHUD = Config.Bind("Features.Navigation", "EnableHUD", true, "Show the real-time compass, coordinates, raft tracker, and shark radar.");
             HUDStyle = Config.Bind("Features.Navigation", "HUDStyle", 0, "HUD Style: 0=Sleek Ribbon, 1=Top Compass Bar, 2=Minimalist Pill, 3=Compact Box.");
+            ShowAnimalHealthBars = Config.Bind("Features.Navigation", "ShowAnimalHealthBars", true, "Render floating health bars and distance tags above animals and enemies.");
 
             // Bind Survival & World Settings
             InfiniteDurability = Config.Bind("Features.Survival", "InfiniteDurability", true, "Tools, weapons, hooks, and armor never lose durability.");
@@ -83,6 +89,13 @@ namespace SailorsCompanion
             NoHungerThirst = Config.Bind("Features.Survival", "NoHungerThirst", false, "Freeze hunger and thirst meters at maximum.");
             CustomStackSize = Config.Bind("Features.Inventory", "CustomStackSize", 99, "Maximum stack size for stackable resources.");
 
+            // Bind QoL Automation & Crafting
+            CraftFromStorage = Config.Bind("Features.Crafting", "CraftFromStorage", true, "Craft items directly using materials stored in nearby storage chests (22m).");
+            AutoEmptyCollectionNets = Config.Bind("Features.World", "AutoEmptyCollectionNets", false, "Continuously auto-empty all raft collection nets into inventory.");
+            AutoWaterCrops = Config.Bind("Features.Farming", "AutoWaterCrops", false, "Continuously auto-water all crop plots and animal grass.");
+            EnableCropGrowthBoost = Config.Bind("Features.Farming", "EnableCropGrowthBoost", true, "Accelerate crop, flower, and tree growth speed.");
+            CropGrowthMultiplier = Config.Bind("Features.Farming", "CropGrowthMultiplier", 2.0f, "Crop growth speed multiplier (e.g. 2.0 = twice as fast).");
+
             // Bind Movement & Speeds
             SwimSpeedMultiplier = Config.Bind("Features.Movement", "SwimSpeedMultiplier", 1.8f, "Multiplier for player swimming speed.");
             SprintSpeedMultiplier = Config.Bind("Features.Movement", "SprintSpeedMultiplier", 1.4f, "Multiplier for player sprinting speed.");
@@ -91,7 +104,6 @@ namespace SailorsCompanion
             EnableFlyMode = Config.Bind("Features.Movement", "EnableFlyMode", false, "Fly / Noclip mode.");
             FlySpeed = Config.Bind("Features.Movement", "FlySpeed", 14f, "Flight speed in m/s.");
             CheckForUpdates = Config.Bind("Features.General", "CheckForUpdates", true, "Check online for mod updates on startup.");
-            AutoWaterCrops = Config.Bind("Features.Farming", "AutoWaterCrops", false, "Continuously auto-water all crop plots and animal grass.");
 
             // Register Harmony Patches
             RegisterHarmonyPatches();
@@ -156,8 +168,10 @@ namespace SailorsCompanion
                 ManagerGO.AddComponent<CanvasModUI>();
                 ManagerGO.AddComponent<ModGUI>();
                 ManagerGO.AddComponent<HUDOverlay>();
+                ManagerGO.AddComponent<CreatureHealthOverlay>();
                 ManagerGO.AddComponent<FlyController>();
                 ManagerGO.AddComponent<FarmingHelper>();
+                ManagerGO.AddComponent<NetsHelper>();
                 ManagerGO.AddComponent<UpdateChecker>();
                 Debug.Log("[Sailor's Companion] Initialized persistent SailorsCompanion_Manager with HideAndDontSave protection.");
             }

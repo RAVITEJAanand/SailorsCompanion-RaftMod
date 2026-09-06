@@ -24,5 +24,8 @@ namespace SailorsCompanion.Patches
             }
         }
     }
-    #endregion // [END] PATCH: FAST HOOK PULL & GATHER SPEED
+    // ============================================================================
+    // [END] PATCH: FAST HOOK PULL & GATHER SPEED
+    // ============================================================================
+    #endregion
 }

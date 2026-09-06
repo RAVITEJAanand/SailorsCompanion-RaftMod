@@ -230,5 +230,8 @@ namespace SailorsCompanion.Patches
             }
         }
     }
-    #endregion // [END] PATCH: PAUSE MENU BUTTON INJECTION
+    // ============================================================================
+    // [END] PATCH: PAUSE MENU BUTTON INJECTION
+    // ============================================================================
+    #endregion
 }

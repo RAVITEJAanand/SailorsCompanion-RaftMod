@@ -25,5 +25,8 @@ namespace SailorsCompanion.Patches
             return true;
         }
     }
-    #endregion // [END] PATCH: GOD MODE DAMAGE IMMUNITY
+    // ============================================================================
+    // [END] PATCH: GOD MODE DAMAGE IMMUNITY
+    // ============================================================================
+    #endregion
 }

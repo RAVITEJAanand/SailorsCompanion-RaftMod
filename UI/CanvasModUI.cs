@@ -267,30 +267,71 @@ namespace SailorsCompanion.UI
 
         #region [START] TAB 0: SURVIVAL QOL
         // ============================================================================
-        // [START] TAB 0: SURVIVAL QUALITY OF LIFE (Quick Stack, Farming, Anti-Shark, Durability, Speeds)
+        // [START] TAB 0: SURVIVAL QUALITY OF LIFE (Scrollable Page with Full ON/OFF Controls)
         // ============================================================================
         private GameObject BuildSurvivalQoLTab(Transform parent)
         {
             var page = CreateBox(parent, "Page_SurvivalQoL", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            var layout = page.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 8;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
 
-            // Quick Stack Button Row
-            var quickStackRow = CreateBox(page.transform, "QuickStackRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), Color.clear);
-            EnsureLayout(quickStackRow, -1, 42);
-            var qsLayout = quickStackRow.AddComponent<HorizontalLayoutGroup>();
+            // Scroll View Container for smooth navigation through all QoL options
+            var scrollGO = CreateBox(page.transform, "ScrollView", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
+            var scrollRect = scrollGO.AddComponent<ScrollRect>();
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.scrollSensitivity = 25f;
+
+            var viewport = CreateBox(scrollGO.transform, "Viewport", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
+            viewport.AddComponent<Mask>().showMaskGraphic = false;
+            scrollRect.viewport = viewport.GetComponent<RectTransform>();
+
+            var contentGO = CreateBox(viewport.transform, "Content", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, Vector2.zero, Color.clear);
+            var contentLayout = contentGO.AddComponent<VerticalLayoutGroup>();
+            contentLayout.spacing = 8;
+            contentLayout.padding = new RectOffset(4, 12, 4, 12);
+            contentLayout.childForceExpandWidth = true;
+            contentLayout.childForceExpandHeight = false;
+            contentGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            scrollRect.content = contentGO.GetComponent<RectTransform>();
+
+            // 1. Quick Stack Button Row
+            var qsRow = CreateBox(contentGO.transform, "QuickStackRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), Color.clear);
+            EnsureLayout(qsRow, -1, 42);
+            var qsLayout = qsRow.AddComponent<HorizontalLayoutGroup>();
             qsLayout.spacing = 10;
             qsLayout.childForceExpandWidth = true;
 
-            CreateButton(quickStackRow.transform, "Btn_QuickStack", "📦 Quick Stack Items into Nearby Chests (22m)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateButton(qsRow.transform, "Btn_QuickStack", "📦 Quick Stack Items into Nearby Chests (22m)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 ChestSorter.QuickStackToNearbyChests();
             }, new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 15);
 
-            // Farming Helper Row: Manual Water + Auto-Water Toggle
-            var farmRow = CreateBox(page.transform, "FarmRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), Color.clear);
+            // 2. Craft from Nearby Storage / Chests Toggle
+            CreateToggleItem(contentGO.transform, "🛠️ Craft from Nearby Storage (Auto-pulls crafting materials from chests within 22m)", Plugin.CraftFromStorage.Value, v =>
+            {
+                Plugin.CraftFromStorage.Value = v;
+                TeleportManager.SetNotification(v ? "🛠️ Craft from Storage: ENABLED" : "🛠️ Craft from Storage: DISABLED");
+            });
+
+            // 3. Collection Nets: Button + Auto-Empty Toggle
+            var netsRow = CreateBox(contentGO.transform, "NetsRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), Color.clear);
+            EnsureLayout(netsRow, -1, 42);
+            var netsLayout = netsRow.AddComponent<HorizontalLayoutGroup>();
+            netsLayout.spacing = 10;
+            netsLayout.childForceExpandWidth = true;
+
+            CreateButton(netsRow.transform, "Btn_EmptyNets", "🕸️ Empty All Raft Collection Nets Now", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            {
+                NetsHelper.EmptyAllNets(silent: false);
+            }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
+
+            CreateToggleItem(contentGO.transform, "🕸️ Auto-Empty Collection Nets (Continuously gathers trapped items into inventory)", Plugin.AutoEmptyCollectionNets.Value, v =>
+            {
+                Plugin.AutoEmptyCollectionNets.Value = v;
+                TeleportManager.SetNotification(v ? "🕸️ Auto-Empty Nets: ENABLED" : "🕸️ Auto-Empty Nets: DISABLED");
+            });
+
+            // 4. Farming Helper: Button + Auto-Water Toggle
+            var farmRow = CreateBox(contentGO.transform, "FarmRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), Color.clear);
             EnsureLayout(farmRow, -1, 42);
             var farmLayout = farmRow.AddComponent<HorizontalLayoutGroup>();
             farmLayout.spacing = 10;
@@ -301,41 +342,50 @@ namespace SailorsCompanion.UI
                 FarmingHelper.WaterAllPlots(silent: false);
             }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
 
-            var autoWaterBox = CreateBox(farmRow.transform, "AutoWaterBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(250, 42), new Color(0.11f, 0.11f, 0.15f, 0.90f));
-            EnsureLayout(autoWaterBox, 250, 42, false);
-            var awLayout = autoWaterBox.AddComponent<HorizontalLayoutGroup>();
-            awLayout.spacing = 10;
-            awLayout.padding = new RectOffset(12, 12, 0, 0);
-            awLayout.childForceExpandHeight = false;
-
-            bool awState = Plugin.AutoWaterCrops != null && Plugin.AutoWaterCrops.Value;
-            var awChkBox = CreateBox(autoWaterBox.transform, "AWCheckbox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(26, 26), awState ? new Color(0.85f, 0.15f, 0.20f) : new Color(0.20f, 0.20f, 0.25f));
-            EnsureLayout(awChkBox, 26, 26, false);
-            var awChkBtn = awChkBox.AddComponent<Button>();
-            var awChkImg = awChkBox.GetComponent<Image>();
-            var awCheckMark = CreateText(awChkBox.transform, "Mark", awState ? "✓" : "", 16, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-
-            awChkBtn.onClick.AddListener(() =>
+            CreateToggleItem(contentGO.transform, "🌱 Auto-Water Crops Continually (Never let crop plots or livestock grass dry out)", Plugin.AutoWaterCrops.Value, v =>
             {
-                awState = !awState;
-                awChkImg.color = awState ? new Color(0.85f, 0.15f, 0.20f) : new Color(0.20f, 0.20f, 0.25f);
-                awCheckMark.text = awState ? "✓" : "";
-                if (Plugin.AutoWaterCrops != null) Plugin.AutoWaterCrops.Value = awState;
-                TeleportManager.SetNotification(awState ? "🌱 Auto-Watering: ENABLED" : "🌱 Auto-Watering: DISABLED");
+                Plugin.AutoWaterCrops.Value = v;
+                TeleportManager.SetNotification(v ? "🌱 Auto-Watering: ENABLED" : "🌱 Auto-Watering: DISABLED");
             });
 
-            var awLabel = CreateText(autoWaterBox.transform, "Label", "Auto-Water Continually", 14, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
-            EnsureLayout(awLabel.gameObject, 180, 32, true);
+            // 5. Crop & Tree Growth Boost: Toggle + Stepper
+            CreateToggleItem(contentGO.transform, "🌾 Accelerate Crop & Tree Growth (Speeds up farming & tree growth cycles)", Plugin.EnableCropGrowthBoost.Value, v =>
+            {
+                Plugin.EnableCropGrowthBoost.Value = v;
+                TeleportManager.SetNotification(v ? "🌾 Crop Growth Boost: ENABLED" : "🌾 Crop Growth Boost: DISABLED");
+            });
 
-            // QoL Toggles
-            CreateToggleItem(page.transform, "🦈 Anti-Shark Raft Protection (Bruce will not destroy raft blocks)", Plugin.AntiSharkRaftDamage.Value, v => Plugin.AntiSharkRaftDamage.Value = v);
-            CreateToggleItem(page.transform, "🔨 Infinite Tool Durability (Tools, weapons, hooks & armor never break)", Plugin.InfiniteDurability.Value, v => Plugin.InfiniteDurability.Value = v);
+            CreateStepperItem(contentGO.transform, "🌾 Crop Growth Speed Multiplier", 1.0f, 5.0f, 0.5f, Plugin.CropGrowthMultiplier.Value, "x", v =>
+            {
+                Plugin.CropGrowthMultiplier.Value = v;
+            });
 
-            // QoL Steppers
-            CreateStepperItem(page.transform, "Hook Reel-In Speed (Faster floating debris retrieval)", 1.0f, 5.0f, 0.5f, Plugin.HookPullSpeedMultiplier.Value, "x", v => Plugin.HookPullSpeedMultiplier.Value = v);
-            CreateStepperItem(page.transform, "Resource Stack Size Limit", 20f, 999f, 50f, Plugin.CustomStackSize.Value, "", v => Plugin.CustomStackSize.Value = Mathf.RoundToInt(v));
-            CreateStepperItem(page.transform, "Swimming Speed Multiplier", 1.0f, 4.0f, 0.2f, Plugin.SwimSpeedMultiplier.Value, "x", v => Plugin.SwimSpeedMultiplier.Value = v);
-            CreateStepperItem(page.transform, "Sprinting Speed Multiplier", 1.0f, 3.0f, 0.2f, Plugin.SprintSpeedMultiplier.Value, "x", v => Plugin.SprintSpeedMultiplier.Value = v);
+            // 6. Animal & Enemy Health Bars Toggle
+            CreateToggleItem(contentGO.transform, "🐾 Animal & Enemy Health Bars (Floating HP bars and distance meters over creatures)", Plugin.ShowAnimalHealthBars.Value, v =>
+            {
+                Plugin.ShowAnimalHealthBars.Value = v;
+                TeleportManager.SetNotification(v ? "🐾 Animal Health Bars: ENABLED" : "🐾 Animal Health Bars: DISABLED");
+            });
+
+            // 7. Anti-Shark Protection Toggle
+            CreateToggleItem(contentGO.transform, "🦈 Anti-Shark Raft Protection (Bruce will not attack or destroy raft foundations)", Plugin.AntiSharkRaftDamage.Value, v =>
+            {
+                Plugin.AntiSharkRaftDamage.Value = v;
+                TeleportManager.SetNotification(v ? "🦈 Anti-Shark: ENABLED" : "🦈 Anti-Shark: DISABLED");
+            });
+
+            // 8. Infinite Tool Durability Toggle
+            CreateToggleItem(contentGO.transform, "🔨 Infinite Tool Durability (Hooks, weapons, tools, gear & armor never break)", Plugin.InfiniteDurability.Value, v =>
+            {
+                Plugin.InfiniteDurability.Value = v;
+                TeleportManager.SetNotification(v ? "🔨 Infinite Durability: ENABLED" : "🔨 Infinite Durability: DISABLED");
+            });
+
+            // 9. Steppers: Hook speed, Stack size, Swim speed, Sprint speed
+            CreateStepperItem(contentGO.transform, "🎣 Hook Reel-In Speed Multiplier", 1.0f, 5.0f, 0.5f, Plugin.HookPullSpeedMultiplier.Value, "x", v => Plugin.HookPullSpeedMultiplier.Value = v);
+            CreateStepperItem(contentGO.transform, "📦 Resource Stack Size Limit", 20f, 999f, 50f, Plugin.CustomStackSize.Value, "", v => Plugin.CustomStackSize.Value = Mathf.RoundToInt(v));
+            CreateStepperItem(contentGO.transform, "🏊 Swimming Speed Multiplier", 1.0f, 4.0f, 0.2f, Plugin.SwimSpeedMultiplier.Value, "x", v => Plugin.SwimSpeedMultiplier.Value = v);
+            CreateStepperItem(contentGO.transform, "🏃 Sprinting Speed Multiplier", 1.0f, 3.0f, 0.2f, Plugin.SprintSpeedMultiplier.Value, "x", v => Plugin.SprintSpeedMultiplier.Value = v);
 
             return page;
         }
@@ -851,33 +901,83 @@ namespace SailorsCompanion.UI
             return go;
         }
 
+        #region [START] UI TOGGLE ITEM WITH DUAL ON/OFF BUTTONS
+        // ============================================================================
+        // [START] UI TOGGLE ITEM WITH DUAL ON/OFF BUTTONS
+        // ============================================================================
         private void CreateToggleItem(Transform parent, string label, bool initialValue, Action<bool> onToggle)
         {
-            var row = CreateBox(parent, "ToggleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), new Color(0.11f, 0.11f, 0.15f, 0.90f));
-            EnsureLayout(row, -1, 42);
+            var row = CreateBox(parent, "ToggleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), new Color(0.11f, 0.11f, 0.15f, 0.90f));
+            EnsureLayout(row, -1, 44);
             var layout = row.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 12;
-            layout.padding = new RectOffset(14, 14, 0, 0);
+            layout.spacing = 10;
+            layout.padding = new RectOffset(14, 14, 4, 4);
             layout.childForceExpandHeight = false;
+            layout.childForceExpandWidth = false;
 
-            var chkBox = CreateBox(row.transform, "Checkbox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(28, 28), initialValue ? new Color(0.85f, 0.15f, 0.20f) : new Color(0.20f, 0.20f, 0.25f));
-            EnsureLayout(chkBox, 28, 28, false);
-            var chkBtn = chkBox.AddComponent<Button>();
-            var chkImg = chkBox.GetComponent<Image>();
-            var checkMark = CreateText(chkBox.transform, "Mark", initialValue ? "✓" : "", 18, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+            // Feature Label
+            var t = CreateText(row.transform, "Label", label, 15, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
+            EnsureLayout(t.gameObject, 680, 36, true);
+
+            // Container for ON / OFF Buttons
+            var btnGroup = CreateBox(row.transform, "BtnGroup", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(140, 34), Color.clear);
+            EnsureLayout(btnGroup, 140, 34, false);
+            var bgLayout = btnGroup.AddComponent<HorizontalLayoutGroup>();
+            bgLayout.spacing = 6;
+            bgLayout.childForceExpandWidth = true;
+            bgLayout.childForceExpandHeight = true;
 
             bool state = initialValue;
-            chkBtn.onClick.AddListener(() =>
+
+            Color activeOnColor = new Color(0.85f, 0.15f, 0.20f, 1f); // Vibrant Crimson Red
+            Color inactiveColor = new Color(0.16f, 0.16f, 0.20f, 0.95f); // Dark Slate Charcoal
+            Color activeOffColor = new Color(0.35f, 0.12f, 0.15f, 0.95f); // Muted Dark Burgundy
+
+            var onBtn = CreateButton(btnGroup.transform, "Btn_ON", "ON", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, null, state ? activeOnColor : inactiveColor, state ? Color.white : new Color(0.6f, 0.6f, 0.7f), 13);
+            var offBtn = CreateButton(btnGroup.transform, "Btn_OFF", "OFF", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, null, !state ? activeOffColor : inactiveColor, !state ? Color.white : new Color(0.6f, 0.6f, 0.7f), 13);
+
+            var onImg = onBtn.GetComponent<Image>();
+            var onTxt = onBtn.GetComponentInChildren<Text>();
+            var offImg = offBtn.GetComponent<Image>();
+            var offTxt = offBtn.GetComponentInChildren<Text>();
+
+            void UpdateVisuals(bool isOn)
             {
-                state = !state;
-                chkImg.color = state ? new Color(0.85f, 0.15f, 0.20f) : new Color(0.20f, 0.20f, 0.25f);
-                checkMark.text = state ? "✓" : "";
-                onToggle?.Invoke(state);
+                onImg.color = isOn ? activeOnColor : inactiveColor;
+                onTxt.color = isOn ? Color.white : new Color(0.6f, 0.6f, 0.7f);
+                onTxt.fontStyle = isOn ? FontStyle.Bold : FontStyle.Normal;
+
+                offImg.color = !isOn ? activeOffColor : inactiveColor;
+                offTxt.color = !isOn ? Color.white : new Color(0.6f, 0.6f, 0.7f);
+                offTxt.fontStyle = !isOn ? FontStyle.Bold : FontStyle.Normal;
+            }
+
+            UpdateVisuals(state);
+
+            onBtn.GetComponent<Button>().onClick.AddListener(() =>
+            {
+                if (!state)
+                {
+                    state = true;
+                    UpdateVisuals(state);
+                    onToggle?.Invoke(true);
+                }
             });
 
-            var t = CreateText(row.transform, "Label", label, 16, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
-            EnsureLayout(t.gameObject, 750, 34, true);
+            offBtn.GetComponent<Button>().onClick.AddListener(() =>
+            {
+                if (state)
+                {
+                    state = false;
+                    UpdateVisuals(state);
+                    onToggle?.Invoke(false);
+                }
+            });
         }
+        // ============================================================================
+        // [END] UI TOGGLE ITEM WITH DUAL ON/OFF BUTTONS
+        // ============================================================================
+        #endregion
 
         private void CreateButtonItem(Transform parent, string label, Action onClick)
         {
@@ -1170,6 +1270,9 @@ namespace SailorsCompanion.UI
                 wm.SetWeather(weather, true);
             }
         }
-        #endregion // [END] WORLD TIME & WEATHER HELPERS
+        // ============================================================================
+        // [END] WORLD TIME & WEATHER HELPERS
+        // ============================================================================
+        #endregion
     }
 }

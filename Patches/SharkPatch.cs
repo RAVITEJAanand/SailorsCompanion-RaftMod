@@ -52,5 +52,8 @@ namespace SailorsCompanion.Patches
             return true;
         }
     }
-    #endregion // [END] PATCH: ANTI-SHARK RAFT PROTECTION
+    // ============================================================================
+    // [END] PATCH: ANTI-SHARK RAFT PROTECTION
+    // ============================================================================
+    #endregion
 }
