@@ -643,8 +643,11 @@ namespace SailorsCompanion.UI
             EnsureLayout(inputGO, 620, 36, false);
             var inputTxt = CreateText(inputGO.transform, "Text", "", 15, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
             inputTxt.rectTransform.offsetMin = new Vector2(12, 0);
+            var placeholderTxt = CreateText(inputGO.transform, "Placeholder", "🔍 Type to search items... (e.g. plank, titanium, shark)", 14, FontStyle.Italic, new Color(0.55f, 0.60f, 0.68f, 0.70f), TextAnchor.MiddleLeft);
+            placeholderTxt.rectTransform.offsetMin = new Vector2(12, 0);
             _itemSearchInput = inputGO.AddComponent<InputField>();
             _itemSearchInput.textComponent = inputTxt;
+            _itemSearchInput.placeholder = placeholderTxt;
             _itemSearchInput.onValueChanged.AddListener(s => RefreshItemSpawnerList(s));
 
             var clearBtn = CreateButton(searchRow.transform, "Btn_Clear", "✕ Clear", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(100, 36), () =>
@@ -777,7 +780,8 @@ namespace SailorsCompanion.UI
                 var btn10 = CreateButton(row.transform, "Btn_10", "+10", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(56, 32), () => GiveItem(uniqueName, 10), new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
                 EnsureLayout(btn10, 56, 32, false);
 
-                var btnStack = CreateButton(row.transform, "Btn_Stack", $"+{stack}", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(76, 32), () => GiveItem(uniqueName, stack), new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 14);
+                string stackLabel = stack > 1 ? $"+{stack}" : "+Max";
+                var btnStack = CreateButton(row.transform, "Btn_Stack", stackLabel, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(76, 32), () => GiveItem(uniqueName, stack), new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 14);
                 EnsureLayout(btnStack, 76, 32, false);
             }
 
