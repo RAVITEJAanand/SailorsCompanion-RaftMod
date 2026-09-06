@@ -4,9 +4,17 @@ using SailorsCompanion.Features;
 
 namespace SailorsCompanion.UI
 {
+    // ============================================================================
+    // [START] MODULE: ON-SCREEN NAVIGATION HUD OVERLAY
+    // Purpose: Renders real-time compass tape, coordinates, raft tracker arrow,
+    //          shark proximity radar, and in-game notification toasts.
+    // ============================================================================
     public class HUDOverlay : MonoBehaviour
     {
-        // Textures & Styles
+        #region [START] CACHED REFERENCES & DATA STATE
+        // ============================================================================
+        // [START] CACHED REFERENCES & DATA STATE
+        // ============================================================================
         private GUIStyle _hudBoxStyle = null;
         private GUIStyle _hudTextStyle = null;
         private GUIStyle _hudTitleStyle = null;
@@ -41,7 +49,15 @@ namespace SailorsCompanion.UI
         private static string _cachedBadges = "";
 
         public static readonly string[] StyleNames = { "Sleek Ribbon", "Compass Bar", "Mini Pill", "Classic Box" };
+        // ============================================================================
+        // [END] CACHED REFERENCES & DATA STATE
+        // ============================================================================
+        #endregion
 
+        #region [START] GUI STYLES & TEXTURE INITIALIZATION
+        // ============================================================================
+        // [START] GUI STYLES & TEXTURE INITIALIZATION
+        // ============================================================================
         private Texture2D MakeColorTexture(Color col)
         {
             var tex = new Texture2D(1, 1);
@@ -54,11 +70,11 @@ namespace SailorsCompanion.UI
         {
             if (_bgTexture == null)
             {
-                _bgTexture = MakeColorTexture(new Color(0.06f, 0.09f, 0.14f, 0.82f));
+                _bgTexture = MakeColorTexture(new Color(0.06f, 0.08f, 0.12f, 0.88f));
             }
             if (_btnNormalTex == null)
             {
-                _btnNormalTex = MakeColorTexture(new Color(0.12f, 0.18f, 0.26f, 0.85f));
+                _btnNormalTex = MakeColorTexture(new Color(0.14f, 0.20f, 0.28f, 0.90f));
             }
             if (_btnHoverTex == null)
             {
@@ -136,7 +152,15 @@ namespace SailorsCompanion.UI
                 };
             }
         }
+        // ============================================================================
+        // [END] GUI STYLES & TEXTURE INITIALIZATION
+        // ============================================================================
+        #endregion
 
+        #region [START] 10HZ DATA CALCULATION & LIFECYCLE
+        // ============================================================================
+        // [START] 10HZ DATA CALCULATION & LIFECYCLE
+        // ============================================================================
         private void Update()
         {
             // Hotkey to cycle styles: Shift + F6
@@ -169,7 +193,7 @@ namespace SailorsCompanion.UI
                 catch { }
             }
 
-            // Recalculate HUD display data at 10Hz (every 100ms) to prevent GC lag
+            // Recalculate HUD display data at 10Hz (every 100ms) to eliminate GC spikes
             if (Time.unscaledTime - _lastHudCalcTime > 0.1f)
             {
                 _lastHudCalcTime = Time.unscaledTime;
@@ -211,7 +235,7 @@ namespace SailorsCompanion.UI
             _cachedCardinal = GetCardinalDirection(_cachedYaw);
             _cachedPos = player.transform.position;
 
-            // Raft
+            // Raft distance and directional tracking
             if (_cachedRaft != null)
             {
                 _cachedRaftDist = Vector3.Distance(_cachedPos, _cachedRaft.transform.position);
@@ -225,7 +249,7 @@ namespace SailorsCompanion.UI
                 _cachedRaftArrow = "•";
             }
 
-            // Shark & Weather
+            // Shark proximity radar
             if (_cachedShark != null && _cachedShark.gameObject.activeInHierarchy)
             {
                 _cachedSharkDist = Vector3.Distance(_cachedPos, _cachedShark.transform.position);
@@ -237,7 +261,7 @@ namespace SailorsCompanion.UI
 
             _cachedWeatherStr = _cachedWeather != null ? _cachedWeather.GetCurrentWeatherType().ToString() : "Normal";
 
-            // Sky time
+            // World time
             if (_cachedSky?.timeOfDay != null)
             {
                 _cachedHour = Mathf.FloorToInt(_cachedSky.timeOfDay.hour);
@@ -245,7 +269,15 @@ namespace SailorsCompanion.UI
                 _cachedDay = _cachedSky.timeOfDay.dayOfYear;
             }
         }
+        // ============================================================================
+        // [END] 10HZ DATA CALCULATION & LIFECYCLE
+        // ============================================================================
+        #endregion
 
+        #region [START] HUD MAIN ONGUI DISPATCHER
+        // ============================================================================
+        // [START] HUD MAIN ONGUI DISPATCHER
+        // ============================================================================
         private void OnGUI()
         {
             if (!Plugin.EnableHUD.Value) return;
@@ -276,8 +308,16 @@ namespace SailorsCompanion.UI
 
             DrawToastNotification();
         }
+        // ============================================================================
+        // [END] HUD MAIN ONGUI DISPATCHER
+        // ============================================================================
+        #endregion
 
-        #region Styles Implementation
+        #region [START] HUD STYLES IMPLEMENTATION
+        // ============================================================================
+        // [START] HUD STYLES IMPLEMENTATION
+        // ============================================================================
+
         // Style 0: Sleek Ribbon (Compact horizontal bar in top-left)
         private void DrawStyleRibbon()
         {
@@ -368,43 +408,15 @@ namespace SailorsCompanion.UI
                 GUI.Label(new Rect(r.x + 10f, r.y + 80f, w - 20f, 18f), _cachedBadges, _hudSmallStyle);
             }
         }
+        // ============================================================================
+        // [END] HUD STYLES IMPLEMENTATION
+        // ============================================================================
         #endregion
 
-        #region Helpers
-        private static string GetCardinalDirection(float yaw)
-        {
-            string[] cardinals = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
-            int index = Mathf.RoundToInt(yaw / 45f) % 8;
-            if (index < 0) index += 8;
-            return cardinals[index];
-        }
-
-        private static string GetCardinalAt(float angle)
-        {
-            while (angle < 0f) angle += 360f;
-            while (angle >= 360f) angle -= 360f;
-            return GetCardinalDirection(angle);
-        }
-
-        private static string GetDirectionArrow(Camera cam, Vector3 from, Vector3 to)
-        {
-            if (cam == null) return "•";
-            Vector3 dir = to - from;
-            dir.y = 0;
-            if (dir.sqrMagnitude < 4f) return "⚓";
-
-            float angle = Vector3.SignedAngle(cam.transform.forward, dir, Vector3.up);
-
-            if (angle >= -22.5f && angle <= 22.5f) return "↑";
-            if (angle > 22.5f && angle <= 67.5f) return "↗";
-            if (angle > 67.5f && angle <= 112.5f) return "→";
-            if (angle > 112.5f && angle <= 157.5f) return "↘";
-            if (angle > 157.5f || angle <= -157.5f) return "↓";
-            if (angle >= -157.5f && angle < -112.5f) return "↙";
-            if (angle >= -112.5f && angle < -67.5f) return "←";
-            return "↖";
-        }
-
+        #region [START] TOAST NOTIFICATION ENGINE
+        // ============================================================================
+        // [START] TOAST NOTIFICATION ENGINE
+        // ============================================================================
         private void DrawToastNotification()
         {
             if (string.IsNullOrEmpty(TeleportManager.LastStatusMessage)) return;
@@ -442,6 +454,54 @@ namespace SailorsCompanion.UI
             if (_btnNormalTex != null) Destroy(_btnNormalTex);
             if (_btnHoverTex != null) Destroy(_btnHoverTex);
         }
+        // ============================================================================
+        // [END] TOAST NOTIFICATION ENGINE
+        // ============================================================================
+        #endregion
+
+        #region [START] NAVIGATION MATH & DIRECTION HELPERS
+        // ============================================================================
+        // [START] NAVIGATION MATH & DIRECTION HELPERS
+        // ============================================================================
+        private static string GetCardinalDirection(float yaw)
+        {
+            string[] cardinals = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
+            int index = Mathf.RoundToInt(yaw / 45f) % 8;
+            if (index < 0) index += 8;
+            return cardinals[index];
+        }
+
+        private static string GetCardinalAt(float angle)
+        {
+            while (angle < 0f) angle += 360f;
+            while (angle >= 360f) angle -= 360f;
+            return GetCardinalDirection(angle);
+        }
+
+        private static string GetDirectionArrow(Camera cam, Vector3 from, Vector3 to)
+        {
+            if (cam == null) return "•";
+            Vector3 dir = to - from;
+            dir.y = 0;
+            if (dir.sqrMagnitude < 4f) return "⚓";
+
+            float angle = Vector3.SignedAngle(cam.transform.forward, dir, Vector3.up);
+
+            if (angle >= -22.5f && angle <= 22.5f) return "↑";
+            if (angle > 22.5f && angle <= 67.5f) return "↗";
+            if (angle > 67.5f && angle <= 112.5f) return "→";
+            if (angle > 112.5f && angle <= 157.5f) return "↘";
+            if (angle > 157.5f || angle <= -157.5f) return "↓";
+            if (angle >= -157.5f && angle < -112.5f) return "↙";
+            if (angle >= -112.5f && angle < -67.5f) return "←";
+            return "↖";
+        }
+        // ============================================================================
+        // [END] NAVIGATION MATH & DIRECTION HELPERS
+        // ============================================================================
         #endregion
     }
+    // ============================================================================
+    // [END] MODULE: ON-SCREEN NAVIGATION HUD OVERLAY
+    // ============================================================================
 }

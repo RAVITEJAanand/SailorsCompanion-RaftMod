@@ -3,8 +3,17 @@ using UnityEngine;
 
 namespace SailorsCompanion.Features
 {
+    // ============================================================================
+    // [START] MODULE: TELEPORTATION & RAFT RECOVERY SYSTEM
+    // Purpose: Handles recalling players to the raft deck, summoning the raft
+    //          to the player's position, and controlling the raft's anchor remotely.
+    // ============================================================================
     public static class TeleportManager
     {
+        #region [START] NOTIFICATION ENGINE
+        // ============================================================================
+        // [START] NOTIFICATION ENGINE
+        // ============================================================================
         public static string LastStatusMessage { get; private set; } = "";
         public static float LastStatusTime { get; private set; } = 0f;
 
@@ -14,10 +23,17 @@ namespace SailorsCompanion.Features
             LastStatusTime = Time.unscaledTime;
             Debug.Log($"[Sailor's Companion] {message}");
         }
+        // ============================================================================
+        // [END] NOTIFICATION ENGINE
+        // ============================================================================
+        #endregion
 
-        /// <summary>
-        /// Instantly teleports the local player back onto the Raft deck safely.
-        /// </summary>
+        #region [START] FEATURE 1: PLAYER RECALL TO RAFT (F8)
+        // ============================================================================
+        // [START] FEATURE 1: PLAYER RECALL TO RAFT (Hotkey: F8)
+        // Description: Safely teleports the local player back onto the raft deck from
+        //              anywhere in the world (deep ocean, island peaks, etc.).
+        // ============================================================================
         public static bool TeleportPlayerToRaft(bool autoDropAnchor = false)
         {
             var player = PlayerHelper.GetLocalPlayer();
@@ -36,10 +52,10 @@ namespace SailorsCompanion.Features
 
             float prevDist = Vector3.Distance(player.transform.position, raft.transform.position);
 
-            // 1. Disable Fly mode if active to avoid gravity conflicts
+            // Step 1: Disable Fly mode if active to avoid gravity conflicts
             Plugin.EnableFlyMode.Value = false;
 
-            // 2. Determine target position on the raft deck
+            // Step 2: Determine target position on the raft deck
             Vector3 targetPos = raft.transform.position + Vector3.up * 2.2f;
             try
             {
@@ -70,7 +86,7 @@ namespace SailorsCompanion.Features
             }
             catch { }
 
-            // 3. Set Parent to Raft (GameManager.Singleton.lockedPivot)
+            // Step 3: Set Parent to Raft (GameManager.Singleton.lockedPivot)
             try
             {
                 if (GameManager.Singleton != null && GameManager.Singleton.lockedPivot != null)
@@ -80,7 +96,7 @@ namespace SailorsCompanion.Features
             }
             catch { }
 
-            // 4. Set Controller to Ground, reset fall velocity & duration
+            // Step 4: Set Controller to Ground, reset fall velocity & duration
             try
             {
                 if (player.PersonController != null)
@@ -94,11 +110,11 @@ namespace SailorsCompanion.Features
             }
             catch { }
 
-            // 5. Apply Position & Sync
+            // Step 5: Apply Position & Sync transforms with physics engine
             player.transform.position = targetPos;
             Physics.SyncTransforms();
 
-            // 6. Optional: Drop anchor so raft doesn't drift away
+            // Step 6: Optional - Drop anchor so raft doesn't drift away
             if (autoDropAnchor && !raft.IsAnchored)
             {
                 try
@@ -111,10 +127,17 @@ namespace SailorsCompanion.Features
             SetNotification($"⚡ Teleported back to Raft! (Traveled {prevDist:F0}m)");
             return true;
         }
+        // ============================================================================
+        // [END] FEATURE 1: PLAYER RECALL TO RAFT
+        // ============================================================================
+        #endregion
 
-        /// <summary>
-        /// Teleports the Raft directly in front of the player (e.g. while on an island).
-        /// </summary>
+        #region [START] FEATURE 2: SUMMON RAFT TO PLAYER (F9)
+        // ============================================================================
+        // [START] FEATURE 2: SUMMON RAFT TO PLAYER (Hotkey: F9)
+        // Description: Pulls the raft directly in front of the player on the ocean
+        //              water level (~18m away) and automatically anchors it.
+        // ============================================================================
         public static bool TeleportRaftToPlayer()
         {
             var player = PlayerHelper.GetLocalPlayer();
@@ -137,7 +160,7 @@ namespace SailorsCompanion.Features
             if (forward.sqrMagnitude < 0.01f) forward = player.transform.forward;
             forward.Normalize();
 
-            // Position ~18 meters in front of the player at water level
+            // Position ~18 meters in front of the player at water level (y = 0)
             Vector3 targetPos = player.transform.position + forward * 18f;
             targetPos.y = 0f;
 
@@ -160,7 +183,7 @@ namespace SailorsCompanion.Features
 
                 Physics.SyncTransforms();
 
-                // Anchor the raft so it doesn't drift away
+                // Automatically anchor the raft so it stays put
                 if (!raft.IsAnchored)
                 {
                     raft.AddAnchor(true, raft.gameObject);
@@ -175,10 +198,16 @@ namespace SailorsCompanion.Features
             SetNotification("⛵ Raft summoned in front of you and anchored!");
             return true;
         }
+        // ============================================================================
+        // [END] FEATURE 2: SUMMON RAFT TO PLAYER
+        // ============================================================================
+        #endregion
 
-        /// <summary>
-        /// Remotely toggles the Raft's anchor from anywhere in the world.
-        /// </summary>
+        #region [START] FEATURE 3: REMOTE RAFT ANCHOR CONTROL
+        // ============================================================================
+        // [START] FEATURE 3: REMOTE RAFT ANCHOR CONTROL
+        // Description: Allows dropping or raising the raft's anchor from anywhere.
+        // ============================================================================
         public static bool ToggleRaftAnchor()
         {
             var raft = ComponentManager<Raft>.Value ?? UnityEngine.Object.FindObjectOfType<Raft>();
@@ -208,5 +237,12 @@ namespace SailorsCompanion.Features
                 return false;
             }
         }
+        // ============================================================================
+        // [END] FEATURE 3: REMOTE RAFT ANCHOR CONTROL
+        // ============================================================================
+        #endregion
     }
+    // ============================================================================
+    // [END] MODULE: TELEPORTATION & RAFT RECOVERY SYSTEM
+    // ============================================================================
 }

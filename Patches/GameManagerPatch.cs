@@ -5,6 +5,11 @@ using SailorsCompanion.UI;
 
 namespace SailorsCompanion.Patches
 {
+    #region [START] PATCH: GAMEMANAGER TICK HOOK
+    // ============================================================================
+    // [START] PATCH: GAMEMANAGER TICK HOOK
+    // Description: Hooks GameManager.Update to guarantee plugin tick execution in all scenes.
+    // ============================================================================
     [HarmonyPatch(typeof(GameManager), "Update")]
     public static class GameManagerUpdatePatch
     {
@@ -21,4 +26,5 @@ namespace SailorsCompanion.Patches
             }
         }
     }
+    #endregion // [END] PATCH: GAMEMANAGER TICK HOOK
 }

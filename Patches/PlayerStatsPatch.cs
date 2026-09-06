@@ -2,6 +2,11 @@ using HarmonyLib;
 
 namespace SailorsCompanion.Patches
 {
+    #region [START] PATCH: GOD MODE DAMAGE IMMUNITY
+    // ============================================================================
+    // [START] PATCH: GOD MODE DAMAGE IMMUNITY
+    // Description: Intercepts PlayerStats.Damage to nullify all incoming damage to the local player.
+    // ============================================================================
     [HarmonyPatch(typeof(PlayerStats), nameof(PlayerStats.Damage))]
     public static class PlayerStatsDamagePatch
     {
@@ -20,4 +25,5 @@ namespace SailorsCompanion.Patches
             return true;
         }
     }
+    #endregion // [END] PATCH: GOD MODE DAMAGE IMMUNITY
 }

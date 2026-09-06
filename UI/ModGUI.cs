@@ -7,6 +7,10 @@ namespace SailorsCompanion.UI
 {
     public class ModGUI : MonoBehaviour
     {
+        #region [START] MODGUI: FIELDS & THEME STATE
+        // ============================================================================
+        // [START] MODGUI: FIELDS & THEME STATE
+        // ============================================================================
         public static bool IsOpen = false;
 
         private Rect _windowRect = new Rect(100, 100, 640, 530);
@@ -31,7 +35,12 @@ namespace SailorsCompanion.UI
         private Texture2D _tabSelectedTex = null;
         private Texture2D _tabUnselectedTex = null;
         private Texture2D _cornerBtnTex = null;
+        #endregion // [END] MODGUI: FIELDS & THEME STATE
 
+        #region [START] MODGUI: STYLES & TEXTURE GENERATION
+        // ============================================================================
+        // [START] MODGUI: STYLES & TEXTURE GENERATION
+        // ============================================================================
         private Texture2D MakeTex(int width, int height, Color col)
         {
             var pix = new Color[width * height];
@@ -124,7 +133,12 @@ namespace SailorsCompanion.UI
                 };
             }
         }
+        #endregion // [END] MODGUI: STYLES & TEXTURE GENERATION
 
+        #region [START] MODGUI: TOGGLE & CURSOR CONTROL
+        // ============================================================================
+        // [START] MODGUI: TOGGLE & CURSOR CONTROL
+        // ============================================================================
         public static void Toggle()
         {
             IsOpen = !IsOpen;
@@ -172,7 +186,12 @@ namespace SailorsCompanion.UI
                 Cursor.visible = true;
             }
         }
+        #endregion // [END] MODGUI: TOGGLE & CURSOR CONTROL
 
+        #region [START] MODGUI: ONGUI & WINDOW DISPATCHER
+        // ============================================================================
+        // [START] MODGUI: ONGUI & WINDOW DISPATCHER
+        // ============================================================================
         private void OnGUI()
         {
             EnsureStyles();
@@ -252,7 +271,12 @@ namespace SailorsCompanion.UI
             GUILayout.EndVertical();
             GUI.DragWindow(new Rect(0, 0, _windowRect.width, 30));
         }
+        #endregion // [END] MODGUI: ONGUI & WINDOW DISPATCHER
 
+        #region [START] MODGUI: TAB 0 - SURVIVAL & VITALS
+        // ============================================================================
+        // [START] MODGUI: TAB 0 - SURVIVAL & VITALS
+        // ============================================================================
         private void DrawSurvivalTab()
         {
             _scrollPosSurvival = GUILayout.BeginScrollView(_scrollPosSurvival);
@@ -299,7 +323,12 @@ namespace SailorsCompanion.UI
 
             GUILayout.EndScrollView();
         }
+        #endregion // [END] MODGUI: TAB 0 - SURVIVAL & VITALS
 
+        #region [START] MODGUI: TAB 1 - RAFT & WORLD PROTECTION
+        // ============================================================================
+        // [START] MODGUI: TAB 1 - RAFT & WORLD PROTECTION
+        // ============================================================================
         private void DrawWorldTab()
         {
             _scrollPosWorld = GUILayout.BeginScrollView(_scrollPosWorld);
@@ -363,7 +392,12 @@ namespace SailorsCompanion.UI
 
             GUILayout.EndScrollView();
         }
+        #endregion // [END] MODGUI: TAB 1 - RAFT & WORLD PROTECTION
 
+        #region [START] MODGUI: TAB 2 - R&D RECIPES RESEARCH
+        // ============================================================================
+        // [START] MODGUI: TAB 2 - R&D RECIPES RESEARCH
+        // ============================================================================
         private void DrawResearchTab()
         {
             GUILayout.BeginVertical(_cardBoxStyle);
@@ -390,7 +424,12 @@ namespace SailorsCompanion.UI
             }
             GUILayout.EndVertical();
         }
+        #endregion // [END] MODGUI: TAB 2 - R&D RECIPES RESEARCH
 
+        #region [START] MODGUI: TAB 3 - ITEM SPAWNER
+        // ============================================================================
+        // [START] MODGUI: TAB 3 - ITEM SPAWNER
+        // ============================================================================
         private void DrawItemSpawnerTab()
         {
             var player = PlayerHelper.GetLocalPlayer();
@@ -451,7 +490,12 @@ namespace SailorsCompanion.UI
             }
             GUILayout.EndScrollView();
         }
+        #endregion // [END] MODGUI: TAB 3 - ITEM SPAWNER
 
+        #region [START] MODGUI: TAB 4 - NAVIGATION TELEMETRY
+        // ============================================================================
+        // [START] MODGUI: TAB 4 - NAVIGATION TELEMETRY
+        // ============================================================================
         private void DrawNavigationTab()
         {
             GUILayout.BeginVertical(_cardBoxStyle);
@@ -491,7 +535,12 @@ namespace SailorsCompanion.UI
             }
             GUILayout.EndVertical();
         }
+        #endregion // [END] MODGUI: TAB 4 - NAVIGATION TELEMETRY
 
+        #region [START] MODGUI: WORLD & TIME HELPERS
+        // ============================================================================
+        // [START] MODGUI: WORLD & TIME HELPERS
+        // ============================================================================
         private static void UnlockAllResearch()
         {
             try
@@ -526,7 +575,12 @@ namespace SailorsCompanion.UI
                 wm.SetWeather(weather, true);
             }
         }
+        #endregion // [END] MODGUI: WORLD & TIME HELPERS
 
+        #region [START] MODGUI: CLEANUP & DISPOSAL
+        // ============================================================================
+        // [START] MODGUI: CLEANUP & DISPOSAL
+        // ============================================================================
         private void OnDestroy()
         {
             if (_winTex != null) Destroy(_winTex);
@@ -535,5 +589,6 @@ namespace SailorsCompanion.UI
             if (_tabUnselectedTex != null) Destroy(_tabUnselectedTex);
             if (_cornerBtnTex != null) Destroy(_cornerBtnTex);
         }
+        #endregion // [END] MODGUI: CLEANUP & DISPOSAL
     }
 }

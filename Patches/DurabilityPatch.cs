@@ -2,6 +2,11 @@ using HarmonyLib;
 
 namespace SailorsCompanion.Patches
 {
+    #region [START] PATCH: INFINITE TOOL & ARMOR DURABILITY
+    // ============================================================================
+    // [START] PATCH: INFINITE TOOL & ARMOR DURABILITY
+    // Description: Prevents usage degradation on hotbar tools, weapons, and equipped armor.
+    // ============================================================================
     [HarmonyPatch(typeof(Slot), nameof(Slot.IncrementUses))]
     public static class SlotDurabilityPatch
     {
@@ -31,4 +36,5 @@ namespace SailorsCompanion.Patches
             return true;
         }
     }
+    #endregion // [END] PATCH: INFINITE TOOL & ARMOR DURABILITY
 }

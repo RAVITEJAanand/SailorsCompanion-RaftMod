@@ -9,6 +9,11 @@ using UnityEngine;
 
 namespace SailorsCompanion
 {
+    // ============================================================================
+    // [START] MAIN PLUGIN ENTRY POINT: SAILOR'S COMPANION
+    // Description: Orchestrates BepInEx lifecycle, Harmony patches, configuration,
+    //              and real-time survival stats monitoring.
+    // ============================================================================
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     [BepInProcess("Raft.exe")]
     public class Plugin : BaseUnityPlugin
@@ -16,7 +21,10 @@ namespace SailorsCompanion
         public static Plugin Instance { get; private set; }
         public static GameObject ManagerGO { get; private set; }
 
-        // Config entries
+        #region [START] CONFIGURATION DEFINITIONS
+        // ============================================================================
+        // [START] CONFIGURATION DEFINITIONS (General & Feature Settings)
+        // ============================================================================
         public static ConfigEntry<bool> EnableHUD;
         public static ConfigEntry<int> HUDStyle;
         public static ConfigEntry<KeyCode> KeyMenu;
@@ -41,21 +49,31 @@ namespace SailorsCompanion
         private Harmony _harmony;
         private float _baseSwimSpeed = -1f;
         private float _baseSprintSpeed = -1f;
+        // ============================================================================
+        // [END] CONFIGURATION DEFINITIONS
+        // ============================================================================
+        #endregion
 
+        #region [START] PLUGIN INITIALIZATION & CONFIG BINDING
+        // ============================================================================
+        // [START] PLUGIN INITIALIZATION & CONFIG BINDING
+        // ============================================================================
         private void Awake()
         {
             Instance = this;
 
-            // Bind Configurations
+            // Bind Hotkeys
             KeyMenu = Config.Bind("General.Hotkeys", "KeyMenu", KeyCode.F5, "Hotkey to toggle the in-game GUI menu.");
             KeyHUD = Config.Bind("General.Hotkeys", "KeyHUD", KeyCode.F6, "Hotkey to toggle the navigation HUD overlay.");
             KeyFly = Config.Bind("General.Hotkeys", "KeyFly", KeyCode.F, "Hotkey to toggle Fly / Noclip mode.");
             KeyTeleportToRaft = Config.Bind("General.Hotkeys", "KeyTeleportToRaft", KeyCode.F8, "Hotkey to instantly recall/teleport player back onto the raft.");
             KeyTeleportRaftToPlayer = Config.Bind("General.Hotkeys", "KeyTeleportRaftToPlayer", KeyCode.F9, "Hotkey to summon raft to player's current location.");
 
+            // Bind Navigation Settings
             EnableHUD = Config.Bind("Features.Navigation", "EnableHUD", true, "Show the real-time compass, coordinates, raft tracker, and shark radar.");
             HUDStyle = Config.Bind("Features.Navigation", "HUDStyle", 0, "HUD Style: 0=Sleek Ribbon, 1=Top Compass Bar, 2=Minimalist Pill, 3=Compact Box.");
 
+            // Bind Survival & World Settings
             InfiniteDurability = Config.Bind("Features.Survival", "InfiniteDurability", true, "Tools, weapons, hooks, and armor never lose durability.");
             AntiSharkRaftDamage = Config.Bind("Features.World", "AntiSharkRaftDamage", true, "Stops the shark from attacking or damaging raft blocks.");
             InfiniteOxygen = Config.Bind("Features.Survival", "InfiniteOxygen", true, "Allows diving freely without running out of oxygen.");
@@ -63,6 +81,7 @@ namespace SailorsCompanion
             NoHungerThirst = Config.Bind("Features.Survival", "NoHungerThirst", false, "Freeze hunger and thirst meters at maximum.");
             CustomStackSize = Config.Bind("Features.Inventory", "CustomStackSize", 99, "Maximum stack size for stackable resources.");
 
+            // Bind Movement & Speeds
             SwimSpeedMultiplier = Config.Bind("Features.Movement", "SwimSpeedMultiplier", 1.8f, "Multiplier for player swimming speed.");
             SprintSpeedMultiplier = Config.Bind("Features.Movement", "SprintSpeedMultiplier", 1.4f, "Multiplier for player sprinting speed.");
             HookPullSpeedMultiplier = Config.Bind("Features.World", "HookPullSpeedMultiplier", 2.2f, "Multiplier for hook debris reeling speed.");
@@ -70,7 +89,25 @@ namespace SailorsCompanion
             EnableFlyMode = Config.Bind("Features.Movement", "EnableFlyMode", false, "Fly / Noclip mode.");
             FlySpeed = Config.Bind("Features.Movement", "FlySpeed", 14f, "Flight speed in m/s.");
 
-            // Apply Harmony Patches individually with error isolation
+            // Register Harmony Patches
+            RegisterHarmonyPatches();
+
+            // Create persistent Manager GameObject protected from Unity asset cleaning
+            EnsureManager();
+
+            Logger.LogInfo($"[{PluginInfo.PLUGIN_NAME}] v{PluginInfo.PLUGIN_VERSION} initialized successfully! Press F5 for menu, F6 for HUD.");
+        }
+        // ============================================================================
+        // [END] PLUGIN INITIALIZATION & CONFIG BINDING
+        // ============================================================================
+        #endregion
+
+        #region [START] HARMONY PATCH REGISTRATION
+        // ============================================================================
+        // [START] HARMONY PATCH REGISTRATION
+        // ============================================================================
+        private void RegisterHarmonyPatches()
+        {
             _harmony = new Harmony(PluginInfo.PLUGIN_GUID);
             Type[] patchClasses = new[]
             {
@@ -108,13 +145,16 @@ namespace SailorsCompanion
                     Logger.LogError($"[{PluginInfo.PLUGIN_NAME}] Failed patch {patchClass.Name}: {ex.Message}");
                 }
             }
-
-            // Create persistent Manager GameObject protected from Unity asset cleaning
-            EnsureManager();
-
-            Logger.LogInfo($"[{PluginInfo.PLUGIN_NAME}] v{PluginInfo.PLUGIN_VERSION} initialized successfully! Press F5 for menu, F6 for HUD.");
         }
+        // ============================================================================
+        // [END] HARMONY PATCH REGISTRATION
+        // ============================================================================
+        #endregion
 
+        #region [START] PERSISTENT MANAGER LIFECYCLE
+        // ============================================================================
+        // [START] PERSISTENT MANAGER LIFECYCLE
+        // ============================================================================
         public static void EnsureManager()
         {
             if (ManagerGO == null)
@@ -129,7 +169,15 @@ namespace SailorsCompanion
                 Debug.Log("[Sailor's Companion] Initialized persistent SailorsCompanion_Manager with HideAndDontSave protection.");
             }
         }
+        // ============================================================================
+        // [END] PERSISTENT MANAGER LIFECYCLE
+        // ============================================================================
+        #endregion
 
+        #region [START] PER-FRAME ENGINE UPDATES
+        // ============================================================================
+        // [START] PER-FRAME ENGINE UPDATES
+        // ============================================================================
         private static int _lastUpdateFrame = -1;
 
         public void OnGameManagerUpdate()
@@ -146,7 +194,7 @@ namespace SailorsCompanion
                 }
             }
 
-            // Local Player Continuous Updates
+            // Continuous updates for local player stats and speeds
             var player = PlayerHelper.GetLocalPlayer();
             if (player != null)
             {
@@ -154,7 +202,15 @@ namespace SailorsCompanion
                 UpdatePlayerSpeed(player);
             }
         }
+        // ============================================================================
+        // [END] PER-FRAME ENGINE UPDATES
+        // ============================================================================
+        #endregion
 
+        #region [START] SURVIVAL STATS & MOVEMENT MULTIPLIERS
+        // ============================================================================
+        // [START] SURVIVAL STATS & MOVEMENT MULTIPLIERS
+        // ============================================================================
         private void UpdatePlayerStats(Network_Player player)
         {
             if (player.Stats == null) return;
@@ -206,5 +262,12 @@ namespace SailorsCompanion
         {
             _harmony?.UnpatchSelf();
         }
+        // ============================================================================
+        // [END] SURVIVAL STATS & MOVEMENT MULTIPLIERS
+        // ============================================================================
+        #endregion
     }
+    // ============================================================================
+    // [END] MAIN PLUGIN ENTRY POINT
+    // ============================================================================
 }

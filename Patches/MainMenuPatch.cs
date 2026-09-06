@@ -7,6 +7,11 @@ using SailorsCompanion.UI;
 
 namespace SailorsCompanion.Patches
 {
+    #region [START] PATCH: TITLE SCREEN BUTTON INJECTION
+    // ============================================================================
+    // [START] PATCH: TITLE SCREEN BUTTON INJECTION
+    // Description: Injects "MODS" button into the main title menu and adds version badge.
+    // ============================================================================
     [HarmonyPatch(typeof(StartMenuScreen), "Start")]
     public static class StartMenuScreenStartPatch
     {
@@ -134,7 +139,13 @@ namespace SailorsCompanion.Patches
             }
         }
     }
+    #endregion // [END] PATCH: TITLE SCREEN BUTTON INJECTION
 
+    #region [START] PATCH: PAUSE MENU BUTTON INJECTION
+    // ============================================================================
+    // [START] PATCH: PAUSE MENU BUTTON INJECTION
+    // Description: Injects "MOD MENU" button into the in-game ESC Pause Menu.
+    // ============================================================================
     [HarmonyPatch(typeof(PauseMenu), "Start")]
     public static class PauseMenuStartPatch
     {
@@ -219,4 +230,5 @@ namespace SailorsCompanion.Patches
             }
         }
     }
+    #endregion // [END] PATCH: PAUSE MENU BUTTON INJECTION
 }

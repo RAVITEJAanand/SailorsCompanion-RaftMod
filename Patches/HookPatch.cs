@@ -3,6 +3,11 @@ using UnityEngine;
 
 namespace SailorsCompanion.Patches
 {
+    #region [START] PATCH: FAST HOOK PULL & GATHER SPEED
+    // ============================================================================
+    // [START] PATCH: FAST HOOK PULL & GATHER SPEED
+    // Description: Accelerates hook cast reel speed and item gathering speed.
+    // ============================================================================
     [HarmonyPatch(typeof(Hook), "Start")]
     public static class HookStartPatch
     {
@@ -19,4 +24,5 @@ namespace SailorsCompanion.Patches
             }
         }
     }
+    #endregion // [END] PATCH: FAST HOOK PULL & GATHER SPEED
 }

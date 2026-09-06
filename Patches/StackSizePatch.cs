@@ -2,6 +2,11 @@ using HarmonyLib;
 
 namespace SailorsCompanion.Patches
 {
+    #region [START] PATCH: CUSTOM RESOURCE STACK SIZE
+    // ============================================================================
+    // [START] PATCH: CUSTOM RESOURCE STACK SIZE
+    // Description: Dynamically overrides inventory stack limit for stackable resources (up to 999).
+    // ============================================================================
     [HarmonyPatch(typeof(ItemInstance_Inventory), "get_StackSize")]
     public static class StackSizePatch
     {
@@ -16,4 +21,5 @@ namespace SailorsCompanion.Patches
             }
         }
     }
+    #endregion // [END] PATCH: CUSTOM RESOURCE STACK SIZE
 }

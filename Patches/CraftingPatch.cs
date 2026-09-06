@@ -2,6 +2,11 @@ using HarmonyLib;
 
 namespace SailorsCompanion.Patches
 {
+    #region [START] PATCH: FREE INSTANT CRAFTING
+    // ============================================================================
+    // [START] PATCH: FREE INSTANT CRAFTING
+    // Description: Allows crafting all unlocked recipes without requiring any materials in inventory.
+    // ============================================================================
     [HarmonyPatch(typeof(CostMultiple), nameof(CostMultiple.HasEnoughInInventory))]
     public static class CraftingHasEnoughPatch
     {
@@ -44,4 +49,5 @@ namespace SailorsCompanion.Patches
             return true;
         }
     }
+    #endregion // [END] PATCH: FREE INSTANT CRAFTING
 }

@@ -5,6 +5,11 @@ namespace SailorsCompanion
 {
     public static class PlayerHelper
     {
+        #region [START] PLAYER HELPER: LOCAL PLAYER RESOLUTION ENGINE
+        // ============================================================================
+        // [START] PLAYER HELPER: LOCAL PLAYER RESOLUTION ENGINE
+        // Description: Cached, throttled locator finding the active local Network_Player in SP/MP.
+        // ============================================================================
         private static Network_Player _cachedPlayer = null;
         private static float _lastSearchTime = 0f;
 
@@ -86,5 +91,6 @@ namespace SailorsCompanion
 
             return null;
         }
+        #endregion // [END] PLAYER HELPER: LOCAL PLAYER RESOLUTION ENGINE
     }
 }

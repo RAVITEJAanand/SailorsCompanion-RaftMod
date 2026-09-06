@@ -6,6 +6,11 @@ namespace SailorsCompanion
 {
     public static class InputHelper
     {
+        #region [START] INPUT HELPER: KEY PRESS DETECTION (DOWN EVENT)
+        // ============================================================================
+        // [START] INPUT HELPER: KEY PRESS DETECTION (DOWN EVENT)
+        // Description: Hybrid polling supporting both Unity Legacy Input and New Input System.
+        // ============================================================================
         public static bool WasKeyPressed(KeyCode legacyKey)
         {
             // 1. Try legacy Input
@@ -39,7 +44,13 @@ namespace SailorsCompanion
 
             return false;
         }
+        #endregion // [END] INPUT HELPER: KEY PRESS DETECTION (DOWN EVENT)
 
+        #region [START] INPUT HELPER: KEY HELD CONTINUOUS POLLING
+        // ============================================================================
+        // [START] INPUT HELPER: KEY HELD CONTINUOUS POLLING
+        // Description: Continuous frame-by-frame held state checking for WASD, Shift, Space, etc.
+        // ============================================================================
         public static bool IsKeyHeld(KeyCode legacyKey)
         {
             try
@@ -70,5 +81,6 @@ namespace SailorsCompanion
 
             return false;
         }
+        #endregion // [END] INPUT HELPER: KEY HELD CONTINUOUS POLLING
     }
 }

@@ -2,6 +2,11 @@ using HarmonyLib;
 
 namespace SailorsCompanion.Patches
 {
+    #region [START] PATCH: ANTI-SHARK RAFT PROTECTION
+    // ============================================================================
+    // [START] PATCH: ANTI-SHARK RAFT PROTECTION
+    // Description: Blocks Bruce the Shark from targeting, biting, or damaging raft foundations.
+    // ============================================================================
     [HarmonyPatch(typeof(AI_State_Attack_Block_Shark), "FindBlockToAttack")]
     public static class SharkFindBlockPatch
     {
@@ -47,4 +52,5 @@ namespace SailorsCompanion.Patches
             return true;
         }
     }
+    #endregion // [END] PATCH: ANTI-SHARK RAFT PROTECTION
 }

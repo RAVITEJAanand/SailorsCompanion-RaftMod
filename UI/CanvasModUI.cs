@@ -37,6 +37,10 @@ namespace SailorsCompanion.UI
         // Font
         private Font _gameFont;
 
+        #region [START] LIFECYCLE & AWAKE INITIALIZATION
+        // ============================================================================
+        // [START] LIFECYCLE & AWAKE INITIALIZATION
+        // ============================================================================
         private void Awake()
         {
             try
@@ -155,8 +159,15 @@ namespace SailorsCompanion.UI
 
             Debug.Log("[Sailor's Companion] BuildCanvasUI successfully built persistent canvas & mod window!");
         }
+        // ============================================================================
+        // [END] LIFECYCLE & AWAKE INITIALIZATION
+        // ============================================================================
+        #endregion
 
-        #region Mod Window
+        #region [START] MOD WINDOW FRAME & TABS CONTROLLER
+        // ============================================================================
+        // [START] MOD WINDOW FRAME & TABS CONTROLLER
+        // ============================================================================
         private void BuildModWindow()
         {
             _modWindowGO = new GameObject("Window_ModMenu");
@@ -208,7 +219,15 @@ namespace SailorsCompanion.UI
 
             SelectTab(0);
         }
+        // ============================================================================
+        // [END] MOD WINDOW FRAME & TABS CONTROLLER
+        // ============================================================================
+        #endregion
 
+        #region [START] TAB 0: SURVIVAL & CHEATS
+        // ============================================================================
+        // [START] TAB 0: SURVIVAL & CHEATS (God Mode, Oxygen, Hunger/Thirst, Durability, Speeds)
+        // ============================================================================
         private GameObject BuildSurvivalTab(Transform parent)
         {
             var page = CreateBox(parent, "Page_Survival", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
@@ -240,7 +259,15 @@ namespace SailorsCompanion.UI
 
             return page;
         }
+        // ============================================================================
+        // [END] TAB 0: SURVIVAL & CHEATS
+        // ============================================================================
+        #endregion
 
+        #region [START] TAB 1: RAFT, WORLD & TELEPORTATION
+        // ============================================================================
+        // [START] TAB 1: RAFT, WORLD & TELEPORTATION (Anti-Shark, Free Craft, Teleport to Raft, Summon Raft, Weather)
+        // ============================================================================
         private GameObject BuildWorldTab(Transform parent)
         {
             var page = CreateBox(parent, "Page_World", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
@@ -302,7 +329,15 @@ namespace SailorsCompanion.UI
 
             return page;
         }
+        // ============================================================================
+        // [END] TAB 1: RAFT, WORLD & TELEPORTATION
+        // ============================================================================
+        #endregion
 
+        #region [START] TAB 2: RESEARCH & R&D BLUEPRINTS
+        // ============================================================================
+        // [START] TAB 2: RESEARCH & R&D BLUEPRINTS (Instant Learn All Recipes)
+        // ============================================================================
         private GameObject BuildResearchTab(Transform parent)
         {
             var page = CreateBox(parent, "Page_Research", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
@@ -357,7 +392,15 @@ namespace SailorsCompanion.UI
 
             return page;
         }
+        // ============================================================================
+        // [END] TAB 2: RESEARCH & R&D BLUEPRINTS
+        // ============================================================================
+        #endregion
 
+        #region [START] TAB 3: 300+ ITEM SPAWNER ENGINE
+        // ============================================================================
+        // [START] TAB 3: 300+ ITEM SPAWNER ENGINE (Real-Time Search & Instant Spawning)
+        // ============================================================================
         private GameObject BuildSpawnerTab(Transform parent)
         {
             var page = CreateBox(parent, "Page_Spawner", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
@@ -491,7 +534,15 @@ namespace SailorsCompanion.UI
                 TeleportManager.SetNotification("⚠️ Enter a game world to spawn items!");
             }
         }
+        // ============================================================================
+        // [END] TAB 3: 300+ ITEM SPAWNER ENGINE
+        // ============================================================================
+        #endregion
 
+        #region [START] TAB 4: NAVIGATION HUD & SHARK RADAR
+        // ============================================================================
+        // [START] TAB 4: NAVIGATION HUD & SHARK RADAR
+        // ============================================================================
         private GameObject BuildNavTab(Transform parent)
         {
             var page = CreateBox(parent, "Page_Nav", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
@@ -586,9 +637,15 @@ namespace SailorsCompanion.UI
                 RefreshItemSpawnerList(_itemSearchInput?.text ?? "");
             }
         }
+        // ============================================================================
+        // [END] TAB 4: NAVIGATION HUD & SHARK RADAR
+        // ============================================================================
         #endregion
 
-        #region Helpers
+        #region [START] UI COMPONENT BUILDERS (Buttons, Toggles, Sliders)
+        // ============================================================================
+        // [START] UI COMPONENT BUILDERS (Buttons, Toggles, Sliders)
+        // ============================================================================
         private GameObject CreateBox(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPos, Vector2 sizeDelta, Color color)
         {
             var go = new GameObject(name);
@@ -725,8 +782,15 @@ namespace SailorsCompanion.UI
             }, new Color(0.06f, 0.52f, 0.76f), Color.white, 16);
             EnsureLayout(plusBtn, 50, 30, false);
         }
+        // ============================================================================
+        // [END] UI COMPONENT BUILDERS
+        // ============================================================================
         #endregion
 
+        #region [START] UPDATE LOOP & HOTKEY HANDLER
+        // ============================================================================
+        // [START] UPDATE LOOP & HOTKEY HANDLER (F5, F6, F/F7, F8, F9, ESC)
+        // ============================================================================
         private void Update()
         {
             try
@@ -929,7 +993,15 @@ namespace SailorsCompanion.UI
                 }
             }
         }
+        // ============================================================================
+        // [END] UPDATE LOOP & HOTKEY HANDLER
+        // ============================================================================
+        #endregion
 
+        #region [START] WORLD TIME & WEATHER HELPERS
+        // ============================================================================
+        // [START] WORLD TIME & WEATHER HELPERS
+        // ============================================================================
         public void SetHUDVisible(bool visible)
         {
             Plugin.EnableHUD.Value = visible;
@@ -952,5 +1024,6 @@ namespace SailorsCompanion.UI
                 wm.SetWeather(weather, true);
             }
         }
+        #endregion // [END] WORLD TIME & WEATHER HELPERS
     }
 }

@@ -5,6 +5,11 @@ using SailorsCompanion.UI;
 
 namespace SailorsCompanion.Patches
 {
+    #region [START] PATCH: CURSOR UNLOCKING & VISIBILITY
+    // ============================================================================
+    // [START] PATCH: CURSOR UNLOCKING & VISIBILITY
+    // Description: Ensures mouse cursor is freed and interactable when Mod UI is active or on main menus.
+    // ============================================================================
     public static class CursorPatchHelper
     {
         public static bool ShouldForceCursorFree()
@@ -55,4 +60,5 @@ namespace SailorsCompanion.Patches
             }
         }
     }
+    #endregion // [END] PATCH: CURSOR UNLOCKING & VISIBILITY
 }
