@@ -267,125 +267,100 @@ namespace SailorsCompanion.UI
 
         #region [START] TAB 0: SURVIVAL QOL
         // ============================================================================
-        // [START] TAB 0: SURVIVAL QUALITY OF LIFE (Scrollable Page with Full ON/OFF Controls)
+        // [START] TAB 0: SURVIVAL QUALITY OF LIFE (Full Dashboard with Instant Actions & ON/OFF Controls)
         // ============================================================================
         private GameObject BuildSurvivalQoLTab(Transform parent)
         {
             var page = CreateBox(parent, "Page_SurvivalQoL", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
+            var layout = page.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = 5;
+            layout.padding = new RectOffset(4, 4, 2, 2);
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
 
-            // Scroll View Container for smooth navigation through all QoL options
-            var scrollGO = CreateBox(page.transform, "ScrollView", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            var scrollRect = scrollGO.AddComponent<ScrollRect>();
-            scrollRect.horizontal = false;
-            scrollRect.vertical = true;
-            scrollRect.scrollSensitivity = 25f;
+            // 1. Quick Action Bar: 3 Primary Utility Buttons
+            var actionRow = CreateBox(page.transform, "QuickActionBar", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
+            EnsureLayout(actionRow, -1, 36);
+            var actionLayout = actionRow.AddComponent<HorizontalLayoutGroup>();
+            actionLayout.spacing = 8;
+            actionLayout.childForceExpandWidth = true;
 
-            var viewport = CreateBox(scrollGO.transform, "Viewport", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            viewport.AddComponent<Mask>().showMaskGraphic = false;
-            scrollRect.viewport = viewport.GetComponent<RectTransform>();
-
-            var contentGO = CreateBox(viewport.transform, "Content", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, Vector2.zero, Color.clear);
-            var contentLayout = contentGO.AddComponent<VerticalLayoutGroup>();
-            contentLayout.spacing = 8;
-            contentLayout.padding = new RectOffset(4, 12, 4, 12);
-            contentLayout.childForceExpandWidth = true;
-            contentLayout.childForceExpandHeight = false;
-            contentGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            scrollRect.content = contentGO.GetComponent<RectTransform>();
-
-            // 1. Quick Stack Button Row
-            var qsRow = CreateBox(contentGO.transform, "QuickStackRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), Color.clear);
-            EnsureLayout(qsRow, -1, 42);
-            var qsLayout = qsRow.AddComponent<HorizontalLayoutGroup>();
-            qsLayout.spacing = 10;
-            qsLayout.childForceExpandWidth = true;
-
-            CreateButton(qsRow.transform, "Btn_QuickStack", "📦 Quick Stack Items into Nearby Chests (22m)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateButton(actionRow.transform, "Btn_QuickStack", "📦 Quick Stack to Chests (22m)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 ChestSorter.QuickStackToNearbyChests();
-            }, new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 15);
+            }, new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 14);
 
-            // 2. Craft from Nearby Storage / Chests Toggle
-            CreateToggleItem(contentGO.transform, "🛠️ Craft from Nearby Storage (Auto-pulls crafting materials from chests within 22m)", Plugin.CraftFromStorage.Value, v =>
-            {
-                Plugin.CraftFromStorage.Value = v;
-                TeleportManager.SetNotification(v ? "🛠️ Craft from Storage: ENABLED" : "🛠️ Craft from Storage: DISABLED");
-            });
-
-            // 3. Collection Nets: Button + Auto-Empty Toggle
-            var netsRow = CreateBox(contentGO.transform, "NetsRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), Color.clear);
-            EnsureLayout(netsRow, -1, 42);
-            var netsLayout = netsRow.AddComponent<HorizontalLayoutGroup>();
-            netsLayout.spacing = 10;
-            netsLayout.childForceExpandWidth = true;
-
-            CreateButton(netsRow.transform, "Btn_EmptyNets", "🕸️ Empty All Raft Collection Nets Now", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateButton(actionRow.transform, "Btn_EmptyNets", "🕸️ Empty All Collection Nets", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 NetsHelper.EmptyAllNets(silent: false);
             }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
 
-            CreateToggleItem(contentGO.transform, "🕸️ Auto-Empty Collection Nets (Continuously gathers trapped items into inventory)", Plugin.AutoEmptyCollectionNets.Value, v =>
-            {
-                Plugin.AutoEmptyCollectionNets.Value = v;
-                TeleportManager.SetNotification(v ? "🕸️ Auto-Empty Nets: ENABLED" : "🕸️ Auto-Empty Nets: DISABLED");
-            });
-
-            // 4. Farming Helper: Button + Auto-Water Toggle
-            var farmRow = CreateBox(contentGO.transform, "FarmRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), Color.clear);
-            EnsureLayout(farmRow, -1, 42);
-            var farmLayout = farmRow.AddComponent<HorizontalLayoutGroup>();
-            farmLayout.spacing = 10;
-            farmLayout.childForceExpandWidth = true;
-
-            CreateButton(farmRow.transform, "Btn_WaterPlots", "🌱 Water All Crops & Animal Grass Now", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateButton(actionRow.transform, "Btn_WaterPlots", "🌱 Water All Crops & Grass", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 FarmingHelper.WaterAllPlots(silent: false);
             }, new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
 
-            CreateToggleItem(contentGO.transform, "🌱 Auto-Water Crops Continually (Never let crop plots or livestock grass dry out)", Plugin.AutoWaterCrops.Value, v =>
+            // 2. Craft from Nearby Storage Toggle
+            CreateToggleItem(page.transform, "🛠️ Craft from Nearby Storage (Auto-pulls materials from chests within 22m)", Plugin.CraftFromStorage.Value, v =>
+            {
+                Plugin.CraftFromStorage.Value = v;
+                TeleportManager.SetNotification(v ? "🛠️ Craft from Storage: ENABLED" : "🛠️ Craft from Storage: DISABLED");
+            }, 35f);
+
+            // 3. Collection Nets Auto-Empty Toggle
+            CreateToggleItem(page.transform, "🕸️ Auto-Empty Collection Nets (Continuously gathers trapped items into inventory)", Plugin.AutoEmptyCollectionNets.Value, v =>
+            {
+                Plugin.AutoEmptyCollectionNets.Value = v;
+                TeleportManager.SetNotification(v ? "🕸️ Auto-Empty Nets: ENABLED" : "🕸️ Auto-Empty Nets: DISABLED");
+            }, 35f);
+
+            // 4. Farming Helper Auto-Water Toggle
+            CreateToggleItem(page.transform, "🌱 Auto-Water Crops Continually (Never let crop plots or livestock grass dry out)", Plugin.AutoWaterCrops.Value, v =>
             {
                 Plugin.AutoWaterCrops.Value = v;
                 TeleportManager.SetNotification(v ? "🌱 Auto-Watering: ENABLED" : "🌱 Auto-Watering: DISABLED");
-            });
+            }, 35f);
 
-            // 5. Crop & Tree Growth Boost: Toggle + Stepper
-            CreateToggleItem(contentGO.transform, "🌾 Accelerate Crop & Tree Growth (Speeds up farming & tree growth cycles)", Plugin.EnableCropGrowthBoost.Value, v =>
+            // 5. Crop Growth Acceleration Toggle
+            CreateToggleItem(page.transform, "🌾 Accelerate Crop & Tree Growth (Speeds up farming & tree growth cycles)", Plugin.EnableCropGrowthBoost.Value, v =>
             {
                 Plugin.EnableCropGrowthBoost.Value = v;
                 TeleportManager.SetNotification(v ? "🌾 Crop Growth Boost: ENABLED" : "🌾 Crop Growth Boost: DISABLED");
-            });
-
-            CreateStepperItem(contentGO.transform, "🌾 Crop Growth Speed Multiplier", 1.0f, 5.0f, 0.5f, Plugin.CropGrowthMultiplier.Value, "x", v =>
-            {
-                Plugin.CropGrowthMultiplier.Value = v;
-            });
+            }, 35f);
 
             // 6. Animal & Enemy Health Bars Toggle
-            CreateToggleItem(contentGO.transform, "🐾 Animal & Enemy Health Bars (Floating HP bars and distance meters over creatures)", Plugin.ShowAnimalHealthBars.Value, v =>
+            CreateToggleItem(page.transform, "🐾 Animal & Enemy Health Bars (Floating HP bars and distance meters over creatures)", Plugin.ShowAnimalHealthBars.Value, v =>
             {
                 Plugin.ShowAnimalHealthBars.Value = v;
                 TeleportManager.SetNotification(v ? "🐾 Animal Health Bars: ENABLED" : "🐾 Animal Health Bars: DISABLED");
-            });
+            }, 35f);
 
             // 7. Anti-Shark Protection Toggle
-            CreateToggleItem(contentGO.transform, "🦈 Anti-Shark Raft Protection (Bruce will not attack or destroy raft foundations)", Plugin.AntiSharkRaftDamage.Value, v =>
+            CreateToggleItem(page.transform, "🦈 Anti-Shark Raft Protection (Bruce will not attack or destroy raft foundations)", Plugin.AntiSharkRaftDamage.Value, v =>
             {
                 Plugin.AntiSharkRaftDamage.Value = v;
                 TeleportManager.SetNotification(v ? "🦈 Anti-Shark: ENABLED" : "🦈 Anti-Shark: DISABLED");
-            });
+            }, 35f);
 
             // 8. Infinite Tool Durability Toggle
-            CreateToggleItem(contentGO.transform, "🔨 Infinite Tool Durability (Hooks, weapons, tools, gear & armor never break)", Plugin.InfiniteDurability.Value, v =>
+            CreateToggleItem(page.transform, "🔨 Infinite Tool Durability (Hooks, weapons, tools, gear & armor never break)", Plugin.InfiniteDurability.Value, v =>
             {
                 Plugin.InfiniteDurability.Value = v;
                 TeleportManager.SetNotification(v ? "🔨 Infinite Durability: ENABLED" : "🔨 Infinite Durability: DISABLED");
-            });
+            }, 35f);
 
-            // 9. Steppers: Hook speed, Stack size, Swim speed, Sprint speed
-            CreateStepperItem(contentGO.transform, "🎣 Hook Reel-In Speed Multiplier", 1.0f, 5.0f, 0.5f, Plugin.HookPullSpeedMultiplier.Value, "x", v => Plugin.HookPullSpeedMultiplier.Value = v);
-            CreateStepperItem(contentGO.transform, "📦 Resource Stack Size Limit", 20f, 999f, 50f, Plugin.CustomStackSize.Value, "", v => Plugin.CustomStackSize.Value = Mathf.RoundToInt(v));
-            CreateStepperItem(contentGO.transform, "🏊 Swimming Speed Multiplier", 1.0f, 4.0f, 0.2f, Plugin.SwimSpeedMultiplier.Value, "x", v => Plugin.SwimSpeedMultiplier.Value = v);
-            CreateStepperItem(contentGO.transform, "🏃 Sprinting Speed Multiplier", 1.0f, 3.0f, 0.2f, Plugin.SprintSpeedMultiplier.Value, "x", v => Plugin.SprintSpeedMultiplier.Value = v);
+            // 9. Dual Stepper: Crop Growth & Stack Size Limit
+            CreateDualStepperRow(page.transform,
+                "🌾 Crop Growth Multiplier", 1.0f, 5.0f, 0.5f, Plugin.CropGrowthMultiplier.Value, "x", v => Plugin.CropGrowthMultiplier.Value = v,
+                "📦 Resource Stack Limit", 20f, 999f, 50f, Plugin.CustomStackSize.Value, "", v => Plugin.CustomStackSize.Value = Mathf.RoundToInt(v),
+                35f);
+
+            // 10. Triple Stepper: Hook Reel Speed, Swim Speed, Sprint Speed
+            CreateTripleStepperRow(page.transform,
+                "🎣 Hook Reel Speed", 1.0f, 5.0f, 0.5f, Plugin.HookPullSpeedMultiplier.Value, "x", v => Plugin.HookPullSpeedMultiplier.Value = v,
+                "🏊 Swim Speed", 1.0f, 4.0f, 0.2f, Plugin.SwimSpeedMultiplier.Value, "x", v => Plugin.SwimSpeedMultiplier.Value = v,
+                "🏃 Sprint Speed", 1.0f, 3.0f, 0.2f, Plugin.SprintSpeedMultiplier.Value, "x", v => Plugin.SprintSpeedMultiplier.Value = v,
+                35f);
 
             return page;
         }
@@ -681,24 +656,39 @@ namespace SailorsCompanion.UI
             var refreshBtn = CreateButton(searchRow.transform, "Btn_Refresh", "🔄 Refresh", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(110, 36), () => RefreshItemSpawnerList(_itemSearchInput?.text ?? ""), new Color(0.18f, 0.18f, 0.23f), Color.white, 14);
             EnsureLayout(refreshBtn, 110, 36, false);
 
-            // Scroll View
+            // Scroll View with RectMask2D (Reliable 2D clipping without stencil mask alpha bug)
             var scrollGO = CreateBox(page.transform, "ScrollView", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 310), new Color(0.06f, 0.06f, 0.08f, 0.75f));
             EnsureLayout(scrollGO, -1, 310);
             var scrollRect = scrollGO.AddComponent<ScrollRect>();
             scrollRect.horizontal = false;
             scrollRect.vertical = true;
+            scrollRect.scrollSensitivity = 25f;
 
-            var viewport = CreateBox(scrollGO.transform, "Viewport", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            viewport.AddComponent<Mask>().showMaskGraphic = false;
-            scrollRect.viewport = viewport.GetComponent<RectTransform>();
+            var viewport = new GameObject("Viewport");
+            viewport.transform.SetParent(scrollGO.transform, false);
+            var vpRt = viewport.AddComponent<RectTransform>();
+            vpRt.anchorMin = Vector2.zero;
+            vpRt.anchorMax = Vector2.one;
+            vpRt.pivot = new Vector2(0.5f, 0.5f);
+            vpRt.sizeDelta = Vector2.zero;
+            viewport.AddComponent<RectMask2D>();
+            scrollRect.viewport = vpRt;
 
-            var contentGO = CreateBox(viewport.transform, "Content", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, Vector2.zero, Color.clear);
+            var contentGO = new GameObject("Content");
+            contentGO.transform.SetParent(viewport.transform, false);
+            var cRt = contentGO.AddComponent<RectTransform>();
+            cRt.anchorMin = new Vector2(0, 1);
+            cRt.anchorMax = new Vector2(1, 1);
+            cRt.pivot = new Vector2(0.5f, 1);
+            cRt.sizeDelta = new Vector2(0, 310);
             var contentLayout = contentGO.AddComponent<VerticalLayoutGroup>();
             contentLayout.spacing = 4;
+            contentLayout.padding = new RectOffset(4, 4, 4, 4);
             contentLayout.childForceExpandWidth = true;
             contentLayout.childForceExpandHeight = false;
-            contentGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            scrollRect.content = contentGO.GetComponent<RectTransform>();
+            var csf = contentGO.AddComponent<ContentSizeFitter>();
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            scrollRect.content = cRt;
 
             _itemScrollContent = contentGO.transform;
             RefreshItemSpawnerList("");
@@ -718,13 +708,17 @@ namespace SailorsCompanion.UI
 
             if (_allItems == null || _allItems.Count == 0)
             {
-                _allItems = ItemManager.GetAllItems();
-                if (_allItems == null || _allItems.Count == 0)
+                var list = ItemManager.GetAllItems();
+                if (list != null && list.Count > 0)
+                {
+                    _allItems = list.Where(i => i != null && !string.IsNullOrEmpty(i.UniqueName)).ToList();
+                }
+                else
                 {
                     var found = Resources.FindObjectsOfTypeAll<Item_Base>();
                     if (found != null && found.Length > 0)
                     {
-                        _allItems = found.Distinct().ToList();
+                        _allItems = found.Where(i => i != null && !string.IsNullOrEmpty(i.UniqueName)).Distinct().ToList();
                     }
                 }
             }
@@ -734,6 +728,7 @@ namespace SailorsCompanion.UI
                 var row = CreateBox(_itemScrollContent, "NoticeRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 70), new Color(0.11f, 0.11f, 0.15f, 0.92f));
                 EnsureLayout(row, -1, 70);
                 CreateText(row.transform, "NoticeTxt", "💡 <b>Items load when you load into a game world.</b>\nEnter a game world to browse and spawn all 300+ items directly into your inventory!", 15, FontStyle.Normal, new Color(0.9f, 0.94f, 0.98f), TextAnchor.MiddleCenter);
+                Canvas.ForceUpdateCanvases();
                 return;
             }
 
@@ -753,6 +748,7 @@ namespace SailorsCompanion.UI
                 var emptyRow = CreateBox(_itemScrollContent, "EmptyRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 80), new Color(0.11f, 0.11f, 0.15f, 0.92f));
                 EnsureLayout(emptyRow, -1, 80);
                 CreateText(emptyRow.transform, "EmptyTxt", $"🔍 <b>No items found matching \"{filter}\"</b>\nTry searching: <b>Hammer</b>, <b>Plank</b>, <b>Plastic</b>, <b>Scrap</b>, <b>Titanium</b>, or click <b>Clear</b>.", 15, FontStyle.Normal, new Color(0.9f, 0.94f, 0.98f), TextAnchor.MiddleCenter);
+                Canvas.ForceUpdateCanvases();
                 return;
             }
 
@@ -783,6 +779,8 @@ namespace SailorsCompanion.UI
                 var btnStack = CreateButton(row.transform, "Btn_Stack", $"+{stack}", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(70, 30), () => GiveItem(uniqueName, stack), new Color(0.85f, 0.15f, 0.20f, 1f), Color.white, 14);
                 EnsureLayout(btnStack, 70, 30, false);
             }
+
+            Canvas.ForceUpdateCanvases();
         }
 
         private void GiveItem(string uniqueName, int amount)
@@ -905,23 +903,23 @@ namespace SailorsCompanion.UI
         // ============================================================================
         // [START] UI TOGGLE ITEM WITH DUAL ON/OFF BUTTONS
         // ============================================================================
-        private void CreateToggleItem(Transform parent, string label, bool initialValue, Action<bool> onToggle)
+        private void CreateToggleItem(Transform parent, string label, bool initialValue, Action<bool> onToggle, float rowHeight = 35f, int fontSize = 14)
         {
-            var row = CreateBox(parent, "ToggleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), new Color(0.11f, 0.11f, 0.15f, 0.90f));
-            EnsureLayout(row, -1, 44);
+            var row = CreateBox(parent, "ToggleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), new Color(0.11f, 0.11f, 0.15f, 0.90f));
+            EnsureLayout(row, -1, rowHeight);
             var layout = row.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = 10;
-            layout.padding = new RectOffset(14, 14, 4, 4);
+            layout.padding = new RectOffset(14, 14, 2, 2);
             layout.childForceExpandHeight = false;
             layout.childForceExpandWidth = false;
 
             // Feature Label
-            var t = CreateText(row.transform, "Label", label, 15, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
-            EnsureLayout(t.gameObject, 680, 36, true);
+            var t = CreateText(row.transform, "Label", label, fontSize, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
+            EnsureLayout(t.gameObject, 660, rowHeight - 4, true);
 
             // Container for ON / OFF Buttons
-            var btnGroup = CreateBox(row.transform, "BtnGroup", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(140, 34), Color.clear);
-            EnsureLayout(btnGroup, 140, 34, false);
+            var btnGroup = CreateBox(row.transform, "BtnGroup", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(136, rowHeight - 6), Color.clear);
+            EnsureLayout(btnGroup, 136, rowHeight - 6, false);
             var bgLayout = btnGroup.AddComponent<HorizontalLayoutGroup>();
             bgLayout.spacing = 6;
             bgLayout.childForceExpandWidth = true;
@@ -1014,6 +1012,104 @@ namespace SailorsCompanion.UI
                 onChange?.Invoke(currentVal);
             }, new Color(0.85f, 0.15f, 0.20f), Color.white, 18);
             EnsureLayout(plusBtn, 54, 32, false);
+        }
+
+        private void CreateDualStepperRow(Transform parent,
+            string label1, float min1, float max1, float step1, float initial1, string unit1, Action<float> cb1,
+            string label2, float min2, float max2, float step2, float initial2, string unit2, Action<float> cb2,
+            float rowHeight = 35f)
+        {
+            var row = CreateBox(parent, "DualStepperRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), Color.clear);
+            EnsureLayout(row, -1, rowHeight);
+            var layout = row.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 8;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = true;
+
+            CreateHalfStepper(row.transform, label1, min1, max1, step1, initial1, unit1, cb1, rowHeight);
+            CreateHalfStepper(row.transform, label2, min2, max2, step2, initial2, unit2, cb2, rowHeight);
+        }
+
+        private void CreateHalfStepper(Transform parent, string label, float min, float max, float step, float initialVal, string unit, Action<float> onChange, float height)
+        {
+            var box = CreateBox(parent, "StepperBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, height), new Color(0.11f, 0.11f, 0.15f, 0.90f));
+            EnsureLayout(box, -1, height);
+            var layout = box.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 8;
+            layout.padding = new RectOffset(12, 8, 2, 2);
+            layout.childForceExpandHeight = false;
+
+            float currentVal = initialVal;
+            string format = (step < 1f) ? "F1" : "F0";
+
+            var labelTxt = CreateText(box.transform, "Label", $"{label}: <b>{currentVal.ToString(format)}{unit}</b>", 13, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
+            EnsureLayout(labelTxt.gameObject, 240, height - 6, true);
+
+            var minusBtn = CreateButton(box.transform, "Btn_Minus", " - ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(40, height - 8), () =>
+            {
+                currentVal = Mathf.Max(min, currentVal - step);
+                labelTxt.text = $"{label}: <b>{currentVal.ToString(format)}{unit}</b>";
+                onChange?.Invoke(currentVal);
+            }, new Color(0.18f, 0.18f, 0.22f), Color.white, 16);
+            EnsureLayout(minusBtn, 40, height - 8, false);
+
+            var plusBtn = CreateButton(box.transform, "Btn_Plus", " + ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(40, height - 8), () =>
+            {
+                currentVal = Mathf.Min(max, currentVal + step);
+                labelTxt.text = $"{label}: <b>{currentVal.ToString(format)}{unit}</b>";
+                onChange?.Invoke(currentVal);
+            }, new Color(0.85f, 0.15f, 0.20f), Color.white, 16);
+            EnsureLayout(plusBtn, 40, height - 8, false);
+        }
+
+        private void CreateTripleStepperRow(Transform parent,
+            string label1, float min1, float max1, float step1, float initial1, string unit1, Action<float> cb1,
+            string label2, float min2, float max2, float step2, float initial2, string unit2, Action<float> cb2,
+            string label3, float min3, float max3, float step3, float initial3, string unit3, Action<float> cb3,
+            float rowHeight = 35f)
+        {
+            var row = CreateBox(parent, "TripleStepperRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), Color.clear);
+            EnsureLayout(row, -1, rowHeight);
+            var layout = row.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 8;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = true;
+
+            CreateThirdStepper(row.transform, label1, min1, max1, step1, initial1, unit1, cb1, rowHeight);
+            CreateThirdStepper(row.transform, label2, min2, max2, step2, initial2, unit2, cb2, rowHeight);
+            CreateThirdStepper(row.transform, label3, min3, max3, step3, initial3, unit3, cb3, rowHeight);
+        }
+
+        private void CreateThirdStepper(Transform parent, string label, float min, float max, float step, float initialVal, string unit, Action<float> onChange, float height)
+        {
+            var box = CreateBox(parent, "StepperBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, height), new Color(0.11f, 0.11f, 0.15f, 0.90f));
+            EnsureLayout(box, -1, height);
+            var layout = box.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 6;
+            layout.padding = new RectOffset(8, 6, 2, 2);
+            layout.childForceExpandHeight = false;
+
+            float currentVal = initialVal;
+            string format = (step < 1f) ? "F1" : "F0";
+
+            var labelTxt = CreateText(box.transform, "Label", $"{label}: <b>{currentVal.ToString(format)}{unit}</b>", 13, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
+            EnsureLayout(labelTxt.gameObject, 140, height - 6, true);
+
+            var minusBtn = CreateButton(box.transform, "Btn_Minus", " - ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(34, height - 8), () =>
+            {
+                currentVal = Mathf.Max(min, currentVal - step);
+                labelTxt.text = $"{label}: <b>{currentVal.ToString(format)}{unit}</b>";
+                onChange?.Invoke(currentVal);
+            }, new Color(0.18f, 0.18f, 0.22f), Color.white, 15);
+            EnsureLayout(minusBtn, 34, height - 8, false);
+
+            var plusBtn = CreateButton(box.transform, "Btn_Plus", " + ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(34, height - 8), () =>
+            {
+                currentVal = Mathf.Min(max, currentVal + step);
+                labelTxt.text = $"{label}: <b>{currentVal.ToString(format)}{unit}</b>";
+                onChange?.Invoke(currentVal);
+            }, new Color(0.85f, 0.15f, 0.20f), Color.white, 15);
+            EnsureLayout(plusBtn, 34, height - 8, false);
         }
         // ============================================================================
         // [END] UI COMPONENT BUILDERS
