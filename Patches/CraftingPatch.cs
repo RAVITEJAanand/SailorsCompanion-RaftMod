@@ -5,8 +5,66 @@ namespace SailorsCompanion.Patches
     #region [START] PATCH: FREE INSTANT CRAFTING
     // ============================================================================
     // [START] PATCH: FREE INSTANT CRAFTING
-    // Description: Allows crafting all unlocked recipes without requiring any materials in inventory.
+    // Description: Allows crafting all recipes without requiring any materials in inventory.
     // ============================================================================
+    [HarmonyPatch(typeof(CostCollection), nameof(CostCollection.MeetsRequirements))]
+    public static class CostCollectionMeetsRequirementsPatch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(ref bool __result)
+        {
+            if (Plugin.FreeCrafting.Value)
+            {
+                __result = true;
+                return false;
+            }
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(BuildingUI_CostBox), nameof(BuildingUI_CostBox.MeetsRequirements))]
+    public static class BuildingUICostBoxMeetsRequirementsPatch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(ref bool __result)
+        {
+            if (Plugin.FreeCrafting.Value)
+            {
+                __result = true;
+                return false;
+            }
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(ItemInstance_Recipe), nameof(ItemInstance_Recipe.HasEnoughResourcesToCraft))]
+    public static class RecipeHasEnoughResourcesPatch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(ref bool __result)
+        {
+            if (Plugin.FreeCrafting.Value)
+            {
+                __result = true;
+                return false;
+            }
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(SelectedRecipeBox), "Update")]
+    public static class SelectedRecipeBoxUpdatePatch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(SelectedRecipeBox __instance)
+        {
+            if (Plugin.FreeCrafting.Value && __instance != null && __instance.craftButton != null)
+            {
+                __instance.craftButton.interactable = true;
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(CostMultiple), nameof(CostMultiple.HasEnoughInInventory))]
     public static class CraftingHasEnoughPatch
     {

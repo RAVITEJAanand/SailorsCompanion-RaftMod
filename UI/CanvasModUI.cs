@@ -423,16 +423,23 @@ namespace SailorsCompanion.UI
             var searchLayout = searchRow.AddComponent<HorizontalLayoutGroup>();
             searchLayout.spacing = 8;
 
-            var inputGO = CreateBox(searchRow.transform, "InputSearch", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(500, 36), new Color(0.12f, 0.16f, 0.22f));
-            EnsureLayout(inputGO, 500, 36, false);
+            var inputGO = CreateBox(searchRow.transform, "InputSearch", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(440, 36), new Color(0.12f, 0.16f, 0.22f));
+            EnsureLayout(inputGO, 440, 36, false);
             var inputTxt = CreateText(inputGO.transform, "Text", "", 14, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
             inputTxt.rectTransform.offsetMin = new Vector2(10, 0);
             _itemSearchInput = inputGO.AddComponent<InputField>();
             _itemSearchInput.textComponent = inputTxt;
             _itemSearchInput.onValueChanged.AddListener(s => RefreshItemSpawnerList(s));
 
-            var refreshBtn = CreateButton(searchRow.transform, "Btn_Refresh", "Refresh Items", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(160, 36), () => RefreshItemSpawnerList(_itemSearchInput?.text ?? ""), new Color(0.18f, 0.24f, 0.32f), Color.white, 14);
-            EnsureLayout(refreshBtn, 160, 36, false);
+            var clearBtn = CreateButton(searchRow.transform, "Btn_Clear", "✕ Clear", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(90, 36), () =>
+            {
+                if (_itemSearchInput != null) _itemSearchInput.text = "";
+                RefreshItemSpawnerList("");
+            }, new Color(0.35f, 0.20f, 0.20f), Color.white, 13);
+            EnsureLayout(clearBtn, 90, 36, false);
+
+            var refreshBtn = CreateButton(searchRow.transform, "Btn_Refresh", "🔄 Refresh", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(120, 36), () => RefreshItemSpawnerList(_itemSearchInput?.text ?? ""), new Color(0.18f, 0.24f, 0.32f), Color.white, 14);
+            EnsureLayout(refreshBtn, 120, 36, false);
 
             // Scroll View
             var scrollGO = CreateBox(page.transform, "ScrollView", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 320), new Color(0.06f, 0.08f, 0.12f, 0.7f));
@@ -483,17 +490,30 @@ namespace SailorsCompanion.UI
 
             if (_allItems == null || _allItems.Count == 0)
             {
-                var row = CreateBox(_itemScrollContent, "NoticeRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 60), new Color(0.12f, 0.16f, 0.24f, 0.9f));
-                EnsureLayout(row, -1, 60);
-                CreateText(row.transform, "NoticeTxt", "💡 <b>Items load when you start or load a world.</b>\nEnter a world to browse and spawn all 300+ items directly into your inventory!", 14, FontStyle.Normal, new Color(0.9f, 0.94f, 0.98f), TextAnchor.MiddleCenter);
+                var row = CreateBox(_itemScrollContent, "NoticeRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 70), new Color(0.12f, 0.16f, 0.24f, 0.9f));
+                EnsureLayout(row, -1, 70);
+                CreateText(row.transform, "NoticeTxt", "💡 <b>Items load when you load into a game world.</b>\nEnter a game world to browse and spawn all 300+ items directly into your inventory!", 14, FontStyle.Normal, new Color(0.9f, 0.94f, 0.98f), TextAnchor.MiddleCenter);
                 return;
             }
 
+            string[] tokens = string.IsNullOrEmpty(filter) ? new string[0] : filter.Trim().ToLower().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
             var filtered = _allItems.Where(i =>
-                string.IsNullOrEmpty(filter) ||
-                (i.UniqueName != null && i.UniqueName.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0) ||
-                (i.settings_Inventory?.DisplayName != null && i.settings_Inventory.DisplayName.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
-            ).Take(60).ToList();
+            {
+                if (tokens.Length == 0) return true;
+                string uName = i.UniqueName?.ToLower() ?? "";
+                string dName = i.settings_Inventory?.DisplayName?.ToLower() ?? "";
+                // Match if all or any tokens match
+                return tokens.Any(t => uName.Contains(t) || dName.Contains(t));
+            }).Take(80).ToList();
+
+            if (filtered.Count == 0)
+            {
+                var emptyRow = CreateBox(_itemScrollContent, "EmptyRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 80), new Color(0.12f, 0.16f, 0.24f, 0.9f));
+                EnsureLayout(emptyRow, -1, 80);
+                CreateText(emptyRow.transform, "EmptyTxt", $"🔍 <b>No items found matching \"{filter}\"</b>\nTry searching: <b>Hammer</b>, <b>Plank</b>, <b>Plastic</b>, <b>Scrap</b>, <b>Titanium</b>, or click <b>Clear</b>.", 14, FontStyle.Normal, new Color(0.9f, 0.94f, 0.98f), TextAnchor.MiddleCenter);
+                return;
+            }
 
             foreach (var item in filtered)
             {
