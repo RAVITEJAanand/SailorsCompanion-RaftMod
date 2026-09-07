@@ -60,6 +60,9 @@ namespace SailorsCompanion.UI
         private Text[] _profileButtonTexts = new Text[4];
         private Text _qolTooltipText;
 
+        // UI Scaling Constant (1.3x Proportional Scale)
+        public const float MenuUiScale = 1.3f;
+
         // Update Banner
         private GameObject _updateBannerGO;
         private Text _updateBannerText;
@@ -174,6 +177,7 @@ namespace SailorsCompanion.UI
                 _scaler.referenceResolution = new Vector2(1920, 1080);
                 _scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
                 _scaler.matchWidthOrHeight = 0.5f;
+                _scaler.dynamicPixelsPerUnit = MenuUiScale;
 
                 _raycaster = _canvasGO.AddComponent<GraphicRaycaster>();
             }
@@ -206,6 +210,7 @@ namespace SailorsCompanion.UI
             winRt.pivot = new Vector2(0.5f, 0.5f);
             winRt.anchoredPosition = Vector2.zero;
             winRt.sizeDelta = new Vector2(1100, 680);
+            winRt.localScale = new Vector3(MenuUiScale, MenuUiScale, 1.0f);
 
             var winImg = _modWindowGO.AddComponent<Image>();
             winImg.color = new Color(0.06f, 0.06f, 0.08f, 0.98f);
