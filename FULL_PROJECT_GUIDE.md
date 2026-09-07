@@ -1,7 +1,7 @@
 # ⚓ Sailor's Companion — Full Project History, Architecture & Process Guide
 
 **రచయిత (Author)**: KONDURI (RAVITEJAanand)  
-**వర్షన్ (Version)**: 1.0.0 (Release)  
+**వర్షన్ (Version)**: 1.1.0 (Release)  
 **గేమ్ (Target Game)**: Raft (The Final Chapter Update 1.09 / v13.01)  
 **టెక్నాలజీ (Technology Stack)**: C#, .NET Standard 2.1, BepInEx 5.4.21, HarmonyLib 2.2, Unity 2020.3 UI  
 **తేదీ (Created Date)**: September 2026  
@@ -19,167 +19,100 @@
 
 ---
 
-## 🌟 2. మోడ్ ఫీచర్లు (Complete Features Overview)
+## 🌟 2. v1.1.0 కొత్త ఫీచర్లు (New Features Overview)
 
-### 1. రాఫ్ట్ టెలిపోర్టేషన్ & రీకాల్ (Intelligent Raft Teleportation)
+### 1. స్మార్ట్ బోట్ కంట్రోల్ (Smart Boat Propulsion & Auto-Align Sails)
+- **ఇండిపెండెంట్ ఇంజిన్ & సెయిల్ కంట్రోల్**: ఇంజిన్ వీల్స్‌ని `[Toggle All Engines]` (F3) తో మరియు సెయిల్స్‌ని `[Toggle All Sails]` (F4) తో విడివిడిగా ఒకదానితో ఒకటి సంబంధం లేకుండా ఆన్/ఆఫ్ చేయవచ్చు.
+- **యాంగిల్ ప్రిజర్వేషన్**: సెయిల్స్‌ను తెరిచినా లేదా మూసినా మీ పూర్వపు రుడ్డర్ / స్టీరింగ్ యాంగిల్ డిస్టర్బ్ అవ్వకుండా భద్రపరుస్తుంది.
+- **స్మార్ట్ సెయిల్ ఆటో-ఎలైన్ మోడ్స్**:
+  - `Manual`: సాధారణ ప్లేయర్ హ్యాండ్‌మేడ్ యాంగిల్స్.
+  - `Auto-Align Wind`: గాలి వీచే దిశను (Wind Direction) ఆటోమేటిక్‌గా రీడ్ చేసి, గరిష్ట వేగం కోసం అన్ని సెయిల్స్‌ను ఆటోమేటిక్‌గా సరైన కోణానికి తిప్పుతుంది!
+  - `Follow Raft Heading`: తెప్ప కదులుతున్న ఫిజికల్ డైరెక్షన్‌కి సెయిల్స్‌ను ఎలైన్ చేస్తుంది.
 
-- **Player Recall to Raft [F8]**: సముద్రంలో లేదా సుదూర దీవుల్లో ఎక్కడ ఉన్నా సురక్షితంగా మీ తెప్ప (Raft) డెక్‌పైకి తక్షణమే చేరుస్తుంది.
-- **Summon Raft to Player [F9]**: మీ తెప్పను మీరున్న స్థలానికి 18 మీటర్ల దూరంలో సముద్ర ఉపరితలంపై రప్పిస్తుంది. తెప్ప కొట్టుకుపోకుండా వెంటనే ఆటోమేటిక్‌గా యాంకర్ (Anchor) వేస్తుంది.
-- **Remote Anchor Toggle**: ఎక్కడి నుంచైనా ఒకే క్లిక్‌తో యాంకర్ వేయడం లేదా ఎత్తడం చేయవచ్చు.
-- **On-Screen Toast Notifications**: టెలిపోర్ట్ అయిన దూరం మరియు స్టేటస్ స్క్రీన్‌పై నోటిఫికేషన్‌గా చూపిస్తుంది.
+### 2. ఐలాండ్ 3D పల్స్ స్కానర్ (Item Detector & Island Sonar Pulse)
+- **10 సెకన్ల 3D పల్స్ స్కానర్**: 15 మీటర్ల పరిధిలో భూమిపైన మరియు నీటి అడుగున ఉన్న లూట్, చెస్ట్‌లు, పండ్లు, బెర్రీలు, పూలు, క్లే, సాండ్ మరియు మెటల్/కాపర్ ఓర్‌లను గుర్తించి డైరెక్షనల్ మీటర్లు చూపిస్తుంది.
+- **సర్వైవల్ బ్యాలెన్స్**: సర్వైవల్ మోడ్‌లో 10 సెకన్లు యాక్టివ్‌గా ఉండి 30 సెకన్ల కూల్‌డౌన్ ఉంటుంది. క్రియేటివ్ మోడ్‌లో ఎప్పుడైనా వాడవచ్చు.
 
-### 2. హై-డెఫినిషన్ కాన్వాస్ UI (Modern Canvas UI [F5])
+### 3. ఐలాండ్ హ్యాండ్ పికప్ & రీఫ్ షాలో వాటర్ హార్వెస్టింగ్ (Hand Pickup & Reef Mining)
+- **ల్యాండ్ హ్యాండ్ పికప్**: నేలపై ఉండే పువ్వులు, పండ్లు, విత్తనాలను హుక్ లేకుండా చేత్తోనే నేరుగా ఏరుకోవచ్చు.
+- **అండర్‌వాటర్ రీఫ్ మైనింగ్**: లోతులేని నీళ్లలోని సాండ్, క్లే, స్క్రాప్, మెటల్/కాపర్ ఓర్‌లను హుక్ లేకుండా చేతులతోనే తవ్వవచ్చు.
+- **0.4s ర్యాపిడ్ మైనింగ్**: షార్క్ వచ్చేలోపు సురక్షితంగా బయటకు రావడం కోసం ఛానెలింగ్ టైమ్‌ను 3 సెకన్ల నుంచి 0.4 సెకన్లకు తగ్గించి వేగవంతం చేయబడింది.
 
-- 100% ప్యూర్ Unity UI కాన్వాస్ ఆర్కిటెక్చర్ (Zero OnGUI Overhead).
-- మెయిన్ టైటిల్ స్క్రీన్‌లో **`MODS`** బటన్ మరియు పాజ్ మెనూలో **`MOD MENU`** బటన్ ఇంజెక్షన్.
-- 5 రకాల ప్రత్యేక ట్యాబ్‌లు:
-  - 🛡️ **Survival**: God Mode, Infinite Oxygen, No Hunger/Thirst, Infinite Tool Durability, Instant Heal.
-  - 🦈 **Raft & World**: Anti-Shark Raft Attacks, Free Instant Crafting, Hook Pull Speed Multiplier (1x-5x), Custom Stack Size (999 వరకు).
-  - 🔬 **R&D / Blueprints**: ఒకే క్లిక్‌తో రీసెర్చ్ టేబుల్‌లోని అన్ని బ్లూప్రింట్లు మరియు వస్తువులను అన్‌లాక్ చేయడం.
-  - 📦 **Item Spawner**: రాఫ్ట్ గేమ్‌లోని 300+ వస్తువులను లైవ్‌గా సెర్చ్ చేసి +1, +10, +Full Stack ఇన్వెంటరీలోకి తెచ్చుకోవడం.
-  - 🧭 **Navigation HUD**: కంపాస్, కోఆర్డినేట్స్, రాఫ్ట్ దిశ మరియు బ్రూస్ షార్క్ దూరం చూపే HUD కంట్రోల్స్.
+### 4. ఓషన్ మాగ్నెట్ డిబ్రిస్ పుల్ (Magnetic Ocean Debris Collector)
+- **20 మీటర్ల అయస్కాంత ఆకర్షణ**: సముద్రంలో తేలే బారెల్స్, వుడ్, ప్లాస్టిక్ వంటి డిబ్రిస్‌ను ప్లేయర్ వైపు సహజమైన నీటి తేలియాడే భౌతికశాస్త్రం (Floating Physics) తో సున్నితంగా లాగుతుంది.
+- **సర్వైవల్ బ్యాలెన్స్**: సర్వైవల్‌లో 45 సెకన్లు పని చేసి 60 సెకన్ల కూల్‌డౌన్ ఉంటుంది. క్రియేటివ్‌లో నిరంతరాయంగా వాడవచ్చు.
 
-### 3. 4 నావిగేషన్ HUD స్టైల్స్ [F6 / Shift+F6]
-
-1. **Style 0: Top Compass Ribbon** (Skyrim / Subnautica స్టైల్ కంపాస్ బార్).
-2. **Style 1: Modern Compass Tape** (డిగ్రీ మార్కర్లు మరియు రాఫ్ట్ మార్కర్‌తో కూడిన హెడింగ్ టేప్).
-3. **Style 2: Mini Pill Widget** (స్క్రీన్ పైభాగంలో తక్కువ స్థలంలో కనిపించే కాంపాక్ట్ విడ్జెట్).
-4. **Style 3: Classic Tactical Box** (ప్లేయర్, తెప్ప, మరియు షార్క్ లైవ్ టెలిమెట్రీతో కూడిన ఫుల్ బాక్స్).
-
-- **100ms CPU Throttling**: గేమ్ FPS ఏమాత్రం తగ్గకుండా 10Hz ఆప్టిమైజ్డ్ మ్యాథమెటికల్ లూప్.
-
-### 4. ఫ్లై / నో-క్లిప్ మోడ్ (Fly & Noclip Mode [F / F7])
-
-- గాల్లో మరియు నీటిలో అడ్డంకులు లేకుండా స్వేచ్ఛగా ఎగరవచ్చు.
-- కంట్రోల్స్: `WASD` దిశ, `Space` పైకి, `LeftShift/Ctrl` కిందకి, `LeftAlt` టర్బో బూస్ట్ స్పీడ్.
-- మెనూ ఓపెన్ అయినప్పుడు ప్లేయర్ మూవ్‌మెంట్ ఆటోమేటిక్‌గా ఫ్రీజ్ అయ్యే ఇన్‌పుట్ సప్రెషన్.
+### 5. ఆప్షనల్ ప్రో క్విక్ హాట్‌కీస్ (Anti-Conflict Pro Hotkeys)
+- **డీఫాల్ట్ UI-ఫస్ట్ డిజైన్**: సాధారణ ప్లేయర్లకు కీబోర్డ్ గందరగోళం లేకుండా అన్ని ఆప్షన్లు మెనూ బటన్ల ద్వారా సులభంగా ఆపరేట్ చేయవచ్చు.
+- **ప్రో హాట్‌కీస్ ఆప్షన్**: మెనూలో `[Enable Quick Hotkeys]` ఆన్ చేస్తే గేమ్‌ప్లే లోనే ఫాస్ట్ యాక్షన్ కీలు అన్‌లాక్ అవుతాయి:
+  - `[F4]` — Toggle All Sails
+  - `[F3]` — Toggle All Engines
+  - `[F7]` — Toggle Ocean Magnet
+  - `[F10]` — Trigger Island Scan
 
 ---
 
 ## 🏛️ 3. కోడ్ ఆర్కిటెక్చర్ & `[START]` / `[END]` డీమార్కేషన్
 
-భవిష్యత్తులో సులభంగా కోడ్ రివ్యూ చేయడానికి మరియు అప్‌డేట్స్ చేయడానికి, కోడ్‌బేస్‌లోని మొత్తం 18 ఫైల్స్‌కు ప్రామాణికమైన `#region [START] ...` మరియు `#endregion // [END] ...` ట్యాగ్‌లు ఏర్పాటు చేయబడ్డాయి.
-
-### ఎడిటర్‌లో వాడటం ఎలా? (VS Code / Visual Studio Shortcuts)
-
-- **`Ctrl + K, Ctrl + 0`**: మొత్తం కోడ్‌ను ఒక్కసారిగా ముడుచుకునేలా చేస్తుంది (Fold All).
-- **`Ctrl + K, Ctrl + J`**: మొత్తం కోడ్‌ను విప్పదీస్తుంది (Unfold All).
-
-### ఫైల్స్ & రీజియన్ల మ్యాపింగ్
+కోడ్‌బేస్‌లోని ప్రతీ ఫైల్ మరియు మెథడ్‌కు ప్రామాణికమైన `#region [START] ...` మరియు `#endregion // [END] ...` ట్యాగ్‌లు ఏర్పాటు చేయబడ్డాయి:
 
 ```text
 ModSource/SailorsCompanion/
-├── Plugin.cs
-│   ├── [START] CONFIGURATION DEFINITIONS
-│   ├── [START] PLUGIN INITIALIZATION & CONFIG BINDING
-│   ├── [START] HARMONY PATCH REGISTRATION
-│   ├── [START] MANAGER INITIALIZATION & LIFECYCLE
-│   ├── [START] ENGINE UPDATE LOOPS & KEY BINDINGS
-│   └── [START] STATS & SPEED MULTIPLIERS TICK
+├── Plugin.cs                          -> ప్రధాన కాన్ఫిగరేషన్, లైఫ్‌సైకిల్ & హాట్‌కీ మేనేజర్
+├── PluginInfo.cs                      -> మోడ్ మెటాడేటా & వెర్షన్ 1.1.0 కాన్‌స్టంట్స్
+├── InputHelper.cs                     -> కీబోర్డ్ ఇన్‌పుట్ డిటెక్షన్ & పోలింగ్
+├── PlayerHelper.cs                    -> లోకల్ ప్లేయర్ రిజల్యూషన్ ఇంజిన్
 ├── Features/
-│   ├── TeleportManager.cs
-│   │   ├── [START] TOAST NOTIFICATION ENGINE
-│   │   ├── [START] FEATURE 1: PLAYER RECALL TO RAFT (F8)
-│   │   ├── [START] FEATURE 2: SUMMON RAFT TO PLAYER (F9)
-│   │   └── [START] FEATURE 3: REMOTE ANCHOR TOGGLE
-│   └── FlyController.cs
-│       ├── [START] STATE & FIELDS
-│       ├── [START] FLY CONTROLLER LIFECYCLE LOOP
-│       ├── [START] FLIGHT ENGAGEMENT & TOGGLE
-│       └── [START] 6-AXIS FLIGHT MOVEMENT ENGINE
+│   ├── BoatController.cs              -> స్మార్ట్ బోట్ కంట్రోల్, సెయిల్ & ఇంజిన్ ఆటోమేషన్
+│   ├── ItemDetector.cs                -> 3D పల్స్ స్కానర్ & సోనార్ ఇండికేటర్స్
+│   ├── ReefHandHarvesting.cs          -> ఐలాండ్ & రీఫ్ హ్యాండ్ పికప్ ఇంజిన్
+│   ├── MagneticCollector.cs           -> 20m ఓషన్ మాగ్నెట్ డిబ్రిస్ అట్రాక్షన్
+│   ├── TeleportManager.cs             -> రీకాల్ టు రాఫ్ట్ (F8), సమ్మన్ రాఫ్ట్ (F9)
+│   ├── FlyController.cs               -> 6-యాక్సిస్ ఫ్లై & నోక్లిప్ ఇంజిన్
+│   ├── Cheat.cs                       -> గాడ్ మోడ్, ఇన్ఫినిట్ ఆక్సిజన్, అన్‌లాక్ బ్లూప్రింట్స్
+│   └── UpdateChecker.cs               -> ఆటోమేటిక్ గిట్‌హబ్ అప్‌డేట్ డిటెక్టర్
 ├── UI/
-│   ├── CanvasModUI.cs (100% Unity Canvas High-DPI UI)
-│   │   ├── [START] LIFECYCLE & INITIALIZATION
-│   │   ├── [START] MOD WINDOW FRAME & TABS CONTROLLER
-│   │   ├── [START] TAB 0: SURVIVAL CHEATS & VITALS
-│   │   ├── [START] TAB 1: RAFT, SHARK & WORLD CHEATS
-│   │   ├── [START] TAB 2: RESEARCH & R&D BLUEPRINTS
-│   │   ├── [START] TAB 3: ITEM SPAWNER & SEARCH
-│   │   ├── [START] TAB 4: NAVIGATION HUD SETTINGS
-│   │   ├── [START] UI COMPONENT BUILDERS
-│   │   ├── [START] ENGINE UPDATE LOOP & HOTKEYS
-│   │   └── [START] WORLD TIME & WEATHER HELPERS
-│   ├── HUDOverlay.cs (Navigation Telemetry & Compass)
-│   │   ├── [START] HUD: CACHED STATE & METRICS
-│   │   ├── [START] HUD: STYLES & TEXTURES
-│   │   ├── [START] HUD: 10HZ COMPASS & TELEMETRY COMPUTATIONS
-│   │   ├── [START] HUD: ONGUI RENDER DISPATCHER
-│   │   ├── [START] HUD: STYLES 0-3
-│   │   ├── [START] HUD: TOAST NOTIFICATION ENGINE
-│   │   └── [START] HUD: NAVIGATION & HEADING MATH HELPERS
-│   └── ModGUI.cs (Legacy IMGUI Fallback Engine)
-├── Patches/
-│   ├── SharkPatch.cs          -> [START] PATCH: ANTI-SHARK RAFT PROTECTION
-│   ├── DurabilityPatch.cs     -> [START] PATCH: INFINITE TOOL & ARMOR DURABILITY
-│   ├── CraftingPatch.cs       -> [START] PATCH: FREE INSTANT CRAFTING
-│   ├── StackSizePatch.cs      -> [START] PATCH: CUSTOM RESOURCE STACK SIZE
-│   ├── PlayerStatsPatch.cs    -> [START] PATCH: GOD MODE DAMAGE IMMUNITY
-│   ├── HookPatch.cs           -> [START] PATCH: FAST HOOK PULL & GATHER SPEED
-│   ├── MainMenuPatch.cs       -> [START] PATCH: TITLE & PAUSE MENU BUTTON INJECTIONS
-│   ├── CursorPatch.cs         -> [START] PATCH: CURSOR UNLOCKING & VISIBILITY
-│   └── GameManagerPatch.cs    -> [START] PATCH: GAMEMANAGER TICK HOOK
-└── Helpers/
-    ├── InputHelper.cs         -> [START] KEY PRESS & HELD POLLING
-    ├── PlayerHelper.cs        -> [START] LOCAL PLAYER RESOLUTION ENGINE
-    └── PluginInfo.cs          -> [START] MOD METADATA & CONSTANTS
+│   ├── CanvasModUI.cs                 -> 1.3x స్కేల్డ్ రాఫ్ట్ వుడెన్ ప్లాంక్ మెనూ కాన్వాస్
+│   └── HUDOverlay.cs                  -> ఆన్-స్క్రీన్ నావిగేషన్ కంపాస్ & షార్క్ రాడార్
+└── Patches/
+    ├── HarvestingPatch.cs             -> PickupChanneling 0.4s & బేర్ హ్యాండ్ రీఫ్ ప్యాచ్
+    ├── SharkPatch.cs                  -> యాంటీ-షార్క్ రాఫ్ట్ ప్రొటెక్షన్
+    ├── DurabilityPatch.cs             -> ఇన్ఫినిట్ టూల్ & ఆర్మర్ డ్యూరబిలిటీ
+    ├── CraftingPatch.cs               -> ఫ్రీ ఇన్‌స్టంట్ క్రాఫ్టింగ్
+    ├── StackSizePatch.cs              -> కస్టమ్ స్టాక్ సైజ్ ప్యాచ్
+    ├── PlayerStatsPatch.cs            -> గాడ్ మోడ్ డ్యామేజ్ ఇమ్యూనిటీ
+    ├── HookPatch.cs                   -> ఫాస్ట్ హుక్ రీల్ స్పీడ్
+    ├── MainMenuPatch.cs               -> టైటిల్ & పాజ్ మెనూ ఇంజెక్షన్
+    ├── CursorPatch.cs                 -> కర్సర్ అన్‌లాక్ మేనేజ్‌మెంట్
+    └── GameManagerPatch.cs            -> గేమ్‌మేనేజర్ టిక్ హుక్
 ```
 
 ---
 
-## 🛠️ 4. బిల్డ్ & పబ్లిషింగ్ ప్రక్రియ (Build & Publish Commands)
+## 🛠️ 4. బిల్డ్ & ప్యాకేజింగ్ కమాండ్స్
 
-### ప్రాజెక్ట్‌ను కంపైల్ చేయడం
-
+### ప్రాజెక్ట్‌ను కంపైల్ చేయడం (0 Warnings, 0 Errors)
 ```powershell
-# ModSource ఫోల్డర్‌లోకి వెళ్లి Release బిల్డ్ రన్ చేయాలి
 cd "d:\SteamLibrary\steamapps\common\Raft\ModSource\SailorsCompanion"
 dotnet build SailorsCompanion.csproj -c Release
 ```
 
-- అవుట్‌పుట్ DLL నేరుగా `d:\SteamLibrary\steamapps\common\Raft\BepInEx\plugins\SailorsCompanion\SailorsCompanion.dll` లోకి వెళ్తుంది.
-
-### డిస్ట్రిబ్యూషన్ జిప్ ఫైల్ తయారు చేయడం
-
+### ఆటో-సింక్ & జిప్ ప్యాకేజ్ క్రియేషన్
 ```powershell
-Copy-Item "d:\SteamLibrary\steamapps\common\Raft\BepInEx\plugins\SailorsCompanion\SailorsCompanion.dll" "d:\SteamLibrary\steamapps\common\Raft\Publish\BepInEx\plugins\SailorsCompanion\SailorsCompanion.dll" -Force
-Compress-Archive -Path "d:\SteamLibrary\steamapps\common\Raft\Publish\BepInEx\*" -DestinationPath "d:\SteamLibrary\steamapps\common\Raft\Publish\SailorsCompanion_BepInEx_v1.0.0.zip" -Force
+Copy-Item "d:\SteamLibrary\steamapps\common\Raft\BepInEx\plugins\SailorsCompanion\SailorsCompanion.dll" "d:\SteamLibrary\steamapps\common\Raft\mods\SailorsCompanion\SailorsCompanion.dll" -Force
+Copy-Item "d:\SteamLibrary\steamapps\common\Raft\BepInEx\plugins\SailorsCompanion\SailorsCompanion.dll" "Release\SailorsCompanion.dll" -Force
+Compress-Archive -Path "Release\SailorsCompanion.dll", "modinfo.json", "README.md" -DestinationPath "Release\SailorsCompanion_BepInEx_v1.1.0.zip" -Force
 ```
 
 ### గిట్‌హబ్‌లోకి కమిట్ & పుష్ చేయడం
-
 ```powershell
-cd "d:\SteamLibrary\steamapps\common\Raft\ModSource\SailorsCompanion"
 git add .
-git commit -m "Your commit message"
-git push origin main
+git commit -m "Update v1.1.0 release files"
+git tag -f v1.1.0
+git push origin main --tags -f
 ```
 
 ---
 
-## 📊 5. మోడ్ పర్ఫామెన్స్ & ఫీడ్‌బ్యాక్ ఎలా గమనించాలి?
-
-1. **Nexus Mods (కామెంట్స్ & రేటింగ్స్)**:
-   - మీ లింక్: `https://www.nexusmods.com/raft/mods/154`
-   - **`POSTS`** ట్యాబ్‌లో ప్లేయర్లు రాసే కామెంట్లు మరియు ప్రశ్నలు ఉంటాయి.
-   - **`BUGS`** ట్యాబ్‌లో ఏవైనా లోపాలుంటే రిపోర్ట్ చేస్తారు.
-   - వెబ్‌సైట్ పైభాగంలో ఉన్న బెల్ ఐకాన్ (🔔) ద్వారా కొత్త కామెంట్ అలర్ట్స్ వస్తాయి.
-
-2. **RaftModding.com (డౌన్‌లోడ్స్)**:
-   - మీ లింక్: `https://www.raftmodding.com/mods/sailors-companion`
-   - డౌన్‌లోడ్ కౌంట్ మరియు లైక్స్ కనిపిస్తాయి.
-   - వాళ్ల కమ్యూనిటీ Discord సర్వర్‌లో ప్లేయర్లు మోడ్ గురించి చర్చిస్తారు.
-
-3. **టెక్నికల్ ఎర్రర్ లాగ్స్ (In-Game Log)**:
-   - పాత్: `d:\SteamLibrary\steamapps\common\Raft\BepInEx\LogOutput.log`
-   - గేమ్‌లో ఎక్కడైనా రెడ్ ఎర్రర్స్ (Exceptions) ఉన్నాయా అని తనిఖీ చేయడానికి ఈ లాగ్ ఫైల్ ఉపయోగపడుతుంది.
-
----
-
-## 🔮 6. తదుపరి అప్‌డేట్ (v1.1.0) ప్లానింగ్ సూచనలు
-
-రాబోయే కొద్ది రోజులు ప్లేయర్ల రెస్పాన్స్ చూసిన తర్వాత v1.1.0 లో చేర్చదగిన కొన్ని మంచి ఆలోచనలు:
-
-1. **Radar / Island Waypoint ESP**: సముద్రంలో సమీపంలో ఉన్న పెద్ద దీవులు, రేడియో టవర్లను స్క్రీన్‌పై మార్కర్‌గా చూపించడం.
-2. **Auto-Water Crops & Purify**: పంటలకు నీళ్లు ఆటోమేటిక్‌గా పెట్టే సదుపాయం.
-3. **Storage Chest Sorter**: బాక్సుల్లో ఉన్న వస్తువులను ఒకే క్లిక్‌తో అక్షరక్రమంలో సర్దడం (Stack & Sort).
-4. **Custom Keybinding Menu**: మోడ్ మెనూ నుంచే F5, F6, F8, F9 బటన్లను యూజర్ తనకు నచ్చిన కీలకు మార్చుకునే సదుపాయం.
+## 📜 లైసెన్స్
+ఈ ప్రాజెక్ట్ **[MIT License](LICENSE)** క్రింద ఓపెన్ సోర్స్‌గా అందించబడింది.
