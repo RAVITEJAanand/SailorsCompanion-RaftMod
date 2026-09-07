@@ -20,7 +20,7 @@ namespace SailorsCompanion.Features
         public static UpdateChecker Instance { get; private set; }
 
         public const string VERSION_URL = "https://raw.githubusercontent.com/RAVITEJAanand/SailorsCompanion-RaftMod/main/version.json";
-        public const string DEFAULT_DOWNLOAD_URL = "https://www.nexusmods.com/raft/mods/155";
+        public const string DEFAULT_DOWNLOAD_URL = "https://www.nexusmods.com/raft/mods/154";
 
         public static bool IsUpdateAvailable { get; private set; } = false;
         public static string LatestVersion { get; private set; } = "";
@@ -116,6 +116,7 @@ namespace SailorsCompanion.Features
 
                 if (hasError)
                 {
+                    TeleportManager.SetNotification("⚠️ Unable to check updates (offline or host unreachable).");
                     Debug.Log($"[Sailor's Companion] Update check skipped (offline or host unreachable): {req.error}");
                     yield break;
                 }
@@ -151,11 +152,13 @@ namespace SailorsCompanion.Features
                     if (IsNewerVersion(PluginInfo.PLUGIN_VERSION, LatestVersion))
                     {
                         IsUpdateAvailable = true;
+                        TeleportManager.SetNotification($"✨ Update v{LatestVersion} available! Open [F5] menu to download.");
                         Debug.Log($"[Sailor's Companion] 🎉 A new update (v{LatestVersion}) is available! Current: v{PluginInfo.PLUGIN_VERSION}. URL: {DownloadUrl}");
                     }
                     else
                     {
                         IsUpdateAvailable = false;
+                        TeleportManager.SetNotification($"✅ Sailor's Companion is up to date (v{PluginInfo.PLUGIN_VERSION})!");
                         Debug.Log($"[Sailor's Companion] Sailor's Companion is up to date (v{PluginInfo.PLUGIN_VERSION}).");
                     }
                 }
