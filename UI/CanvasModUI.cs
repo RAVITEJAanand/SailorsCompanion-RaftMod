@@ -49,9 +49,9 @@ namespace SailorsCompanion.UI
         private static readonly string[] ProfileKeys = { "VanillaPlus", "BalancedOP", "EasyMode", "Custom" };
         private static readonly string[] ProfileNames = { "🌿 Vanilla+", "⚖️ Balanced OP", "⚡ Easy Mode", "⚙️ Custom" };
         private static readonly string[] ProfileTooltips = {
-            "🌿 <b>Vanilla+ Profile:</b> Authentic Raft survival balance with handy craft-from-storage & creature health bars.",
-            "⚖️ <b>Balanced OP Profile:</b> 100 stack, 1.5x crop/hook, 1.2x speeds, all QoL & automations enabled.",
-            "⚡ <b>Easy Mode Profile:</b> 200 stack, 2.0x crop/hook, 1.5x swim/sprint speeds for relaxed easy gameplay.",
+            "🌿 <b>Vanilla+ Profile:</b> Authentic vanilla balance (1.0x weapon dmg, 40 stack, normal speeds, craft-from-storage & creature HP bars).",
+            "⚖️ <b>Balanced OP Profile:</b> 1.5x weapon dmg, 100 stack, 1.5x crop/hook, 1.2x speeds, all QoL automations enabled.",
+            "⚡ <b>Easy Mode Profile:</b> 2.5x weapon dmg, 200 stack, 2.0x crop/hook, 1.5x speeds for relaxed easy gameplay.",
             "⚙️ <b>Custom Profile:</b> User-defined fine-tuned configuration."
         };
         private static readonly Color ProfileActiveColor = new Color(0.85f, 0.15f, 0.20f, 1f); // Vibrant Crimson
@@ -359,6 +359,7 @@ namespace SailorsCompanion.UI
             {
                 SetProfileSettings(
                     stackSize: 40,
+                    weaponDamage: 1.0f,
                     enableGrowthBoost: false,
                     growthMultiplier: 1.0f,
                     hookSpeed: 1.0f,
@@ -371,13 +372,14 @@ namespace SailorsCompanion.UI
                     infiniteDurability: false,
                     animalHealthBars: true
                 );
-                tooltipText = "🌿 <b>Vanilla+ Profile:</b> Authentic Raft survival balance with handy craft-from-storage & creature health bars.";
+                tooltipText = "🌿 <b>Vanilla+ Profile:</b> Authentic vanilla balance (1.0x weapon dmg, 40 stack, normal speeds, craft-from-storage & creature HP bars).";
                 TeleportManager.SetNotification("🌿 Activated 'Vanilla+' Preset Profile");
             }
             else if (profileName == "BalancedOP" || profileName == "CozyFarming")
             {
                 SetProfileSettings(
                     stackSize: 100,
+                    weaponDamage: 1.5f,
                     enableGrowthBoost: true,
                     growthMultiplier: 1.5f,
                     hookSpeed: 1.5f,
@@ -390,13 +392,14 @@ namespace SailorsCompanion.UI
                     infiniteDurability: true,
                     animalHealthBars: true
                 );
-                tooltipText = "⚖️ <b>Balanced OP Profile:</b> 100 stack, 1.5x crop/hook, 1.2x speeds, all QoL & automations enabled.";
+                tooltipText = "⚖️ <b>Balanced OP Profile:</b> 1.5x weapon dmg, 100 stack, 1.5x crop/hook, 1.2x speeds, all QoL automations enabled.";
                 TeleportManager.SetNotification("⚖️ Activated 'Balanced OP' Preset Profile");
             }
             else if (profileName == "EasyMode" || profileName == "MasterBuilder")
             {
                 SetProfileSettings(
                     stackSize: 200,
+                    weaponDamage: 2.5f,
                     enableGrowthBoost: true,
                     growthMultiplier: 2.0f,
                     hookSpeed: 2.0f,
@@ -409,7 +412,7 @@ namespace SailorsCompanion.UI
                     infiniteDurability: true,
                     animalHealthBars: true
                 );
-                tooltipText = "⚡ <b>Easy Mode Profile:</b> 200 stack, 2.0x crop/hook, 1.5x swim/sprint speeds for relaxed easy gameplay.";
+                tooltipText = "⚡ <b>Easy Mode Profile:</b> 2.5x weapon dmg, 200 stack, 2.0x crop/hook, 1.5x speeds for relaxed easy gameplay.";
                 TeleportManager.SetNotification("⚡ Activated 'Easy Mode' Preset Profile");
             }
 
@@ -438,6 +441,7 @@ namespace SailorsCompanion.UI
 
         private static void SetProfileSettings(
             int stackSize,
+            float weaponDamage,
             bool enableGrowthBoost,
             float growthMultiplier,
             float hookSpeed,
@@ -451,6 +455,7 @@ namespace SailorsCompanion.UI
             bool animalHealthBars)
         {
             if (Plugin.CustomStackSize != null) Plugin.CustomStackSize.Value = stackSize;
+            if (Plugin.WeaponDamageMultiplier != null) Plugin.WeaponDamageMultiplier.Value = weaponDamage;
             if (Plugin.EnableCropGrowthBoost != null) Plugin.EnableCropGrowthBoost.Value = enableGrowthBoost;
             if (Plugin.CropGrowthMultiplier != null) Plugin.CropGrowthMultiplier.Value = growthMultiplier;
             if (Plugin.HookPullSpeedMultiplier != null) Plugin.HookPullSpeedMultiplier.Value = hookSpeed;
@@ -672,9 +677,18 @@ namespace SailorsCompanion.UI
 
             float maxGrowth = Plugin.IsCreativeMode ? 10.0f : 2.0f;
             float maxStack = Plugin.IsCreativeMode ? 999f : 200f;
+            float maxWeapon = Plugin.IsCreativeMode ? 10.0f : 3.0f;
+
+            float curWeapon = Plugin.WeaponDamageMultiplier?.Value ?? 1.0f;
             float curGrowth = Plugin.CropGrowthMultiplier?.Value ?? 1.0f;
             float curStack = Plugin.CustomStackSize?.Value ?? 40;
-            CreateDualStepperRow(page.transform,
+
+            CreateTripleStepperRow(page.transform,
+                "⚔️ Weapon Dmg", 1.0f, maxWeapon, 0.5f, curWeapon, "x", v =>
+                {
+                    if (Plugin.WeaponDamageMultiplier != null) Plugin.WeaponDamageMultiplier.Value = v;
+                    MarkProfileCustom();
+                }, "⚔️ <b>Weapon Damage:</b> Multiplies damage dealt by spears, arrows, and machete against creatures (1.0x–2.0x recommended).",
                 "🌾 Crop Growth", 1.0f, maxGrowth, 0.5f, curGrowth, "x", v =>
                 {
                     if (Plugin.CropGrowthMultiplier != null) Plugin.CropGrowthMultiplier.Value = v;
@@ -748,6 +762,7 @@ namespace SailorsCompanion.UI
             layout.childForceExpandHeight = false;
 
             CreateToggleItem(page.transform, "🛡️ God Mode (Invulnerable to all damage & shark bites)", Plugin.GodMode.Value, v => Plugin.GodMode.Value = v, 39f, 15);
+            CreateToggleItem(page.transform, "⚔️ 1-Hit Kill / Infinite Damage (Instantly slay any creature in 1 strike)", Plugin.OneHitKill?.Value ?? false, v => { if (Plugin.OneHitKill != null) Plugin.OneHitKill.Value = v; }, 39f, 15);
             CreateToggleItem(page.transform, "🤿 Infinite Oxygen (Dive freely without running out of air)", Plugin.InfiniteOxygen.Value, v => Plugin.InfiniteOxygen.Value = v, 39f, 15);
             CreateToggleItem(page.transform, "🥩 Freeze Hunger & Thirst (Never starve or dehydrate)", Plugin.NoHungerThirst.Value, v => Plugin.NoHungerThirst.Value = v, 39f, 15);
             CreateToggleItem(page.transform, "🕊️ Fly / Noclip Mode (Hotkey: [F] | WASD + Space/Shift)", Plugin.EnableFlyMode.Value, v => Plugin.EnableFlyMode.Value = v, 39f, 15);
@@ -1558,6 +1573,17 @@ namespace SailorsCompanion.UI
                     badge = "<color=#EAB308><size=11>[🟡 Easy Mode]</size></color>";
                 else
                     badge = "<color=#EF4444><size=11>[🔴 High]</size></color>";
+            }
+            else if (label.Contains("Weapon"))
+            {
+                if (val <= 1.05f)
+                    badge = "<color=#22C55E><size=11>[🟢 Vanilla 1x]</size></color>";
+                else if (val <= 1.55f)
+                    badge = "<color=#38BDF8><size=11>[🟢 Balanced 1.5x]</size></color>";
+                else if (val <= 2.55f)
+                    badge = "<color=#EAB308><size=11>[🟡 Boosted]</size></color>";
+                else
+                    badge = "<color=#EF4444><size=11>[🔴 High/OP]</size></color>";
             }
             else // Crop Growth, Reel Speed, etc.
             {

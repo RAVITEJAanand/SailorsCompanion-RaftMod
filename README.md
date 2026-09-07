@@ -14,9 +14,9 @@
 
 ### 🎮 2. Gameplay Presets & Save Profiles
 Switch instant configurations with 1-click at the top of the menu:
-- **`🌿 Vanilla+`**: Authentic Raft survival balance (Stack 40, normal 1.0x speeds, craft-from-storage, creature health bars, standard tools wear down).
-- **`⚖️ Balanced OP`**: Best all-around experience (Stack 100, 1.5x crop growth, 1.5x hook reel speed, 1.2x swim & sprint speeds, all QoL automations enabled).
-- **`⚡ Easy Mode`**: More overpowered for relaxed play (Stack 200, 2.0x crop growth, 2.0x hook reel speed, 1.5x swim & sprint speeds).
+- **`🌿 Vanilla+`**: Authentic Raft survival balance (1.0x weapon dmg, Stack 40, normal 1.0x speeds, craft-from-storage, creature health bars).
+- **`⚖️ Balanced OP`**: Best all-around experience (1.5x weapon dmg, Stack 100, 1.5x crop growth, 1.5x hook reel speed, 1.2x swim & sprint speeds, all QoL automations enabled).
+- **`⚡ Easy Mode`**: More overpowered for relaxed play (2.5x weapon dmg, Stack 200, 2.0x crop growth, 2.0x hook reel speed, 1.5x swim & sprint speeds).
 - **`⚙️ Custom`**: Fine-tune any toggle or slider to your exact personal taste.
 
 ### ⚡ 3. Intelligent Raft Teleportation & Recall (Never Lose Your Raft!)
@@ -72,6 +72,7 @@ Switch instant configurations with 1-click at the top of the menu:
 - **Auto-Empty Collection Nets**: `ON`
 - **Auto-Water Crops**: `ON`
 - **Accelerate Crop & Tree Growth**: `ON` (1.5x)
+- **Weapon Damage Multiplier**: `1.5x`
 - **Animal & Enemy Health Bars**: `ON`
 - **Anti-Shark Raft Protection**: `ON`
 - **Infinite Tool Durability**: `ON`
@@ -81,6 +82,7 @@ Switch instant configurations with 1-click at the top of the menu:
 
 ### ⚡ More OP: Easy Mode (For Maximum Relaxation)
 - **Preset**: `⚡ Easy Mode`
+- **Weapon Damage Multiplier**: `2.5x`
 - **Crop Growth Multiplier**: `2.0x`
 - **Resource Stack Limit**: `200`
 - **Hook Reel Speed**: `2.0x`

@@ -52,6 +52,8 @@ namespace SailorsCompanion
         public static ConfigEntry<bool> EnableCropGrowthBoost;
         public static ConfigEntry<float> CropGrowthMultiplier;
         public static ConfigEntry<bool> ShowAnimalHealthBars;
+        public static ConfigEntry<float> WeaponDamageMultiplier;
+        public static ConfigEntry<bool> OneHitKill;
         public static ConfigEntry<string> ModGameMode;
         public static ConfigEntry<string> ActiveProfile;
 
@@ -105,10 +107,12 @@ namespace SailorsCompanion
             EnableCropGrowthBoost = Config.Bind("Features.Farming", "EnableCropGrowthBoost", true, "Accelerate crop, flower, and tree growth speed.");
             CropGrowthMultiplier = Config.Bind("Features.Farming", "CropGrowthMultiplier", 1.5f, "Crop growth speed multiplier (e.g. 1.5 = 50% faster).");
 
-            // Bind Movement & Speeds
+            // Bind Movement, Speeds & Combat
             SwimSpeedMultiplier = Config.Bind("Features.Movement", "SwimSpeedMultiplier", 1.2f, "Multiplier for player swimming speed.");
             SprintSpeedMultiplier = Config.Bind("Features.Movement", "SprintSpeedMultiplier", 1.1f, "Multiplier for player sprinting speed.");
             HookPullSpeedMultiplier = Config.Bind("Features.World", "HookPullSpeedMultiplier", 1.5f, "Multiplier for hook debris reeling speed.");
+            WeaponDamageMultiplier = Config.Bind("Features.Combat", "WeaponDamageMultiplier", 1.0f, "Multiplier for outgoing weapon & arrow damage against enemies (1.0 = normal).");
+            OneHitKill = Config.Bind("Features.Combat", "OneHitKill", false, "Instantly slay any enemy or predator in one hit (Creative Mode).");
             FreeCrafting = Config.Bind("Features.World", "FreeCrafting", false, "Craft any item without consuming materials.");
             EnableFlyMode = Config.Bind("Features.Movement", "EnableFlyMode", false, "Fly / Noclip mode.");
             FlySpeed = Config.Bind("Features.Movement", "FlySpeed", 14f, "Flight speed in m/s.");
