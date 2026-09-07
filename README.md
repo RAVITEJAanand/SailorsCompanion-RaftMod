@@ -1,148 +1,157 @@
 # ⚓ Sailor's Companion — Quality of Life & Survival Suite for Raft
 
+[![Version](https://img.shields.io/badge/Version-1.1.0-blue.svg?style=for-the-badge&logo=github)](https://github.com/RAVITEJAanand/SailorsCompanion-RaftMod/releases)
+[![Raft Version](https://img.shields.io/badge/Raft-The%20Final%20Chapter%20(v1.0+)-brightgreen.svg?style=for-the-badge&logo=steam)](https://store.steampowered.com/app/648800/Raft/)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B4EMrR5Vrf)
+[![License](https://img.shields.io/badge/License-MIT-orange.svg?style=for-the-badge)](LICENSE)
+
 ![Sailor's Companion Banner](banner.png)
 
-**Sailor's Companion** is the ultimate all-in-one Quality of Life, Navigation, and Creative Survival mod for **Raft (The Final Chapter)**. Designed with a modern high-DPI UI, immersive on-screen HUD styles, intelligent raft recall teleportation, instant R&D blueprint unlocking, and robust protection against annoying game mechanics.
+**Sailor's Companion** is the definitive, all-in-one Quality of Life, Automation, Navigation, and Sandbox mod for **Raft (The Final Chapter)**. Built from the ground up with a native in-game wooden plank UI, rich HUD radar systems, intelligent raft recall teleportation, 3D island resource scanning, smart boat propulsion automation, and balanced survival progression.
 
 ---
 
-## 🌟 Key Features
+## 🚀 What's New in Version 1.1.0
 
-### 🟢 1. Dual Mode System: Survival vs Creative
-- **🟢 Survival Mode (Default)**: Authentic survival experience. Cheats (God Mode, Free Craft, Fly, Unlimited Vitals) and Item Spawner are strictly **LOCKED** to prevent accidental cheating. Recall to Raft `[F8]` has a balanced 3-minute cooldown with live countdown timer. Multipliers are soft-capped to authentic survival ranges with dynamic safety badges (`🟢 Balanced`, `🟡 Boosted`, `🔴 High`).
-- **⚡ Creative Mode**: Full unrestricted sandbox power. Instant 1-click unlocks, unlimited item spawner, god mode, fly/noclip `[F]`, weather controller, summon raft `[F9]`, and uncapped multipliers.
+### ⛵ 1. Smart Boat Propulsion & Sail Control
+- **Separated Engine & Sail Automation**: Toggle all engine wheels (`[Toggle All Engines]`) and unfurl/furl sails (`[Toggle All Sails]`) independently without disrupting each other.
+- **Angle Preservation**: Non-destructive sail toggling that preserves your manual rudder angles and wheel directions.
+- **Smart Sail Auto-Align Modes**:
+  - `Manual`: Standard player-controlled sail angles.
+  - `Auto-Align Wind`: Dynamically checks current ocean wind vectors and automatically rotates all sails to catch maximum tailwind for peak speed!
+  - `Follow Raft Heading`: Aligns sails with the physical drift direction of your raft.
 
-### 🎮 2. Gameplay Presets & Save Profiles
-Switch instant configurations with 1-click at the top of the menu:
-- **`🌿 Vanilla+`**: Authentic Raft survival balance (1.0x weapon dmg, Stack 40, normal 1.0x speeds, craft-from-storage, creature health bars).
-- **`⚖️ Balanced OP`**: Best all-around experience (1.5x weapon dmg, Stack 100, 1.5x crop growth, 1.5x hook reel speed, 1.2x swim & sprint speeds, all QoL automations enabled).
-- **`⚡ Easy Mode`**: More overpowered for relaxed play (2.5x weapon dmg, Stack 200, 2.0x crop growth, 2.0x hook reel speed, 1.5x swim & sprint speeds).
-- **`⚙️ Custom`**: Fine-tune any toggle or slider to your exact personal taste.
+### 🔍 2. Item Detector & Island 3D Pulse Scanner
+- **Island Pulse Scanner (`[Scan Island (10s)]`)**: Emits an expanding 3D sonar pulse (15m radius) around the player to locate ground loot, hidden chests, clay, scrap, metal/copper ores, and island flora.
+- **Balanced Cooldowns**: 10s active duration with a 30s tactical cooldown in Survival Mode (instant ready in Creative Mode).
+- **Subtle On-Screen Indicators**: Clean directional distance meters that guide you directly to resources without cluttering your screen.
 
-### ⚡ 3. Intelligent Raft Teleportation & Recall (Never Lose Your Raft!)
-- **Recall Player to Raft (`[F8]` or UI Button)**: Teleport safely back onto the raft deck from anywhere in the ocean or distant islands. Automatically snaps you to the nearest walkable deck block, parents your movement to the raft pivot, and resets falling inertia. (3-minute emergency cooldown in Survival Mode).
-- **Summon Raft to Player (`[F9]`)**: Calls your raft directly in front of you on the water surface (~18m ahead) and automatically drops the anchor so it cannot drift away. (Use anytime!).
+### 🏝️ 3. Island Hand Pickup & Shallow Reef Underwater Harvesting
+- **Island Land Hand Pickup**: Gather flowers, berries, fruit seeds, and loose ground loot with bare hands without equipping a hook.
+- **Underwater Reef Harvesting**: Channel and mine Sand, Clay, Scrap, Metal Ore, and Copper Ore directly with your hands.
+- **Rapid Reef Mining**: Optimized channeling time (0.4s extraction) allows quick reef diving before Bruce the shark can strike!
+
+### 🧲 4. Magnetic Ocean Debris Auto-Collector
+- **Ocean Magnet (`[Ocean Magnet (45s)]`)**: Generates an active 20m magnetic attraction field centered on the player or raft.
+- **Smooth Physics Gliding**: Floats nearby barrels, crates, plastic, and planks directly to you with natural water buoyancy physics.
+- **Survival Balanced**: 45s active suction with a 60s cooldown in Survival Mode (toggleable continuous in Creative Mode).
+
+### ⌨️ 5. Optional Pro Quick Hotkeys (Anti-Conflict Design)
+- **UI-First by Default**: All features can be triggered directly from the in-game wood menu without memorizing complex key combinations.
+- **Optional Pro Hotkeys Toggle**: Enable `[Enable Quick Hotkeys]` in the Survival QoL tab to unlock instant gameplay keys:
+  - `[F4]` — Toggle All Sails
+  - `[F3]` — Toggle All Engines
+  - `[F7]` — Toggle Ocean Magnet Field
+  - `[F10]` — Trigger Island Pulse Scanner
+
+---
+
+## 🌟 Core Feature Suite
+
+### 🟢 Dual Mode Architecture (Survival vs. Creative)
+- **🟢 Survival Mode (Default)**: Authentic survival gameplay. All game-breaking cheats (God Mode, 1-Hit Kill, Free Instant Crafting, Fly/Noclip, Item Spawner) are strictly **LOCKED**. Recall to Raft `[F8]` has a balanced 3-minute emergency cooldown. Multipliers have safety-capped sliders with color-coded balance badges (`[🟢 Vanilla]`, `[🟢 Balanced OP]`, `[🟡 Easy Mode]`).
+- **⚡ Creative Mode**: Total sandbox freedom. Instant 1-click recipe unlocking, item spawner with 300+ items, invulnerability, noclip flight, raft summoning, and custom weather controls.
+
+### 🎮 Preset Profiles (1-Click Setup)
+Switch optimized mod profiles instantly from the top row:
+- **`🌿 Vanilla+`**: Authentic Raft survival balance (1.0x weapon dmg, Stack 40, normal speeds, craft-from-storage, creature health bars).
+- **`⚖️ Balanced OP` (Recommended)**: The ultimate balance (1.5x weapon dmg, Stack 100, 1.5x crop growth, 1.5x hook reel, 1.2x swim/sprint, all automations enabled).
+- **`⚡ Easy Mode`**: Casual gameplay (2.5x weapon dmg, Stack 200, 2.0x crop growth, 2.0x hook reel, 1.5x swim/sprint).
+- **`⚙️ Custom`**: Fine-tune individual multipliers and toggles to your personal preference.
+
+### ⚡ Intelligent Raft Teleportation & Recovery
+- **Recall Player to Raft (`[F8]`)**: Teleport safely onto the raft deck from deep ocean waters or distant islands. Automatically finds a safe walkable deck tile, resets fall momentum, and parents your movement to the raft pivot (3-min cooldown in Survival).
+- **Summon Raft to Player (`[F9]`)**: Calls your raft directly to your position on the water surface (~18m ahead) and automatically drops the anchor so it never drifts away (Creative/Emergency).
 - **Remote Anchor Toggle**: Drop or raise the anchor remotely from anywhere in the world.
 
-### 🧭 4. Real-Time Navigation HUD & Shark Radar
-- Real-time compass heading (degrees + cardinal directions N/NE/E/SE/S/SW/W/NW).
-- Live player XYZ coordinates & world clock.
-- **Raft Distance & Drift Tracker**: Dynamic directional arrow pointing toward your raft, distance in meters, drift speed in knots, and anchored status.
-- **Shark Bruce Radar**: Live proximity tracker showing Bruce's distance with red warning alerts when he approaches attack range (<25m).
-- **Animal & Enemy Health Bars**: Floating overhead health bars and distance meters over creatures (automatically hidden during loading screens).
+### 🧭 Real-Time Navigation HUD & Shark Radar
+- **Compass Heading**: Cardinal directions (N, NE, E, SE, S, SW, W, NW) with exact 360° degrees.
+- **Raft Distance & Drift Vector**: Directional arrow pointing toward your raft, distance in meters, speed in knots, and anchor status.
+- **Bruce Shark Radar**: Live proximity tracker showing Bruce's distance with red alert warnings when he enters attack range (<25m).
+- **Animal & Enemy Health Bars**: Floating overhead health bars and distance meters over creatures (automatically hides during loading).
 - **4 Customizable HUD Styles (`[Shift + F6]` to cycle)**:
-  1. *Sleek Ribbon* (Default, compact top-left glass bar).
-  2. *Compass Bar* (Skyrim/Subnautica style top-center scrolling tape).
-  3. *Mini Pill* (Minimalist one-line badge).
-  4. *Classic Box* (Detailed stacked metrics).
+  1. *Sleek Ribbon* (Compact top-left status bar).
+  2. *Top Compass Bar* (Skyrim/Subnautica style scrolling ribbon).
+  3. *Minimalist Pill* (Clean single-line badge).
+  4. *Classic Box* (Detailed telemetry dashboard).
 
-### 🔬 5. Progressive Research Table & Blueprints (R&D)
-- **Survival Mode**: Progressive chapter-by-chapter unlocks:
-  - *Base Research*: Learns all standard table recipes from wood/scrap/plastic.
+### 🔬 Progressive Research Table & Blueprints
+- **Survival Progressive Unlocks**:
+  - *Base Research*: Learn standard recipes from Wood, Plastic, Metal, Scrap, Clay, and Sand.
   - *Chapter 1*: Radio Tower & Vasagatan story blueprints (Receiver, Antenna, Engine, Steering Wheel).
   - *Chapter 2*: Balboa Island, Caravan Town & Tangaroa (Biofuel, Machete, Zipline, Water Pipes).
   - *Chapter 3*: Varuna Point, Temperance & Utopia (Electric Smelter, Advanced Anchor, Titanium Tools).
-- **Creative Mode**: Instant 1-click **"Unlock All 100+ Blueprints"**.
+- **Creative Sandbox Station**: 1-click **"Unlock All 100+ R&D Blueprints"**.
 
-### 🦈 6. Raft & World Protection
-- **Anti-Shark Raft Protection**: Stops Bruce the Shark from ever biting or destroying your raft foundations.
-- **Auto-Water Crops & Livestock Grass**: Keeps crops and animals thriving without endless bucket filling.
-- **Auto-Empty Collection Nets**: Continuously sweeps captured flotsam into your backpack.
-- **Craft from Nearby Storage**: Auto-pulls crafting materials from chests within 22m.
-- **Debris Hook Reel Speed Multiplier**: Reel in floating barrels and plastic faster with dynamic safety badges.
-- **Custom Stack Size**: Stack raw materials up to 100 in Survival Mode (up to 999 in Creative).
-- **Time & Weather Controller (Creative)**: Set time to Morning, Noon, or Night, and change weather to Sunny, Calm, Rain, or Fog.
-
-### 🛡️ 7. Creative & Sandbox Suite
-- **God Mode**: Full invulnerability to animal attacks, drowning, and environmental hazards.
-- **Infinite Oxygen**: Dive deep underwater as long as you want without drowning.
-- **Freeze Hunger & Thirst**: Keep food and hydration meters locked at 100%.
-- **Infinite Tool Durability**: Tools, weapons, armor, and hooks never break or lose durability.
-- **Fly / Noclip Mode (`[F]` or `[F7]`)**: Fly freely through the air and underwater with WASD + Space/Shift + Alt turbo boost.
-- **In-Game Item Spawner**: Browse and search all 300+ items in Raft with instant `+1`, `+10`, and `+Full Stack` buttons directly into your inventory.
-
----
-
-## 🎯 Recommended Configurations & Presets
-
-### 🏆 Best Settings: Balanced OP (Recommended)
-- **Preset**: `⚖️ Balanced OP` (or `Custom`)
-- **Quick Stack to Chests**: `ON`
-- **Craft from Nearby Storage**: `ON`
-- **Auto-Empty Collection Nets**: `ON`
-- **Auto-Water Crops**: `ON`
-- **Accelerate Crop & Tree Growth**: `ON` (1.5x)
-- **Weapon Damage Multiplier**: `1.5x`
-- **Animal & Enemy Health Bars**: `ON`
-- **Anti-Shark Raft Protection**: `ON`
-- **Infinite Tool Durability**: `ON`
-- **Resource Stack Limit**: `100`
-- **Hook Reel Speed**: `1.5x`
-- **Swim Speed**: `1.2x` | **Sprint Speed**: `1.2x`
-
-### ⚡ More OP: Easy Mode (For Maximum Relaxation)
-- **Preset**: `⚡ Easy Mode`
-- **Weapon Damage Multiplier**: `2.5x`
-- **Crop Growth Multiplier**: `2.0x`
-- **Resource Stack Limit**: `200`
-- **Hook Reel Speed**: `2.0x`
-- **Swim Speed**: `1.5x` | **Sprint Speed**: `1.5x`
-
-### 🧭 Navigation Setup
-- **Show Navigation HUD**: `ON` (`[F6]`)
-- **HUD Style**: `Compass Bar` (Style 1)
-- **Recall to Raft (`[F8]`)**: Use when far out or stuck on islands.
-- **Summon Raft (`[F9]`)**: Use anytime to call your raft to your position.
-
-> [!IMPORTANT]
-> - **Item Spawner & Cheats**: Only available in **Creative Mode** to protect genuine survival gameplay.
+### 🦈 Raft & World Automations
+- **Anti-Shark Raft Protection**: Prevents Bruce the Shark from ever biting or destroying your raft foundations.
+- **Continuous Auto-Water Crops**: Keeps crop plots and livestock grass plots hydrated automatically.
+- **Continuous Auto-Empty Nets**: Gathers flotsam trapped in collection nets directly into your inventory.
+- **Craft from Nearby Storage**: Automatically pulls crafting materials from storage chests within 22m.
+- **Infinite Tool Durability**: Hooks, weapons, equipment, and armor never degrade.
+- **Weather & Time Controls**: Set time to Morning (08:00), Noon (12:00), or Night (22:00), and switch weather to Sunny, Calm, Rain, or Fog.
 
 ---
 
 ## ⌨️ Controls & Hotkeys Reference
 
-| Key | Action |
-|---|---|
-| **`F5`** or **`Insert`** | Toggle Main Mod Menu Window |
-| **`F6`** | Toggle On-Screen Navigation HUD |
-| **`Shift + F6`** | Cycle Navigation HUD Styles (Ribbon / Compass / Pill / Box) |
-| **`F8`** | **⚡ Recall Player to Raft** (Teleport onto deck) |
-| **`F9`** | **⛵ Summon Raft to Player & Auto-Anchor** |
-| **`F`** or **`F7`** | Toggle Fly / Noclip Mode |
-| **`Escape`** | Close Mod Menu Window / Return to Game |
+| Key | Default Action | Notes |
+|---|---|---|
+| **`[F5]`** or **`[Insert]`** | **Open / Close Main Mod Menu** | Native 1.3x scaled wooden plank UI |
+| **`[F6]`** | **Toggle Navigation HUD** | Shows/hides on-screen navigation bar |
+| **`[Shift + F6]`** | **Cycle HUD Styles** | Ribbon ➔ Compass Bar ➔ Pill ➔ Classic Box |
+| **`[F8]`** | **Recall Player to Raft** | Teleports safely onto raft deck (3m cooldown in Survival) |
+| **`[F9]`** | **Summon Raft to Player** | Spawns raft ahead and drops anchor (Creative / Unlocked) |
+| **`[F]`** | **Toggle Fly / Noclip** | WASD + Space/Shift flight (Creative Mode) |
+| **`[ESC]`** | **Close Mod Menu** | Returns smoothly to active gameplay |
+
+### ⌨️ Optional Pro Quick Hotkeys (When Enabled in Menu)
+*Enable under `Survival QoL` ➔ `Advanced Pro Hotkeys` ➔ `[Enable Quick Hotkeys]`*
+
+| Key | Action | Behavior |
+|---|---|---|
+| **`[F4]`** | **Toggle All Sails** | Unfurls or furls all sails without altering angles |
+| **`[F3]`** | **Toggle All Engines** | Starts/stops all engine wheels simultaneously |
+| **`[F7]`** | **Ocean Magnet Field** | Activates 20m debris suction (45s active / 60s cooldown) |
+| **`[F10]`** | **Scan Island / Reef** | 10s 3D pulse detecting nearby loot, ores, and flora |
 
 ---
 
 ## 📥 Installation
 
-### Method A: BepInEx (Recommended)
-1. Install [BepInEx 5 (x64)](https://github.com/BepInEx/BepInEx/releases) into your Raft root game folder (`steamapps/common/Raft`).
-2. Copy `SailorsCompanion.dll` into `steamapps/common/Raft/BepInEx/plugins/SailorsCompanion/`.
-3. Launch Raft through Steam!
+### Method 1: BepInEx 5 (Recommended)
+1. Install **[BepInEx 5 (x64)](https://github.com/BepInEx/BepInEx/releases)** into your Raft root directory (`steamapps/common/Raft`).
+2. Download the latest `SailorsCompanion.dll` from the [Releases](https://github.com/RAVITEJAanand/SailorsCompanion-RaftMod/releases) page.
+3. Place `SailorsCompanion.dll` into:
+   ```
+   steamapps/common/Raft/BepInEx/plugins/SailorsCompanion/
+   ```
+4. Launch Raft through Steam! Press **`[F5]`** to open the menu.
 
-### Method B: Raft Mod Loader (RML)
-1. Open the **Raft Mod Loader** launcher.
+### Method 2: Raft Mod Loader (RML)
+1. Install and launch the **Raft Mod Loader** (RML).
 2. Place `SailorsCompanion.rmod` into your `steamapps/common/Raft/Mods/` directory.
-3. Enable **Sailor's Companion** in the Mod Manager and launch the game.
+3. Enable **Sailor's Companion** in the mod manager list and click **Play**.
 
 ---
 
 ## 👥 Multiplayer Compatibility
-- **Client-Side Friendly**: The Navigation HUD, Teleport to Raft, Fly Mode, Item Spawner, and Durability patches function when joining multiplayer games.
-- **Host Recommended**: Features that manipulate world state (weather control, summoning raft, anti-shark damage) work best when you are the host or playing singleplayer.
+- **Client-Side Safe**: Navigation HUD, Radar, Teleport to Raft, Fly Mode, Tool Durability, and Item Spawner work seamlessly when joining multiplayer sessions.
+- **Host Recommended**: World-altering features (Weather modification, Summon Raft, Anti-Shark Foundation Protection, Island Scanning) operate best when you are the host or playing singleplayer.
 
 ---
 
 ## 💬 Community & Support
 
-Have questions, suggestions, or need help? Join our official community Discord!
+Join the official **Konduri Modding Hub** community on Discord for support, updates, and sneak peeks!
+
 [![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B4EMrR5Vrf)
 
-- 📢 Get the latest updates and sneak peeks of upcoming features.
-- 💡 Suggest new ideas for future updates (v1.1.0).
-- 🐛 Report bugs or get direct troubleshooting support.
+- 📢 **Latest Releases**: Instant notifications for mod updates and patches.
+- 💡 **Feature Requests**: Suggest new mechanics or QoL features.
+- 🐛 **Bug Reporting**: Direct troubleshooting and assistance.
 
 ---
 
 ## 📜 License
-Released under the **MIT License**. Free for personal and community use.
+This project is open-source and released under the **[MIT License](LICENSE)**. Free for personal, non-commercial, and community gameplay.
