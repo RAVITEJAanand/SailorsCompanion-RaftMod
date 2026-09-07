@@ -57,6 +57,31 @@ namespace SailorsCompanion
         public static ConfigEntry<string> ModGameMode;
         public static ConfigEntry<string> ActiveProfile;
 
+        // [START] CONFIGURATIONS: ADVANCED HOTKEYS
+        public static ConfigEntry<bool> EnableHotkeys;
+        public static ConfigEntry<KeyCode> KeySailToggle;
+        public static ConfigEntry<KeyCode> KeyEngineToggle;
+        public static ConfigEntry<KeyCode> KeyMagnetToggle;
+        public static ConfigEntry<KeyCode> KeyScannerPulse;
+        // [END] CONFIGURATIONS: ADVANCED HOTKEYS
+
+        // [START] CONFIGURATIONS: BOAT & PROPULSION SYSTEMS
+        public static ConfigEntry<bool> BoatEnginesOn;
+        public static ConfigEntry<bool> BoatSailsOn;
+        public static ConfigEntry<int> BoatSailMode;
+        // [END] CONFIGURATIONS: BOAT & PROPULSION SYSTEMS
+
+        // [START] CONFIGURATIONS: REEF & ISLAND HARVESTING
+        public static ConfigEntry<bool> IslandHandPickup;
+        public static ConfigEntry<bool> ReefHandHarvesting;
+        public static ConfigEntry<bool> ReefFastHarvest;
+        // [END] CONFIGURATIONS: REEF & ISLAND HARVESTING
+
+        // [START] CONFIGURATIONS: OCEAN MAGNETIC PULL
+        public static ConfigEntry<bool> MagnetActive;
+        public static ConfigEntry<float> MagnetRadius;
+        // [END] CONFIGURATIONS: OCEAN MAGNETIC PULL
+
         public static bool IsCreativeMode => ModGameMode != null && ModGameMode.Value == "Creative";
         public static bool IsSurvivalMode => !IsCreativeMode;
 
@@ -117,6 +142,27 @@ namespace SailorsCompanion
             EnableFlyMode = Config.Bind("Features.Movement", "EnableFlyMode", false, "Fly / Noclip mode.");
             FlySpeed = Config.Bind("Features.Movement", "FlySpeed", 14f, "Flight speed in m/s.");
             CheckForUpdates = Config.Bind("Features.General", "CheckForUpdates", true, "Check online for mod updates on startup.");
+
+            // Bind Advanced Hotkeys (Default: OFF, for pro users)
+            EnableHotkeys = Config.Bind("General.Hotkeys", "EnableHotkeys", false, "Enable direct gameplay hotkeys for quick actions (Advanced Users).");
+            KeySailToggle = Config.Bind("General.Hotkeys", "KeySailToggle", KeyCode.F4, "Hotkey to toggle all sails open or closed.");
+            KeyEngineToggle = Config.Bind("General.Hotkeys", "KeyEngineToggle", KeyCode.F3, "Hotkey to toggle all engines on or off.");
+            KeyMagnetToggle = Config.Bind("General.Hotkeys", "KeyMagnetToggle", KeyCode.F7, "Hotkey to activate ocean magnetic debris pull.");
+            KeyScannerPulse = Config.Bind("General.Hotkeys", "KeyScannerPulse", KeyCode.F10, "Hotkey to trigger a 10s island pulse scan.");
+
+            // Bind Boat Control Systems
+            BoatEnginesOn = Config.Bind("Features.Boat", "BoatEnginesOn", false, "Raft engines power state.");
+            BoatSailsOn = Config.Bind("Features.Boat", "BoatSailsOn", false, "Raft sails open state.");
+            BoatSailMode = Config.Bind("Features.Boat", "BoatSailMode", 0, "Sail mode: 0=Manual, 1=AutoAlignWind, 2=FollowRaftDirection.");
+
+            // Bind Exploration, Reef & Island Harvesting
+            IslandHandPickup = Config.Bind("Features.Exploration", "IslandHandPickup", true, "Pick up surface island items by hand without hook.");
+            ReefHandHarvesting = Config.Bind("Features.Exploration", "ReefHandHarvesting", true, "Harvest Sand, Clay, Scrap, and Ores underwater by hand without a hook.");
+            ReefFastHarvest = Config.Bind("Features.Exploration", "ReefFastHarvest", true, "Accelerate reef channeling so players can mine safely before shark attacks.");
+
+            // Bind Ocean Magnetic Debris Pull
+            MagnetActive = Config.Bind("Features.World", "MagnetActive", false, "Magnetic debris pull active state.");
+            MagnetRadius = Config.Bind("Features.World", "MagnetRadius", 20f, "Effective radius for magnetic debris pull in meters.");
 
             // Register Harmony Patches
             RegisterHarmonyPatches();
@@ -185,6 +231,10 @@ namespace SailorsCompanion
                 ManagerGO.AddComponent<FlyController>();
                 ManagerGO.AddComponent<FarmingHelper>();
                 ManagerGO.AddComponent<NetsHelper>();
+                ManagerGO.AddComponent<BoatController>();
+                ManagerGO.AddComponent<ItemDetector>();
+                ManagerGO.AddComponent<ReefHandHarvesting>();
+                ManagerGO.AddComponent<MagneticCollector>();
                 ManagerGO.AddComponent<UpdateChecker>();
                 Debug.Log("[Sailor's Companion] Initialized persistent SailorsCompanion_Manager with HideAndDontSave protection.");
             }
@@ -211,6 +261,27 @@ namespace SailorsCompanion
                 if (InputHelper.WasKeyPressed(KeyMenu.Value) || InputHelper.WasKeyPressed(KeyCode.Insert))
                 {
                     CanvasModUI.Instance?.ToggleModWindow();
+                }
+            }
+
+            // Optional Advanced Hotkeys (only active when enabled by user)
+            if (EnableHotkeys != null && EnableHotkeys.Value)
+            {
+                if (KeySailToggle != null && InputHelper.WasKeyPressed(KeySailToggle.Value))
+                {
+                    BoatController.ToggleAllSails();
+                }
+                if (KeyEngineToggle != null && InputHelper.WasKeyPressed(KeyEngineToggle.Value))
+                {
+                    BoatController.ToggleAllEngines();
+                }
+                if (KeyMagnetToggle != null && InputHelper.WasKeyPressed(KeyMagnetToggle.Value))
+                {
+                    MagneticCollector.ToggleMagnet();
+                }
+                if (KeyScannerPulse != null && InputHelper.WasKeyPressed(KeyScannerPulse.Value))
+                {
+                    ItemDetector.TriggerPulseScan();
                 }
             }
 

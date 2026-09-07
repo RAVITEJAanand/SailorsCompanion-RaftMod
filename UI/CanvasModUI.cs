@@ -45,6 +45,9 @@ namespace SailorsCompanion.UI
         private Text _btnModeSurvivalTxt;
         private Text _btnModeCreativeTxt;
         private Text _navRecallBtnText;
+        private Text _navScannerBtnText;
+        private Text _navSailModeBtnText;
+        private Text _qolMagnetBtnText;
 
         #region [START] RAFT NATIVE WOODEN PALETTE
         // ============================================================================
@@ -326,7 +329,7 @@ namespace SailorsCompanion.UI
             // Fixed Hotkeys Footer Bar
             var footerBar = CreateBox(_modWindowGO.transform, "FooterBar", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(0, 36), WoodTitleBar);
             CreateBox(footerBar.transform, "FooterAccent", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 2), WoodTrimAccent);
-            CreateText(footerBar.transform, "FooterText", "<color=#C7A670>Hotkeys:</color> <color=#F5C761>[F5]</color> Menu  |  <color=#F5C761>[F6]</color> HUD  |  <color=#F5C761>[Shift+F6]</color> Style  |  <color=#F5C761>[F]</color> Fly  |  <color=#F5C761>[F8]</color> Recall  |  <color=#F5C761>[F9]</color> Summon  |  <color=#F5C761>[ESC]</color> Close", 13, FontStyle.Bold, TextParchmentLight, TextAnchor.MiddleCenter);
+            CreateText(footerBar.transform, "FooterText", "<color=#C7A670>Hotkeys:</color> <color=#F5C761>[F5]</color> Menu  |  <color=#F5C761>[F6]</color> HUD  |  <color=#F5C761>[F4]</color> Sails  |  <color=#F5C761>[F3]</color> Engines  |  <color=#F5C761>[F7]</color> Magnet  |  <color=#F5C761>[F10]</color> Scan  |  <color=#F5C761>[F8]</color> Recall  |  <color=#F5C761>[ESC]</color> Close", 12, FontStyle.Bold, TextParchmentLight, TextAnchor.MiddleCenter);
 
             // Update Banner (shown when a newer version is available online)
             _updateBannerGO = CreateBox(_modWindowGO.transform, "UpdateBanner", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 36), new Vector2(-36, 40), WoodButtonCrimson);
@@ -695,30 +698,37 @@ namespace SailorsCompanion.UI
             }
             UpdateProfileButtonsVisuals();
 
-            // 1. Quick Action Bar: 3 Primary Utility Buttons
+            // 1. Quick Action Bar: 4 Primary Utility Buttons
             var actionRow = CreateBox(page.transform, "QuickActionBar", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 32), Color.clear);
             EnsureLayout(actionRow, -1, 32);
             var actionLayout = actionRow.AddComponent<HorizontalLayoutGroup>();
             actionLayout.spacing = 8;
             actionLayout.childForceExpandWidth = true;
 
-            CreateButton(actionRow.transform, "Btn_QuickStack", "📦 Quick Stack to Chests (22m)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateButton(actionRow.transform, "Btn_QuickStack", "📦 Quick Stack (22m)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 ChestSorter.QuickStackToNearbyChests();
                 SetQoLTooltip("📦 <b>Quick Stack:</b> Deposited backpack items into matching nearby chests.");
-            }, WoodButtonNormal, TextParchmentLight, 14);
+            }, WoodButtonNormal, TextParchmentLight, 13);
 
-            CreateButton(actionRow.transform, "Btn_EmptyNets", "🕸️ Empty All Collection Nets", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateButton(actionRow.transform, "Btn_EmptyNets", "🕸️ Empty Nets", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 NetsHelper.EmptyAllNets(silent: false);
                 SetQoLTooltip("🕸️ <b>Empty Nets:</b> Scooped all trapped flotsam from collection nets into your inventory.");
-            }, WoodButtonNormal, TextParchmentLight, 14);
+            }, WoodButtonNormal, TextParchmentLight, 13);
 
-            CreateButton(actionRow.transform, "Btn_WaterPlots", "🌱 Water All Crops & Grass", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateButton(actionRow.transform, "Btn_WaterPlots", "🌱 Water Crops", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 FarmingHelper.WaterAllPlots(silent: false);
                 SetQoLTooltip("🌱 <b>Water Plots:</b> Hydrated all crop plots, grass plots, and tree planters.");
-            }, WoodButtonNormal, TextParchmentLight, 14);
+            }, WoodButtonNormal, TextParchmentLight, 13);
+
+            var magnetBtnGO = CreateButton(actionRow.transform, "Btn_Magnet", "🧲 Ocean Magnet (45s)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            {
+                MagneticCollector.ToggleMagnet();
+                SetQoLTooltip("🧲 <b>Ocean Magnet:</b> Smoothly pulls floating flotsam and debris towards your raft.");
+            }, WoodButtonNormal, TextParchmentLight, 13);
+            _qolMagnetBtnText = magnetBtnGO.GetComponentInChildren<Text>();
 
             // CATEGORY 1: INVENTORY & STORAGE AUTOMATION
             CreateCategoryHeader(page.transform, "📦 INVENTORY & STORAGE AUTOMATION", 21f);
@@ -728,16 +738,40 @@ namespace SailorsCompanion.UI
                 if (Plugin.CraftFromStorage != null) Plugin.CraftFromStorage.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🛠️ Craft from Storage: ENABLED" : "🛠️ Craft from Storage: DISABLED");
-            }, 31f, 14, "🛠️ <b>Craft from Storage:</b> Automatically pulls needed ingredients from nearby storage containers when crafting.");
+            }, 30f, 14, "🛠️ <b>Craft from Storage:</b> Automatically pulls needed ingredients from nearby storage containers when crafting.");
 
             CreateToggleItem(page.transform, "🕸️ Auto-Empty Collection Nets (Continuously gathers trapped items into inventory)", Plugin.AutoEmptyCollectionNets?.Value ?? false, v =>
             {
                 if (Plugin.AutoEmptyCollectionNets != null) Plugin.AutoEmptyCollectionNets.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🕸️ Auto-Empty Nets: ENABLED" : "🕸️ Auto-Empty Nets: DISABLED");
-            }, 31f, 14, "🕸️ <b>Auto-Empty Nets:</b> Periodically sweeps collection nets so they never get clogged.");
+            }, 30f, 14, "🕸️ <b>Auto-Empty Nets:</b> Periodically sweeps collection nets so they never get clogged.");
 
-            // CATEGORY 2: FARMING & SUSTENANCE
+            // CATEGORY 2: ISLAND & REEF HARVESTING
+            CreateCategoryHeader(page.transform, "🏝️ ISLAND & REEF HARVESTING", 21f);
+
+            CreateToggleItem(page.transform, "🏝️ Island Hand Pickup (Collect flowers, fruits & ground items with bare hands without hook)", Plugin.IslandHandPickup?.Value ?? true, v =>
+            {
+                if (Plugin.IslandHandPickup != null) Plugin.IslandHandPickup.Value = v;
+                MarkProfileCustom();
+                TeleportManager.SetNotification(v ? "🏝️ Island Hand Pickup: ENABLED" : "🏝️ Island Hand Pickup: DISABLED");
+            }, 30f, 14, "🏝️ <b>Island Hand Pickup:</b> Pick up flowers, fruits, and surface items on islands without needing a hook.");
+
+            CreateToggleItem(page.transform, "🌊 Reef Underwater Harvesting (Mine Sand, Clay, Scrap & Ores without hook)", Plugin.ReefHandHarvesting?.Value ?? true, v =>
+            {
+                if (Plugin.ReefHandHarvesting != null) Plugin.ReefHandHarvesting.Value = v;
+                MarkProfileCustom();
+                TeleportManager.SetNotification(v ? "🌊 Reef Hand Harvesting: ENABLED" : "🌊 Reef Hand Harvesting: DISABLED");
+            }, 30f, 14, "🌊 <b>Reef Hand Harvesting:</b> Allows mining underwater reef resource nodes directly by hand without requiring a hook tool.");
+
+            CreateToggleItem(page.transform, "⚡ Rapid Reef Mining (0.4s Fast Extraction to collect safely before sharks)", Plugin.ReefFastHarvest?.Value ?? true, v =>
+            {
+                if (Plugin.ReefFastHarvest != null) Plugin.ReefFastHarvest.Value = v;
+                MarkProfileCustom();
+                TeleportManager.SetNotification(v ? "⚡ Rapid Reef Mining: ENABLED" : "⚡ Rapid Reef Mining: DISABLED");
+            }, 30f, 14, "⚡ <b>Rapid Reef Mining:</b> Reduces mining channeling time from 3s to 0.4s so you can scavenge quickly before Bruce attacks.");
+
+            // CATEGORY 3: FARMING & SUSTENANCE
             CreateCategoryHeader(page.transform, "🌱 FARMING & SUSTENANCE", 21f);
 
             CreateToggleItem(page.transform, "🌱 Auto-Water Crops Continually (Never let crop plots or livestock grass dry out)", Plugin.AutoWaterCrops?.Value ?? false, v =>
@@ -745,16 +779,16 @@ namespace SailorsCompanion.UI
                 if (Plugin.AutoWaterCrops != null) Plugin.AutoWaterCrops.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🌱 Auto-Watering: ENABLED" : "🌱 Auto-Watering: DISABLED");
-            }, 31f, 14, "🌱 <b>Auto-Water:</b> Continuously maintains full hydration on crop plots and livestock grass.");
+            }, 30f, 14, "🌱 <b>Auto-Water:</b> Continuously maintains full hydration on crop plots and livestock grass.");
 
             CreateToggleItem(page.transform, "🌾 Accelerate Crop & Tree Growth (Speeds up farming & tree growth cycles)", Plugin.EnableCropGrowthBoost?.Value ?? false, v =>
             {
                 if (Plugin.EnableCropGrowthBoost != null) Plugin.EnableCropGrowthBoost.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🌾 Crop Growth Boost: ENABLED" : "🌾 Crop Growth Boost: DISABLED");
-            }, 31f, 14, "🌾 <b>Crop Growth Boost:</b> Toggles custom growth multiplier for farming plots and tree planters.");
+            }, 30f, 14, "🌾 <b>Crop Growth Boost:</b> Toggles custom growth multiplier for farming plots and tree planters.");
 
-            // CATEGORY 3: RAFT & CREATURE DEFENSE
+            // CATEGORY 4: RAFT & CREATURE DEFENSE
             CreateCategoryHeader(page.transform, "🦈 RAFT & CREATURE DEFENSE", 21f);
 
             CreateToggleItem(page.transform, "🐾 Animal & Enemy Health Bars (Floating HP bars and distance meters over creatures)", Plugin.ShowAnimalHealthBars?.Value ?? true, v =>
@@ -762,23 +796,23 @@ namespace SailorsCompanion.UI
                 if (Plugin.ShowAnimalHealthBars != null) Plugin.ShowAnimalHealthBars.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🐾 Animal Health Bars: ENABLED" : "🐾 Animal Health Bars: DISABLED");
-            }, 31f, 14, "🐾 <b>Creature Health Bars:</b> Displays overhead health bars and distance meters on animals and predators.");
+            }, 30f, 14, "🐾 <b>Creature Health Bars:</b> Displays overhead health bars and distance meters on animals and predators.");
 
             CreateToggleItem(page.transform, "🦈 Anti-Shark Raft Protection (Bruce will not attack or destroy raft foundations)", Plugin.AntiSharkRaftDamage?.Value ?? false, v =>
             {
                 if (Plugin.AntiSharkRaftDamage != null) Plugin.AntiSharkRaftDamage.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🦈 Anti-Shark: ENABLED" : "🦈 Anti-Shark: DISABLED");
-            }, 31f, 14, "🦈 <b>Anti-Shark Protection:</b> Bruce the shark will ignore raft foundations and focus only on players in water.");
+            }, 30f, 14, "🦈 <b>Anti-Shark Protection:</b> Bruce the shark will ignore raft foundations and focus only on players in water.");
 
             CreateToggleItem(page.transform, "🔨 Infinite Tool Durability (Hooks, weapons, tools, gear & armor never break)", Plugin.InfiniteDurability?.Value ?? false, v =>
             {
                 if (Plugin.InfiniteDurability != null) Plugin.InfiniteDurability.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🔨 Infinite Durability: ENABLED" : "🔨 Infinite Durability: DISABLED");
-            }, 31f, 14, "🔨 <b>Infinite Durability:</b> Prevents hooks, weapons, tools, and armor from breaking from use.");
+            }, 30f, 14, "🔨 <b>Infinite Durability:</b> Prevents hooks, weapons, tools, and armor from breaking from use.");
 
-            // CATEGORY 4: BALANCED MULTIPLIERS & SPEEDS
+            // CATEGORY 5: BALANCED MULTIPLIERS & SPEEDS
             CreateCategoryHeader(page.transform, "🏃 BALANCED MULTIPLIERS & SPEEDS", 21f);
 
             float maxGrowth = Plugin.IsCreativeMode ? 10.0f : 2.0f;
@@ -805,7 +839,7 @@ namespace SailorsCompanion.UI
                     if (Plugin.CustomStackSize != null) Plugin.CustomStackSize.Value = Mathf.RoundToInt(v);
                     MarkProfileCustom();
                 }, "📦 <b>Stack Limit:</b> Maximum item capacity per inventory slot (20-200 recommended).",
-                32f);
+                30f);
 
             float maxReel = Plugin.IsCreativeMode ? 5.0f : 2.0f;
             float maxSwim = Plugin.IsCreativeMode ? 4.0f : 1.5f;
@@ -829,7 +863,16 @@ namespace SailorsCompanion.UI
                     if (Plugin.SprintSpeedMultiplier != null) Plugin.SprintSpeedMultiplier.Value = v;
                     MarkProfileCustom();
                 }, "🏃 <b>Sprint Speed:</b> Subtle movement speed increase across raft and land (1.0x–1.5x recommended).",
-                32f);
+                30f);
+
+            // CATEGORY 6: ADVANCED PRO HOTKEYS TOGGLE
+            CreateCategoryHeader(page.transform, "⌨️ ADVANCED PRO HOTKEYS", 21f);
+
+            CreateToggleItem(page.transform, "⌨️ Enable Quick Hotkeys ([F4] Sails, [F3] Engines, [F7] Magnet, [F10] Scanner)", Plugin.EnableHotkeys?.Value ?? false, v =>
+            {
+                if (Plugin.EnableHotkeys != null) Plugin.EnableHotkeys.Value = v;
+                TeleportManager.SetNotification(v ? "⌨️ Quick Hotkeys: ENABLED ([F4] Sails, [F3] Engines, [F7] Magnet, [F10] Scanner)" : "⌨️ Quick Hotkeys: DISABLED (UI Buttons only)");
+            }, 30f, 14, "⌨️ <b>Quick Hotkeys:</b> Enables direct gameplay keys for speed actions without opening menus ([F4] Sails, [F3] Engines, [F7] Magnet, [F10] Scanner).");
 
             // Tooltip / Hint Box
             var hintBox = CreateBox(page.transform, "QoLHintBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 26), WoodTitleBar);
@@ -983,33 +1026,65 @@ namespace SailorsCompanion.UI
                 _navStyleBtns.Add(sBtn);
             }
 
-            // Quick Teleport Row
-            var navTeleRow = CreateBox(page.transform, "NavTeleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), Color.clear);
-            EnsureLayout(navTeleRow, -1, 40);
+            // Quick Teleport & Island Scan Row
+            var navTeleRow = CreateBox(page.transform, "NavTeleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
+            EnsureLayout(navTeleRow, -1, 36);
             var navTeleLayout = navTeleRow.AddComponent<HorizontalLayoutGroup>();
-            navTeleLayout.spacing = 10;
+            navTeleLayout.spacing = 8;
             navTeleLayout.childForceExpandWidth = true;
 
             var teleBtnGO = CreateButton(navTeleRow.transform, "Btn_NavTeleToRaft", "⚡ Recall to Raft [F8]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 TeleportManager.TeleportPlayerToRaft();
-            }, WoodButtonNormal, TextParchmentLight, 15);
+            }, WoodButtonNormal, TextParchmentLight, 14);
             _navRecallBtnText = teleBtnGO.GetComponentInChildren<Text>();
 
-            string summonLabel = "⛵ Summon Raft Here [F9]";
+            string summonLabel = "⛵ Summon Raft [F9]";
             CreateButton(navTeleRow.transform, "Btn_NavSummonRaft", summonLabel, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 TeleportManager.TeleportRaftToPlayer();
-            }, WoodButtonNormal, TextParchmentLight, 15);
+            }, WoodButtonNormal, TextParchmentLight, 14);
 
             CreateButton(navTeleRow.transform, "Btn_NavAnchor", "⚓ Toggle Anchor", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 TeleportManager.ToggleRaftAnchor();
-            }, WoodButtonNormal, TextParchmentLight, 15);
+            }, WoodButtonNormal, TextParchmentLight, 14);
+
+            var scanBtnGO = CreateButton(navTeleRow.transform, "Btn_NavScanIsland", "🔍 Scan Island (10s)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            {
+                ItemDetector.TriggerPulseScan();
+            }, WoodButtonNormal, TextParchmentLight, 14);
+            _navScannerBtnText = scanBtnGO.GetComponentInChildren<Text>();
+
+            // Raft Propulsion & Smart Boat Control Row
+            var boatRow = CreateBox(page.transform, "BoatControlRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), WoodTitleBar);
+            EnsureLayout(boatRow, -1, 36);
+            CreateBox(boatRow.transform, "BoatTrim", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 2), WoodTrimAccent);
+            var boatLayout = boatRow.AddComponent<HorizontalLayoutGroup>();
+            boatLayout.spacing = 8;
+            boatLayout.padding = new RectOffset(10, 10, 3, 3);
+            boatLayout.childForceExpandWidth = true;
+
+            CreateButton(boatRow.transform, "Btn_ToggleSails", "⛵ Toggle All Sails", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            {
+                BoatController.ToggleAllSails();
+            }, WoodButtonNormal, TextParchmentLight, 14);
+
+            CreateButton(boatRow.transform, "Btn_ToggleEngines", "⚙️ Toggle All Engines", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            {
+                BoatController.ToggleAllEngines();
+            }, WoodButtonNormal, TextParchmentLight, 14);
+
+            string initialModeName = GetSailModeDisplayName();
+            var modeBtnGO = CreateButton(boatRow.transform, "Btn_SailMode", initialModeName, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            {
+                CycleSailMode();
+            }, TabActiveBg, TabActiveText, 13);
+            _navSailModeBtnText = modeBtnGO.GetComponentInChildren<Text>();
 
             // Live Navigation Data Box
-            var statusBox = CreateBox(page.transform, "StatusBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 180), WoodPlankEven);
-            EnsureLayout(statusBox, -1, 180);
+            var statusBox = CreateBox(page.transform, "StatusBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 160), WoodPlankEven);
+            EnsureLayout(statusBox, -1, 160);
             var boxLayout = statusBox.AddComponent<VerticalLayoutGroup>();
             boxLayout.padding = new RectOffset(18, 18, 12, 12);
             boxLayout.spacing = 8;
@@ -1944,6 +2019,30 @@ namespace SailorsCompanion.UI
         private static AI_StateMachine_Shark _cachedNavShark = null;
         private static Camera _cachedNavCamera = null;
 
+        private static string GetSailModeDisplayName()
+        {
+            int mode = Plugin.BoatSailMode != null ? Plugin.BoatSailMode.Value : 0;
+            switch (mode)
+            {
+                case 1: return "🧭 Sail: Auto-Wind";
+                case 2: return "🧭 Sail: Follow Heading";
+                default: return "🧭 Sail: Manual Control";
+            }
+        }
+
+        private void CycleSailMode()
+        {
+            if (Plugin.BoatSailMode == null) return;
+            int next = (Plugin.BoatSailMode.Value + 1) % 3;
+            Plugin.BoatSailMode.Value = next;
+            if (_navSailModeBtnText != null)
+            {
+                _navSailModeBtnText.text = GetSailModeDisplayName();
+            }
+            BoatController.ApplyActiveSailMode();
+            TeleportManager.SetNotification($"🧭 Smart Sail Mode: {GetSailModeDisplayName()}");
+        }
+
         private void UpdateNavTabText()
         {
             if (_navRecallBtnText != null)
@@ -1961,6 +2060,55 @@ namespace SailorsCompanion.UI
                 {
                     _navRecallBtnText.text = "⚡ Recall to Raft [F8]";
                 }
+            }
+
+            if (_navScannerBtnText != null)
+            {
+                if (ItemDetector.IsScanActive)
+                {
+                    int sec = Mathf.CeilToInt(ItemDetector.GetActiveTimeRemaining());
+                    _navScannerBtnText.text = $"🔍 Active ({sec}s)";
+                }
+                else
+                {
+                    float cd = ItemDetector.GetCooldownRemaining();
+                    if (cd > 0f)
+                    {
+                        int sec = Mathf.CeilToInt(cd);
+                        _navScannerBtnText.text = $"⏳ Scan ({sec}s)";
+                    }
+                    else
+                    {
+                        _navScannerBtnText.text = "🔍 Scan Island (10s)";
+                    }
+                }
+            }
+
+            if (_qolMagnetBtnText != null)
+            {
+                if (MagneticCollector.IsActive)
+                {
+                    int sec = Mathf.CeilToInt(MagneticCollector.GetActiveTimeRemaining());
+                    _qolMagnetBtnText.text = $"🧲 Active ({sec}s)";
+                }
+                else
+                {
+                    float cd = MagneticCollector.GetCooldownRemaining();
+                    if (cd > 0f)
+                    {
+                        int sec = Mathf.CeilToInt(cd);
+                        _qolMagnetBtnText.text = $"⏳ Magnet ({sec}s)";
+                    }
+                    else
+                    {
+                        _qolMagnetBtnText.text = "🧲 Ocean Magnet (45s)";
+                    }
+                }
+            }
+
+            if (_navSailModeBtnText != null)
+            {
+                _navSailModeBtnText.text = GetSailModeDisplayName();
             }
 
             var p = PlayerHelper.GetLocalPlayer();
