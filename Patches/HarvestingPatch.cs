@@ -31,7 +31,7 @@ namespace SailorsCompanion.Patches
     public static class PickupChanneling_Initiate_Patch
     {
         // [START] METHOD: PREFIX INITIATE CHANNEL
-        private static void Prefix(PickupChanneling __instance, Network_Player player)
+        private static void Prefix(PickupChanneling __instance)
         {
             if (__instance == null) return;
 
