@@ -24,6 +24,7 @@ namespace SailorsCompanion.UI
         private Texture2D _bgTexture = null;
         private Texture2D _btnNormalTex = null;
         private Texture2D _btnHoverTex = null;
+        private Texture2D _btnActiveTex = null;
 
         // Cached component references
         private static Raft _cachedRaft = null;
@@ -48,7 +49,7 @@ namespace SailorsCompanion.UI
         private static int _cachedDay = 1;
         private static string _cachedBadges = "";
 
-        public static readonly string[] StyleNames = { "Sleek Ribbon", "Compass Bar", "Mini Pill", "Classic Box" };
+        public static readonly string[] StyleNames = { "Sleek Ribbon", "Top Compass Bar", "Minimalist Pill", "Classic Box" };
         // ============================================================================
         // [END] CACHED REFERENCES & DATA STATE
         // ============================================================================
@@ -79,6 +80,10 @@ namespace SailorsCompanion.UI
             if (_btnHoverTex == null)
             {
                 _btnHoverTex = MakeColorTexture(new Color(0.06f, 0.52f, 0.76f, 0.95f));
+            }
+            if (_btnActiveTex == null)
+            {
+                _btnActiveTex = MakeColorTexture(new Color(0.85f, 0.15f, 0.20f, 0.95f));
             }
 
             if (_hudBoxStyle == null)
@@ -147,6 +152,7 @@ namespace SailorsCompanion.UI
                     fontStyle = FontStyle.Normal,
                     normal = { background = _btnNormalTex, textColor = new Color(0.70f, 0.85f, 0.95f) },
                     hover = { background = _btnHoverTex, textColor = Color.white },
+                    active = { background = _btnActiveTex, textColor = Color.white },
                     alignment = TextAnchor.MiddleCenter,
                     padding = new RectOffset(4, 4, 2, 2)
                 };
@@ -163,15 +169,6 @@ namespace SailorsCompanion.UI
         // ============================================================================
         private void Update()
         {
-            // Hotkey to cycle styles: Shift + F6
-            if (InputHelper.WasKeyPressed(KeyCode.F6))
-            {
-                if (InputHelper.IsKeyHeld(KeyCode.LeftShift) || InputHelper.IsKeyHeld(KeyCode.RightShift))
-                {
-                    CycleStyle();
-                }
-            }
-
             if (!Plugin.EnableHUD.Value) return;
             if (!PlayerHelper.IsInGameWorld()) return;
 
@@ -206,14 +203,23 @@ namespace SailorsCompanion.UI
         {
             int current = Plugin.HUDStyle != null ? Plugin.HUDStyle.Value : 0;
             int next = (current + 1) % 4;
-            if (Plugin.HUDStyle != null) Plugin.HUDStyle.Value = next;
+            SetStyle(next);
         }
 
         public static void SetStyle(int styleIndex)
         {
             if (Plugin.HUDStyle != null)
             {
-                Plugin.HUDStyle.Value = Mathf.Clamp(styleIndex, 0, 3);
+                int safeIdx = Mathf.Clamp(styleIndex, 0, 3);
+                Plugin.HUDStyle.Value = safeIdx;
+                try
+                {
+                    Plugin.Instance?.Config?.Save();
+                }
+                catch { }
+
+                string name = (safeIdx >= 0 && safeIdx < StyleNames.Length) ? StyleNames[safeIdx] : "Unknown";
+                TeleportManager.SetNotification($"🧭 HUD Style: {name}");
             }
         }
 
@@ -281,7 +287,6 @@ namespace SailorsCompanion.UI
         // ============================================================================
         private void OnGUI()
         {
-            if (Event.current.type != EventType.Repaint) return;
             if (!Plugin.EnableHUD.Value) return;
             if (!PlayerHelper.IsInGameWorld()) return;
 
@@ -334,7 +339,7 @@ namespace SailorsCompanion.UI
 
             GUI.Label(new Rect(r.x + 10f, r.y + 6f, w - 85f, 22f), line1, _hudTextStyle);
 
-            if (GUI.Button(new Rect(r.x + w - 70f, r.y + 6f, 62f, 22f), "Style ⟳", _hudButtonStyle))
+            if (GUI.Button(new Rect(r.x + w - 70f, r.y + 6f, 62f, 22f), "Style", _hudButtonStyle))
             {
                 CycleStyle();
             }
@@ -361,7 +366,7 @@ namespace SailorsCompanion.UI
             string sub = $"⚓ <b>{_cachedRaftDist:F0}m</b> {_cachedRaftArrow} ({_cachedRaftState})  |  Pos: ({_cachedPos.x:F0}, {_cachedPos.z:F0}){sharkPart}  |  ☀️ {_cachedHour:D2}:{_cachedMinute:D2}{_cachedBadges}";
             GUI.Label(new Rect(r.x + 10f, r.y + 25f, w - 85f, 18f), sub, _hudSmallStyle);
 
-            if (GUI.Button(new Rect(r.x + w - 70f, r.y + 12f, 62f, 24f), "Style ⟳", _hudButtonStyle))
+            if (GUI.Button(new Rect(r.x + w - 70f, r.y + 12f, 62f, 24f), "Style", _hudButtonStyle))
             {
                 CycleStyle();
             }
@@ -380,7 +385,7 @@ namespace SailorsCompanion.UI
 
             GUI.Label(new Rect(r.x + 8f, r.y + 4f, w - 76f, 20f), text, _hudTextStyle);
 
-            if (GUI.Button(new Rect(r.x + w - 66f, r.y + 3f, 60f, 22f), "Style ⟳", _hudButtonStyle))
+            if (GUI.Button(new Rect(r.x + w - 66f, r.y + 3f, 60f, 22f), "Style", _hudButtonStyle))
             {
                 CycleStyle();
             }
@@ -395,7 +400,7 @@ namespace SailorsCompanion.UI
             GUI.Box(r, GUIContent.none, _hudBoxStyle);
 
             GUI.Label(new Rect(r.x + 10f, r.y + 6f, w - 75f, 20f), "<b>🧭 Sailor's Companion</b>", _hudTitleStyle);
-            if (GUI.Button(new Rect(r.x + w - 65f, r.y + 6f, 56f, 20f), "Style ⟳", _hudButtonStyle))
+            if (GUI.Button(new Rect(r.x + w - 65f, r.y + 6f, 56f, 20f), "Style", _hudButtonStyle))
             {
                 CycleStyle();
             }
@@ -456,6 +461,7 @@ namespace SailorsCompanion.UI
             if (_bgTexture != null) Destroy(_bgTexture);
             if (_btnNormalTex != null) Destroy(_btnNormalTex);
             if (_btnHoverTex != null) Destroy(_btnHoverTex);
+            if (_btnActiveTex != null) Destroy(_btnActiveTex);
         }
         // ============================================================================
         // [END] TOAST NOTIFICATION ENGINE

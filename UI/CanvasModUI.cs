@@ -27,6 +27,7 @@ namespace SailorsCompanion.UI
 
         // Dynamic Text References
         private Text _navStatusText;
+        private List<GameObject> _navStyleBtns = new List<GameObject>();
         private Text _researchStatusText;
 
         // Item Spawner
@@ -867,15 +868,18 @@ namespace SailorsCompanion.UI
             var styleLabel = CreateText(styleRow.transform, "StyleLabel", "HUD Style:", 15, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
             EnsureLayout(styleLabel.gameObject, 90, 34, false);
 
-            string[] styleNames = { "Sleek Ribbon", "Compass Bar", "Mini Pill", "Classic Box" };
+            _navStyleBtns.Clear();
+            string[] styleNames = HUDOverlay.StyleNames;
             for (int s = 0; s < styleNames.Length; s++)
             {
                 int styleIdx = s;
                 var sBtn = CreateButton(styleRow.transform, $"Btn_Style_{s}", styleNames[s], Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(120, 34), () =>
                 {
                     HUDOverlay.SetStyle(styleIdx);
+                    UpdateNavStyleButtonVisuals();
                 }, (Plugin.HUDStyle != null && Plugin.HUDStyle.Value == s) ? new Color(0.85f, 0.15f, 0.20f, 1f) : new Color(0.14f, 0.14f, 0.18f, 0.92f), Color.white, 14);
                 EnsureLayout(sBtn, 120, 34, false);
+                _navStyleBtns.Add(sBtn);
             }
 
             // Quick Teleport Row
@@ -1741,7 +1745,15 @@ namespace SailorsCompanion.UI
                 KeyCode keyHud = Plugin.KeyHUD != null ? Plugin.KeyHUD.Value : KeyCode.F6;
                 if (InputHelper.WasKeyPressed(keyHud))
                 {
-                    Plugin.EnableHUD.Value = !Plugin.EnableHUD.Value;
+                    if (InputHelper.IsKeyHeld(KeyCode.LeftShift) || InputHelper.IsKeyHeld(KeyCode.RightShift))
+                    {
+                        HUDOverlay.CycleStyle();
+                        UpdateNavStyleButtonVisuals();
+                    }
+                    else
+                    {
+                        Plugin.EnableHUD.Value = !Plugin.EnableHUD.Value;
+                    }
                 }
                 KeyCode keyFly = Plugin.KeyFly != null ? Plugin.KeyFly.Value : KeyCode.F;
                 if (InputHelper.WasKeyPressed(keyFly) || InputHelper.WasKeyPressed(KeyCode.F7))
@@ -1854,7 +1866,27 @@ namespace SailorsCompanion.UI
                                   $"• Facing Direction: <b>{yaw:000}° ({cardinals[cIndex]})</b>\n" +
                                   $"• {raftStr}\n" +
                                   $"• {sharkStr}{notifStr}\n\n" +
-                                  $"<size=13><color=#CBD5E1>Hotkeys: [F5] Menu  |  [F6] HUD  |  [F] Fly  |  [F8] Recall to Raft  |  [F9] Summon Raft</color></size>";
+                                  $"<size=13><color=#CBD5E1>Hotkeys: [F5] Menu  |  [F6] HUD  |  [Shift+F6] Cycle Style  |  [F] Fly  |  [F8] Recall  |  [F9] Summon</color></size>";
+
+            UpdateNavStyleButtonVisuals();
+        }
+
+        private void UpdateNavStyleButtonVisuals()
+        {
+            if (_navStyleBtns == null || _navStyleBtns.Count == 0) return;
+            int current = Plugin.HUDStyle != null ? Plugin.HUDStyle.Value : 0;
+            for (int i = 0; i < _navStyleBtns.Count; i++)
+            {
+                if (_navStyleBtns[i] != null)
+                {
+                    var img = _navStyleBtns[i].GetComponent<Image>();
+                    if (img != null)
+                        img.color = (i == current) ? new Color(0.85f, 0.15f, 0.20f, 1f) : new Color(0.14f, 0.14f, 0.18f, 0.92f);
+                    var txt = _navStyleBtns[i].GetComponentInChildren<Text>();
+                    if (txt != null)
+                        txt.fontStyle = (i == current) ? FontStyle.Bold : FontStyle.Normal;
+                }
+            }
         }
 
         public void RefreshUpdateBanner()

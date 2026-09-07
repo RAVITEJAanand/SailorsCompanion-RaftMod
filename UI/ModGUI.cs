@@ -497,6 +497,17 @@ namespace SailorsCompanion.UI
 
             Plugin.EnableHUD.Value = GUILayout.Toggle(Plugin.EnableHUD.Value, " 🧭 Show Navigation HUD Overlay (Hotkey: [F6])");
 
+            GUILayout.Space(4);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("HUD Style:", GUILayout.Width(80));
+            int curStyle = Plugin.HUDStyle != null ? Plugin.HUDStyle.Value : 0;
+            int selectedStyle = GUILayout.Toolbar(curStyle, HUDOverlay.StyleNames);
+            if (selectedStyle != curStyle)
+            {
+                HUDOverlay.SetStyle(selectedStyle);
+            }
+            GUILayout.EndHorizontal();
+
             GUILayout.Space(8);
             GUILayout.Label("Current Navigation Status:", _subHeaderStyle);
 
