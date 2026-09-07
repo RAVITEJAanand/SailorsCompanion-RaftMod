@@ -56,10 +56,10 @@ namespace SailorsCompanion.UI
         private static readonly Color WoodTrimAccent      = new Color(0.78f, 0.65f, 0.44f, 1.00f); // Parchment Golden Wood Trim #C7A670
 
         // Tab Colors (Parchment Wood)
-        private static readonly Color TabActiveBg         = new Color(0.78f, 0.65f, 0.44f, 1.00f); // Light Warm Birch #C7A670
-        private static readonly Color TabActiveText       = new Color(0.24f, 0.14f, 0.07f, 1.00f); // Dark Carved Wood Font #3D2412
-        private static readonly Color TabInactiveBg       = new Color(0.22f, 0.13f, 0.07f, 0.96f); // Dark Inactive Wood #382112
-        private static readonly Color TabInactiveText     = new Color(0.74f, 0.64f, 0.48f, 1.00f); // Warm Muted Beige #BD837B
+        private static readonly Color TabActiveBg         = new Color(0.86f, 0.72f, 0.48f, 1.00f); // Bright Warm Birch Parchment #DDB87A
+        private static readonly Color TabActiveText       = new Color(0.18f, 0.10f, 0.05f, 1.00f); // Deep Carved Wood Font #2E1A0D
+        private static readonly Color TabInactiveBg       = new Color(0.20f, 0.12f, 0.06f, 0.96f); // Dark Inactive Wood #331F0F
+        private static readonly Color TabInactiveText     = new Color(0.82f, 0.72f, 0.58f, 1.00f); // Parchment Beige #D1B894
 
         // Row Planks (Alternating Wooden Plank Strips)
         private static readonly Color WoodPlankEven       = new Color(0.30f, 0.18f, 0.11f, 0.95f); // Plank A #4D2E1C
@@ -391,15 +391,38 @@ namespace SailorsCompanion.UI
         private void UpdateModeButtonsVisuals()
         {
             bool isCreative = Plugin.IsCreativeMode;
+            Color survColor = !isCreative ? new Color(0.14f, 0.50f, 0.25f, 0.95f) : WoodButtonNormal;
+            Color creatColor = isCreative ? WoodButtonCrimson : WoodButtonNormal;
+
             if (_btnModeSurvivalImg != null)
-                _btnModeSurvivalImg.color = !isCreative ? new Color(0.14f, 0.50f, 0.25f, 0.95f) : WoodButtonNormal;
+            {
+                _btnModeSurvivalImg.color = survColor;
+                var btn = _btnModeSurvivalImg.GetComponent<Button>();
+                if (btn != null)
+                {
+                    var cb = btn.colors;
+                    cb.normalColor = survColor;
+                    cb.selectedColor = survColor;
+                    btn.colors = cb;
+                }
+            }
             if (_btnModeCreativeImg != null)
-                _btnModeCreativeImg.color = isCreative ? WoodButtonCrimson : WoodButtonNormal;
+            {
+                _btnModeCreativeImg.color = creatColor;
+                var btn = _btnModeCreativeImg.GetComponent<Button>();
+                if (btn != null)
+                {
+                    var cb = btn.colors;
+                    cb.normalColor = creatColor;
+                    cb.selectedColor = creatColor;
+                    btn.colors = cb;
+                }
+            }
 
             if (_btnModeSurvivalTxt != null)
-                _btnModeSurvivalTxt.color = !isCreative ? TextParchmentLight : TabInactiveText;
+                _btnModeSurvivalTxt.color = !isCreative ? TextParchmentLight : TextMuted;
             if (_btnModeCreativeTxt != null)
-                _btnModeCreativeTxt.color = isCreative ? TextParchmentLight : TabInactiveText;
+                _btnModeCreativeTxt.color = isCreative ? TextParchmentLight : TextMuted;
         }
 
         private void ApplyProfile(string profileName)
@@ -536,10 +559,22 @@ namespace SailorsCompanion.UI
                     || (ProfileKeys[i] == "BalancedOP" && active == "CozyFarming")
                     || (ProfileKeys[i] == "EasyMode" && active == "MasterBuilder"));
 
-                _profileButtonImgs[i].color = isSel ? ProfileActiveColor : ProfileInactiveColor;
+                Color targetBg = isSel ? ProfileActiveColor : ProfileInactiveColor;
+                _profileButtonImgs[i].color = targetBg;
+                var btn = _profileButtonImgs[i].GetComponent<Button>();
+                if (btn != null)
+                {
+                    var cb = btn.colors;
+                    cb.normalColor = targetBg;
+                    cb.highlightedColor = isSel ? targetBg : WoodButtonHover;
+                    cb.pressedColor = WoodWindowBorder;
+                    cb.selectedColor = targetBg;
+                    btn.colors = cb;
+                }
+
                 if (_profileButtonTexts[i] != null)
                 {
-                    _profileButtonTexts[i].color = isSel ? Color.white : new Color(0.70f, 0.75f, 0.82f);
+                    _profileButtonTexts[i].color = isSel ? TabActiveText : TextParchmentLight;
                     _profileButtonTexts[i].fontStyle = isSel ? FontStyle.Bold : FontStyle.Normal;
                 }
             }
@@ -592,6 +627,8 @@ namespace SailorsCompanion.UI
             var cbRt = cardBorder.GetComponent<RectTransform>();
             cbRt.offsetMin = new Vector2(-2, -2);
             cbRt.offsetMax = new Vector2(2, 2);
+            var cbLe = cardBorder.AddComponent<LayoutElement>();
+            cbLe.ignoreLayout = true;
             cardBorder.transform.SetAsFirstSibling();
 
             var cardLayout = card.AddComponent<VerticalLayoutGroup>();
@@ -1037,25 +1074,29 @@ namespace SailorsCompanion.UI
                 EnsureLayout(desc.gameObject, -1, 46);
 
                 // Progressive Buttons
-                CreateButton(page.transform, "Btn_BaseTech", "🧪 1. Research Base Table Materials (Wood, Plastic, Metal, Scrap, Goo, Bricks)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
+                var btnBase = CreateButton(page.transform, "Btn_BaseTech", "🧪 1. Research Base Table Materials (Wood, Plastic, Metal, Scrap, Goo, Bricks)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
                 {
                     ResearchBaseMaterials();
                 }, WoodButtonNormal, TextParchmentLight, 14);
+                EnsureLayout(btnBase, -1, 44);
 
-                CreateButton(page.transform, "Btn_Chapter1", "📻 2. Unlock Chapter 1 Blueprints (Radio Tower & Vasagatan)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
+                var btnCh1 = CreateButton(page.transform, "Btn_Chapter1", "📻 2. Unlock Chapter 1 Blueprints (Radio Tower & Vasagatan)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
                 {
                     UnlockChapterBlueprints(1, "Radio Tower & Vasagatan", new[] { "antenna", "receiver", "headlight", "machete", "steering", "engine" });
                 }, WoodButtonNormal, TextParchmentLight, 14);
+                EnsureLayout(btnCh1, -1, 44);
 
-                CreateButton(page.transform, "Btn_Chapter2", "🐻 3. Unlock Chapter 2 Blueprints (Balboa, Caravan Island, Tangaroa)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
+                var btnCh2 = CreateButton(page.transform, "Btn_Chapter2", "🐻 3. Unlock Chapter 2 Blueprints (Balboa, Caravan Island, Tangaroa)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
                 {
                     UnlockChapterBlueprints(2, "Balboa / Caravan / Tangaroa", new[] { "biofuel", "storage", "charger", "grill", "pipe", "firework" });
                 }, WoodButtonNormal, TextParchmentLight, 14);
+                EnsureLayout(btnCh2, -1, 44);
 
-                CreateButton(page.transform, "Btn_Chapter3", "🏙️ 4. Unlock Chapter 3 Blueprints (Varuna Point, Temperance, Utopia)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
+                var btnCh3 = CreateButton(page.transform, "Btn_Chapter3", "🏙️ 4. Unlock Chapter 3 Blueprints (Varuna Point, Temperance, Utopia)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
                 {
                     UnlockChapterBlueprints(3, "Varuna / Temperance / Utopia", new[] { "batteryadvanced", "anchorstationaryadvanced", "backpackadvanced", "smelter", "windmill", "titanium", "biofuelextractoradvanced" });
                 }, WoodButtonNormal, TextParchmentLight, 14);
+                EnsureLayout(btnCh3, -1, 44);
 
                 _researchStatusText = CreateText(page.transform, "Status", "<color=#DBC49E>Status: Ready. Select a chapter or base research to learn recipes.</color>", 14, FontStyle.Italic, TextParchmentLight, TextAnchor.MiddleCenter);
                 EnsureLayout(_researchStatusText.gameObject, -1, 26);
@@ -1410,12 +1451,27 @@ namespace SailorsCompanion.UI
                 }
                 if (_tabButtonImages[i] != null)
                 {
-                    _tabButtonImages[i].color = (i == tabIndex) ? TabActiveBg : TabInactiveBg;
-                }
-                if (_tabButtonTexts[i] != null)
-                {
-                    _tabButtonTexts[i].color = (i == tabIndex) ? TabActiveText : TabInactiveText;
-                    _tabButtonTexts[i].fontStyle = (i == tabIndex) ? FontStyle.Bold : FontStyle.Normal;
+                    bool isSelected = (i == tabIndex);
+                    Color targetBg = isSelected ? TabActiveBg : TabInactiveBg;
+                    Color targetText = isSelected ? TabActiveText : TabInactiveText;
+
+                    _tabButtonImages[i].color = targetBg;
+                    var btn = _tabButtonImages[i].GetComponent<Button>();
+                    if (btn != null)
+                    {
+                        var cb = btn.colors;
+                        cb.normalColor = targetBg;
+                        cb.highlightedColor = isSelected ? targetBg : WoodButtonHover;
+                        cb.pressedColor = WoodWindowBorder;
+                        cb.selectedColor = targetBg;
+                        btn.colors = cb;
+                    }
+
+                    if (_tabButtonTexts[i] != null)
+                    {
+                        _tabButtonTexts[i].color = targetText;
+                        _tabButtonTexts[i].fontStyle = isSelected ? FontStyle.Bold : FontStyle.Normal;
+                    }
                 }
             }
 
