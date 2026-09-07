@@ -20,7 +20,7 @@ namespace SailorsCompanion.Features
         public static UpdateChecker Instance { get; private set; }
 
         public const string VERSION_URL = "https://raw.githubusercontent.com/RAVITEJAanand/SailorsCompanion-RaftMod/main/version.json";
-        public const string DEFAULT_DOWNLOAD_URL = "https://www.nexusmods.com/raft/mods/154";
+        public const string DEFAULT_DOWNLOAD_URL = "https://www.nexusmods.com/raft/mods/155";
 
         public static bool IsUpdateAvailable { get; private set; } = false;
         public static string LatestVersion { get; private set; } = "";

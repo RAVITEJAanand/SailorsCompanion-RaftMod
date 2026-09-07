@@ -12,7 +12,7 @@
 
 | ప్లాట్‌ఫారమ్ (Platform) | లింక్ (URL) | వివరాలు (Details) |
 | :--- | :--- | :--- |
-| **Nexus Mods** | [nexusmods.com/raft/mods/154](https://www.nexusmods.com/raft/mods/154) | ప్రధాన మోడ్ పేజీ, డౌన్‌లోడ్స్, కామెంట్స్ & బగ్ రిపోర్ట్స్ |
+| **Nexus Mods** | [nexusmods.com/raft/mods/155](https://www.nexusmods.com/raft/mods/155) | ప్రధాన మోడ్ పేజీ, డౌన్‌లోడ్స్, కామెంట్స్ & బగ్ రిపోర్ట్స్ |
 | **RaftModding.com** | [raftmodding.com/mods/sailors-companion](https://www.raftmodding.com/mods/sailors-companion) | అఫీషియల్ రాఫ్ట్ మోడింగ్ కమ్యూనిటీ పేజీ & RML ప్యాకేజీ |
 | **GitHub Repository** | [github.com/RAVITEJAanand/SailorsCompanion-RaftMod](https://github.com/RAVITEJAanand/SailorsCompanion-RaftMod) | ఓపెన్ సోర్స్ కోడ్‌బేస్, ట్రాఫిక్ అనలిటిక్స్ & ఇష్యూ ట్రాకర్ |
 | **Discord Community** | [discord.gg/B4EMrR5Vrf](https://discord.gg/B4EMrR5Vrf) | అఫీషియల్ డిస్కార్డ్ సర్వర్, సపోర్ట్ & కమ్యూనిటీ చర్చలు |
