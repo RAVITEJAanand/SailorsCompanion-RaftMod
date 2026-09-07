@@ -1057,12 +1057,10 @@ namespace SailorsCompanion.UI
             _navScannerBtnText = scanBtnGO.GetComponentInChildren<Text>();
 
             // Raft Propulsion & Smart Boat Control Row
-            var boatRow = CreateBox(page.transform, "BoatControlRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), WoodTitleBar);
+            var boatRow = CreateBox(page.transform, "BoatControlRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
             EnsureLayout(boatRow, -1, 36);
-            CreateBox(boatRow.transform, "BoatTrim", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 2), WoodTrimAccent);
             var boatLayout = boatRow.AddComponent<HorizontalLayoutGroup>();
             boatLayout.spacing = 8;
-            boatLayout.padding = new RectOffset(10, 10, 3, 3);
             boatLayout.childForceExpandWidth = true;
 
             CreateButton(boatRow.transform, "Btn_ToggleSails", "⛵ Toggle All Sails", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
@@ -1149,29 +1147,29 @@ namespace SailorsCompanion.UI
                 EnsureLayout(desc.gameObject, -1, 46);
 
                 // Progressive Buttons
-                var btnBase = CreateButton(page.transform, "Btn_BaseTech", "🧪 1. Research Base Table Materials (Wood, Plastic, Metal, Scrap, Goo, Bricks)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
+                var btnBase = CreateButton(page.transform, "Btn_BaseTech", "🔬 <b><color=#F5C761>1. Research Base Table Materials</color></b> <color=#F2E6CC>(Wood, Plastic, Metal, Scrap, Goo, Bricks)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 46), () =>
                 {
                     ResearchBaseMaterials();
                 }, WoodButtonNormal, TextParchmentLight, 14);
-                EnsureLayout(btnBase, -1, 44);
+                EnsureLayout(btnBase, -1, 46);
 
-                var btnCh1 = CreateButton(page.transform, "Btn_Chapter1", "📻 2. Unlock Chapter 1 Blueprints (Radio Tower & Vasagatan)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
+                var btnCh1 = CreateButton(page.transform, "Btn_Chapter1", "📻 <b><color=#F5C761>2. Unlock Chapter 1 Blueprints</color></b> <color=#F2E6CC>(Radio Tower & Vasagatan)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 46), () =>
                 {
                     UnlockChapterBlueprints(1, "Radio Tower & Vasagatan", new[] { "antenna", "receiver", "headlight", "machete", "steering", "engine" });
                 }, WoodButtonNormal, TextParchmentLight, 14);
-                EnsureLayout(btnCh1, -1, 44);
+                EnsureLayout(btnCh1, -1, 46);
 
-                var btnCh2 = CreateButton(page.transform, "Btn_Chapter2", "🐻 3. Unlock Chapter 2 Blueprints (Balboa, Caravan Island, Tangaroa)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
+                var btnCh2 = CreateButton(page.transform, "Btn_Chapter2", "🐻 <b><color=#F5C761>3. Unlock Chapter 2 Blueprints</color></b> <color=#F2E6CC>(Balboa, Caravan Island, Tangaroa)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 46), () =>
                 {
                     UnlockChapterBlueprints(2, "Balboa / Caravan / Tangaroa", new[] { "biofuel", "storage", "charger", "grill", "pipe", "firework" });
                 }, WoodButtonNormal, TextParchmentLight, 14);
-                EnsureLayout(btnCh2, -1, 44);
+                EnsureLayout(btnCh2, -1, 46);
 
-                var btnCh3 = CreateButton(page.transform, "Btn_Chapter3", "🏙️ 4. Unlock Chapter 3 Blueprints (Varuna Point, Temperance, Utopia)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
+                var btnCh3 = CreateButton(page.transform, "Btn_Chapter3", "🏙️ <b><color=#F5C761>4. Unlock Chapter 3 Blueprints</color></b> <color=#F2E6CC>(Varuna Point, Temperance, Utopia)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 46), () =>
                 {
                     UnlockChapterBlueprints(3, "Varuna / Temperance / Utopia", new[] { "batteryadvanced", "anchorstationaryadvanced", "backpackadvanced", "smelter", "windmill", "titanium", "biofuelextractoradvanced" });
                 }, WoodButtonNormal, TextParchmentLight, 14);
-                EnsureLayout(btnCh3, -1, 44);
+                EnsureLayout(btnCh3, -1, 46);
 
                 _researchStatusText = CreateText(page.transform, "Status", "<color=#DBC49E>Status: Ready. Select a chapter or base research to learn recipes.</color>", 14, FontStyle.Italic, TextParchmentLight, TextAnchor.MiddleCenter);
                 EnsureLayout(_researchStatusText.gameObject, -1, 26);
@@ -1636,6 +1634,7 @@ namespace SailorsCompanion.UI
             t.fontStyle = FontStyle.Bold;
             t.color = textColor;
             t.alignment = TextAnchor.MiddleCenter;
+            t.supportRichText = true;
 
             return go;
         }
