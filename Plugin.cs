@@ -225,6 +225,7 @@ namespace SailorsCompanion
                 ManagerGO.hideFlags = HideFlags.HideAndDontSave;
                 UnityEngine.Object.DontDestroyOnLoad(ManagerGO);
                 ManagerGO.AddComponent<CanvasModUI>();
+                ManagerGO.AddComponent<CanvasInstalledModsUI>();
                 ManagerGO.AddComponent<ModGUI>();
                 ManagerGO.AddComponent<HUDOverlay>();
                 ManagerGO.AddComponent<CreatureHealthOverlay>();

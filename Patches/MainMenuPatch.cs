@@ -80,16 +80,8 @@ namespace SailorsCompanion.Patches
                         btn.onClick = new Button.ButtonClickedEvent();
                         btn.onClick.AddListener(() =>
                         {
-                            Debug.Log("[Sailor's Companion] Main Menu MODS button clicked!");
-                            if (CanvasModUI.Instance != null)
-                            {
-                                CanvasModUI.Instance.ToggleModWindow();
-                            }
-                            else
-                            {
-                                Plugin.EnsureManager();
-                                CanvasModUI.Instance?.ToggleModWindow();
-                            }
+                            Debug.Log("[Sailor's Companion] Main Menu MODS button clicked -> Opening Installed Mods Manager!");
+                            CanvasInstalledModsUI.Toggle();
                         });
                     }
 
@@ -192,8 +184,8 @@ namespace SailorsCompanion.Patches
                     btn.onClick = new Button.ButtonClickedEvent();
                     btn.onClick.AddListener(() =>
                     {
-                        Debug.Log("[Sailor's Companion] Pause Menu MOD MENU button clicked!");
-                        CanvasModUI.Instance?.ToggleModWindow();
+                        Debug.Log("[Sailor's Companion] Pause Menu MOD MENU button clicked -> Opening Installed Mods Manager!");
+                        CanvasInstalledModsUI.Toggle();
                     });
                 }
 
