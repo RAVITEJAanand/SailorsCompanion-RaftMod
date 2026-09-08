@@ -85,12 +85,19 @@ namespace SailorsCompanion.Features
                 return 0;
             }
 
+            // Verify player inventory has space before clearing nets
+            if (!HasInventorySpace(player.Inventory))
+            {
+                if (!silent) TeleportManager.SetNotification("⚠️ Inventory full! Free up space to empty collection nets.");
+                return 0;
+            }
+
             int totalItemsCollected = 0;
             int netsEmptied = 0;
 
             foreach (var collector in _cachedCollectors)
             {
-                if (collector == null || collector.collectedItems == null) continue;
+                if (collector == null || collector.gameObject == null || !collector.gameObject.activeInHierarchy || collector.collectedItems == null) continue;
 
                 int count = collector.collectedItems.Count;
                 if (count > 0)
@@ -125,6 +132,16 @@ namespace SailorsCompanion.Features
         // ============================================================================
         // [END] ACTION: EMPTY ALL COLLECTION NETS
         // ============================================================================
+
+        private static bool HasInventorySpace(PlayerInventory inventory)
+        {
+            if (inventory == null || inventory.allSlots == null) return false;
+            foreach (var slot in inventory.allSlots)
+            {
+                if (slot != null && slot.IsEmpty) return true;
+            }
+            return false;
+        }
     }
     // ============================================================================
     // [END] MODULE: COLLECTION NETS HELPER & AUTO-EMPTY

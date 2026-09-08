@@ -1,6 +1,6 @@
 # ⚓ Sailor's Companion — Quality of Life & Survival Suite for Raft
 
-[![Version](https://img.shields.io/badge/Version-1.1.0-blue.svg?style=for-the-badge&logo=github)](https://github.com/RAVITEJAanand/SailorsCompanion-RaftMod/releases)
+[![Version](https://img.shields.io/badge/Version-1.1.1-blue.svg?style=for-the-badge&logo=github)](https://github.com/RAVITEJAanand/SailorsCompanion-RaftMod/releases)
 [![Raft Version](https://img.shields.io/badge/Raft-The%20Final%20Chapter%20(v1.0+)-brightgreen.svg?style=for-the-badge&logo=steam)](https://store.steampowered.com/app/648800/Raft/)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B4EMrR5Vrf)
 [![License](https://img.shields.io/badge/License-MIT-orange.svg?style=for-the-badge)](LICENSE)
@@ -8,6 +8,17 @@
 ![Sailor's Companion Banner](banner.png)
 
 **Sailor's Companion** is the definitive, all-in-one Quality of Life, Automation, Navigation, and Sandbox mod for **Raft (The Final Chapter)**. Built from the ground up with a native in-game wooden plank UI, rich HUD radar systems, intelligent raft recall teleportation, 3D island resource scanning, smart boat propulsion automation, and balanced survival progression.
+
+---
+
+## 🚀 What's New in Version 1.1.1
+
+### 🛠️ Critical Bugfixes & Performance Enhancements
+- **Fixed Collection Nets Despawning & Raft Sinking**: Resolved an issue where Collection Nets were detected as loose ocean debris, causing placed nets to vanish and destabilize raft physics when multiple nets were installed.
+- **Fixed Dropped Items Auto-Pickup Loop**: Items dropped intentionally by the player (with `[Q]`) are no longer automatically sucked back into inventory.
+- **⚡ 3.5x Fast Reef Mining**: Greatly accelerated Hook mining time for underwater Sand, Clay, Scrap, and Ores (~0.7s per node instead of 2.5s), keeping tool progression intact while removing tedious grind.
+- **🦈 Temporary Shark Repel Ward**: Mining reef resources activates a 5-second protective aura that temporarily diverts Bruce the shark from attacking the player while underwater.
+- **Collection Nets Safety Buffer**: Added automatic inventory capacity checks before emptying collection nets to avoid dropping overflow items into the sea.
 
 ---
 

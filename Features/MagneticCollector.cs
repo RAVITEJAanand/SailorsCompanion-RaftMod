@@ -158,7 +158,15 @@ namespace SailorsCompanion.Features
 
                 foreach (var item in pickups)
                 {
-                    if (item == null || !item.canBePickedUp) continue;
+                    if (item == null || !item.canBePickedUp || item.gameObject == null || !item.gameObject.activeInHierarchy) continue;
+
+                    // CRITICAL FIX: Never pull or pick up Collection Nets, Animals, or Raft Structures!
+                    if (item is ItemNet || item.pickupItemType != PickupItemType.Default) continue;
+                    if (item.GetComponentInParent<Block>() != null) continue;
+                    if (item.GetComponent<ItemCollector>() != null) continue;
+
+                    // CRITICAL FIX: Never pull items intentionally dropped by the player!
+                    if (item.isDropped) continue;
 
                     Vector3 itemPos = item.transform.position;
                     float dist = Vector3.Distance(targetCenter, itemPos);

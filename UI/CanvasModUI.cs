@@ -825,19 +825,12 @@ namespace SailorsCompanion.UI
                 TeleportManager.SetNotification(v ? "🏝️ Island Hand Pickup: ENABLED" : "🏝️ Island Hand Pickup: DISABLED");
             }, 38f, 14, "🏝️ <b>Island Hand Pickup:</b> Pick up flowers, fruits, and surface items on islands without needing a hook.");
 
-            CreateToggleItem(leftCol.transform, "🌊 Reef Hand Harvesting (Mine sand, clay, ore by hand)", Plugin.ReefHandHarvesting?.Value ?? true, v =>
-            {
-                if (Plugin.ReefHandHarvesting != null) Plugin.ReefHandHarvesting.Value = v;
-                MarkProfileCustom();
-                TeleportManager.SetNotification(v ? "🌊 Reef Hand Harvesting: ENABLED" : "🌊 Reef Hand Harvesting: DISABLED");
-            }, 38f, 14, "🌊 <b>Reef Hand Harvesting:</b> Allows mining underwater reef resource nodes directly by hand without requiring a hook tool.");
-
-            CreateToggleItem(leftCol.transform, "⚡ Rapid Reef Mining (0.4s Fast extraction before sharks)", Plugin.ReefFastHarvest?.Value ?? true, v =>
+            CreateToggleItem(leftCol.transform, "⚡ Fast Reef Mining (3.5x Hook Speed + Shark Ward)", Plugin.ReefFastHarvest?.Value ?? true, v =>
             {
                 if (Plugin.ReefFastHarvest != null) Plugin.ReefFastHarvest.Value = v;
                 MarkProfileCustom();
-                TeleportManager.SetNotification(v ? "⚡ Rapid Reef Mining: ENABLED" : "⚡ Rapid Reef Mining: DISABLED");
-            }, 38f, 14, "⚡ <b>Rapid Reef Mining:</b> Reduces mining channeling time from 3s to 0.4s so you can scavenge quickly before Bruce attacks.");
+                TeleportManager.SetNotification(v ? "⚡ Fast Reef Mining: ENABLED (3.5x Speed + Shark Ward)" : "⚡ Fast Reef Mining: DISABLED");
+            }, 38f, 14, "⚡ <b>Fast Reef Mining:</b> Mines underwater Sand, Clay, Scrap, and Ores 3.5x faster (~0.7s) with your Hook, and temporarily wards off Bruce the shark while mining.");
 
             // CATEGORY 3: FARMING & SUSTENANCE
             CreateCategoryHeader(leftCol.transform, "🌱 FARMING & SUSTENANCE", 28f);

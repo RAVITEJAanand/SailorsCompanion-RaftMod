@@ -161,7 +161,11 @@ namespace SailorsCompanion.Features
                 {
                     foreach (var p in pickups)
                     {
-                        if (p == null || !p.canBePickedUp) continue;
+                        if (p == null || !p.canBePickedUp || p.gameObject == null || !p.gameObject.activeInHierarchy) continue;
+                        if (p is ItemNet || p.pickupItemType != PickupItemType.Default) continue;
+                        if (p.GetComponentInParent<Block>() != null) continue;
+                        if (p.GetComponent<ItemCollector>() != null) continue;
+
                         float d = Vector3.Distance(center, p.transform.position);
                         if (d <= SCAN_RADIUS && d > 0.5f)
                         {
