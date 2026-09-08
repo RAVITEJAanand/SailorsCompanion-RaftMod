@@ -28,13 +28,6 @@ namespace SailorsCompanion.Patches
             {
                 var trav = Traverse.Create(startMenu);
 
-                // Update version text
-                var vText = trav.Field<Text>("versionText")?.Value;
-                if (vText != null && !vText.text.Contains("Sailor"))
-                {
-                    vText.text += "\n<color=#00E5FF><b>⚓ Sailor's Companion Active [F5]</b></color>";
-                }
-
                 var settingsSel = trav.Field<Selectable>("settingsButton")?.Value;
                 var menuButtonsGO = trav.Field<GameObject>("menuButtons")?.Value ?? (settingsSel != null ? settingsSel.transform.parent?.gameObject : GameObject.Find("MenuButtons"));
 
