@@ -20,10 +20,11 @@ namespace SailorsCompanion.UI
         private Canvas _canvas;
         private CanvasScaler _scaler;
         private GraphicRaycaster _raycaster;
+        private GameObject _rootGO;
         private GameObject _windowGO;
         private Font _gameFont;
 
-        public static bool IsOpen => Instance != null && Instance._windowGO != null && Instance._windowGO.activeSelf;
+        public static bool IsOpen => Instance != null && Instance._rootGO != null && Instance._rootGO.activeSelf;
 
         // Raft Timber Color Palette
         private static readonly Color BgDimmer          = new Color(0.0f, 0.0f, 0.0f, 0.72f);
@@ -39,7 +40,6 @@ namespace SailorsCompanion.UI
         private static readonly Color SailorsCyan       = new Color(0.00f, 0.90f, 1.00f, 1.00f); // Cyan Accent
         private static readonly Color InventoryGold     = new Color(1.00f, 0.68f, 0.20f, 1.00f); // Amber Accent
         private static readonly Color ButtonWoodNormal  = new Color(0.35f, 0.22f, 0.13f, 0.98f); // Wood Plank Button
-        private static readonly Color ButtonWoodHover   = new Color(0.48f, 0.30f, 0.18f, 1.00f); // Hover
 
         private void Awake()
         {
@@ -86,13 +86,13 @@ namespace SailorsCompanion.UI
                 Instance = go.AddComponent<CanvasInstalledModsUI>();
             }
 
-            if (Instance._windowGO == null)
+            if (Instance._rootGO == null)
             {
                 Instance.BuildCanvasUI();
             }
 
-            bool newState = !Instance._windowGO.activeSelf;
-            Instance._windowGO.SetActive(newState);
+            bool newState = !Instance._rootGO.activeSelf;
+            Instance._rootGO.SetActive(newState);
 
             if (newState)
             {
@@ -100,11 +100,19 @@ namespace SailorsCompanion.UI
             }
         }
 
+        public static void Close()
+        {
+            if (Instance != null && Instance._rootGO != null)
+            {
+                Instance._rootGO.SetActive(false);
+            }
+        }
+
         private void Update()
         {
             if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
             {
-                _windowGO.SetActive(false);
+                Close();
             }
         }
 
@@ -130,18 +138,27 @@ namespace SailorsCompanion.UI
                 _raycaster = _canvasGO.AddComponent<GraphicRaycaster>();
             }
 
-            if (_windowGO == null)
+            if (_rootGO == null)
             {
                 BuildManagerWindow();
-                _windowGO.SetActive(false);
+                _rootGO.SetActive(false); // Entire root including dimmer is hidden by default!
             }
         }
 
         private void BuildManagerWindow()
         {
-            // Dimmer Background
+            // 1. Root Container (toggles Dimmer + Window together)
+            _rootGO = new GameObject("Root_InstalledMods");
+            _rootGO.transform.SetParent(_canvasGO.transform, false);
+            var rootRt = _rootGO.AddComponent<RectTransform>();
+            rootRt.anchorMin = Vector2.zero;
+            rootRt.anchorMax = Vector2.one;
+            rootRt.offsetMin = Vector2.zero;
+            rootRt.offsetMax = Vector2.zero;
+
+            // 2. Dimmer Background inside Root
             var dimmerGO = new GameObject("Dimmer_Background");
-            dimmerGO.transform.SetParent(_canvasGO.transform, false);
+            dimmerGO.transform.SetParent(_rootGO.transform, false);
             var dimmerRt = dimmerGO.AddComponent<RectTransform>();
             dimmerRt.anchorMin = Vector2.zero;
             dimmerRt.anchorMax = Vector2.one;
@@ -150,11 +167,11 @@ namespace SailorsCompanion.UI
             var dimmerImg = dimmerGO.AddComponent<Image>();
             dimmerImg.color = BgDimmer;
             var dimmerBtn = dimmerGO.AddComponent<Button>();
-            dimmerBtn.onClick.AddListener(() => _windowGO.SetActive(false));
+            dimmerBtn.onClick.AddListener(Close);
 
-            // Main Window Panel
+            // 3. Main Window Panel inside Root
             _windowGO = new GameObject("Window_InstalledMods");
-            _windowGO.transform.SetParent(_canvasGO.transform, false);
+            _windowGO.transform.SetParent(_rootGO.transform, false);
 
             var winRt = _windowGO.AddComponent<RectTransform>();
             winRt.anchorMin = new Vector2(0.5f, 0.5f);
@@ -170,7 +187,7 @@ namespace SailorsCompanion.UI
             winOutline.effectColor = WoodWindowBorder;
             winOutline.effectDistance = new Vector2(4, -4);
 
-            // 1. Header Bar
+            // 4. Header Bar
             var headerGO = new GameObject("HeaderBar");
             headerGO.transform.SetParent(_windowGO.transform, false);
             var headRt = headerGO.AddComponent<RectTransform>();
@@ -203,7 +220,7 @@ namespace SailorsCompanion.UI
             var closeImg = closeBtnGO.AddComponent<Image>();
             closeImg.color = new Color(0.6f, 0.15f, 0.15f, 0.95f);
             var closeBtn = closeBtnGO.AddComponent<Button>();
-            closeBtn.onClick.AddListener(() => _windowGO.SetActive(false));
+            closeBtn.onClick.AddListener(Close);
             var closeTxt = CreateText(closeBtnGO, "✕", 18, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
             FillParent(closeTxt.gameObject);
 
@@ -239,10 +256,10 @@ namespace SailorsCompanion.UI
                 hotkeysText: "🎮 In-Game Controls:\n• [F5] Mod Menu\n• [F6] Compass HUD Overlay\n• [F] Fly / Noclip Mode\n• [F4] Toggle Sails  |  [F3] Toggle Engines",
                 openSettingsAction: () =>
                 {
-                    _windowGO.SetActive(false);
+                    Close();
                     CanvasModUI.Instance?.ToggleModWindow();
                 },
-                openGithubUrl: "https://github.com/RAVITEJAanand",
+                openGithubUrl: "https://github.com/RAVITEJAanand/SailorsCompanion-RaftMod",
                 isLeft: true
             );
 
@@ -256,7 +273,7 @@ namespace SailorsCompanion.UI
                 hotkeysText: "🎮 In-Game Controls:\n• [F2] Inventory Master Menu\n• [Z] Auto Sort Backpack / Chest\n• [X] Dump Backpack to Chest\n• [V] Hotbar Row Swap  |  [Alt+Click] Lock",
                 openSettingsAction: () =>
                 {
-                    _windowGO.SetActive(false);
+                    Close();
                     OpenInventoryMasterSettings();
                 },
                 openGithubUrl: "https://github.com/RAVITEJAanand/InventoryMaster-RaftMod",
@@ -295,7 +312,7 @@ namespace SailorsCompanion.UI
             var footCloseImg = footCloseBtnGO.AddComponent<Image>();
             footCloseImg.color = ButtonWoodNormal;
             var footCloseBtn = footCloseBtnGO.AddComponent<Button>();
-            footCloseBtn.onClick.AddListener(() => _windowGO.SetActive(false));
+            footCloseBtn.onClick.AddListener(Close);
             var footCloseTxt = CreateText(footCloseBtnGO, "Close (ESC)", 12, FontStyle.Bold, TextParchment, TextAnchor.MiddleCenter);
             FillParent(footCloseTxt.gameObject);
         }
@@ -317,7 +334,7 @@ namespace SailorsCompanion.UI
             cardOutline.effectColor = titleColor * 0.7f;
             cardOutline.effectDistance = new Vector2(2, -2);
 
-            // 1. Card Header Row (Title + Version + Active Badge)
+            // Card Header Row (Title + Version + Active Badge)
             var cardHeadGO = new GameObject("CardHead");
             cardHeadGO.transform.SetParent(cardGO.transform, false);
             var headRt = cardHeadGO.AddComponent<RectTransform>();
