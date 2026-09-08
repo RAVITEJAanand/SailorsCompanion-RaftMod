@@ -87,6 +87,9 @@ namespace SailorsCompanion.UI
         private static readonly Color WoodButtonNormal    = new Color(0.38f, 0.23f, 0.14f, 0.96f); // Wood Plank Button #613B24
         private static readonly Color WoodButtonHover     = new Color(0.48f, 0.30f, 0.18f, 1.00f); // Lighter Wood Hover #7A4D2E
         private static readonly Color WoodButtonCrimson   = new Color(0.75f, 0.18f, 0.15f, 0.98f); // Warm Crimson Accent
+        private static readonly Color ActionTileBg        = new Color(0.24f, 0.14f, 0.07f, 0.96f); // Deep Carved Timber Action Tile
+        private static readonly Color ActionTileHover     = new Color(0.38f, 0.24f, 0.13f, 1.00f); // Highlighted Wood Plank
+        private static readonly Color ActionTileBorder    = new Color(0.72f, 0.56f, 0.32f, 0.70f); // Parchment Gold Border Trim
         // ============================================================================
         // [END] RAFT NATIVE WOODEN PALETTE
         // ============================================================================
@@ -749,37 +752,36 @@ namespace SailorsCompanion.UI
             }
             UpdateProfileButtonsVisuals();
 
-            // 1. Quick Action Bar: 4 Primary Utility Buttons (Height: 36)
-            var actionRow = CreateBox(page.transform, "QuickActionBar", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
-            EnsureLayout(actionRow, -1, 36);
+            // 1. Quick Action Bar: 4 Primary Utility Action Tiles with Hotkey Badges (Height: 40)
+            var actionRow = CreateBox(page.transform, "QuickActionBar", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), Color.clear);
+            EnsureLayout(actionRow, -1, 40);
             var actionLayout = actionRow.AddComponent<HorizontalLayoutGroup>();
             actionLayout.spacing = 8;
             actionLayout.childForceExpandWidth = true;
 
-            CreateButton(actionRow.transform, "Btn_QuickStack", "📦 Quick Stack (22m)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateActionTile(actionRow.transform, "Btn_QuickStack", "📦 Quick Stack", "[STACK]", () =>
             {
                 ChestSorter.QuickStackToNearbyChests();
                 SetQoLTooltip("📦 <b>Quick Stack:</b> Deposited backpack items into matching nearby chests.");
-            }, WoodButtonNormal, TextParchmentLight, 14);
+            }, 40f, 76f);
 
-            CreateButton(actionRow.transform, "Btn_EmptyNets", "🕸️ Empty Nets", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateActionTile(actionRow.transform, "Btn_EmptyNets", "🕸️ Empty Nets", "[SWEEP]", () =>
             {
                 NetsHelper.EmptyAllNets(silent: false);
                 SetQoLTooltip("🕸️ <b>Empty Nets:</b> Scooped all trapped flotsam from collection nets into your inventory.");
-            }, WoodButtonNormal, TextParchmentLight, 14);
+            }, 40f, 76f);
 
-            CreateButton(actionRow.transform, "Btn_WaterPlots", "🌱 Water Crops", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateActionTile(actionRow.transform, "Btn_WaterPlots", "🌱 Water Crops", "[AUTO]", () =>
             {
                 FarmingHelper.WaterAllPlots(silent: false);
                 SetQoLTooltip("🌱 <b>Water Plots:</b> Hydrated all crop plots, grass plots, and tree planters.");
-            }, WoodButtonNormal, TextParchmentLight, 14);
+            }, 40f, 76f);
 
-            var magnetBtnGO = CreateButton(actionRow.transform, "Btn_Magnet", "🧲 Ocean Magnet (45s)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateActionTile(actionRow.transform, "Btn_Magnet", "🧲 Ocean Magnet", "[F7] KEY", () =>
             {
                 MagneticCollector.ToggleMagnet();
                 SetQoLTooltip("🧲 <b>Ocean Magnet:</b> Smoothly pulls floating flotsam and debris towards your raft.");
-            }, WoodButtonNormal, TextParchmentLight, 14);
-            _qolMagnetBtnText = magnetBtnGO.GetComponentInChildren<Text>();
+            }, out _qolMagnetBtnText, 40f, 78f);
 
             // 2. Main Two-Column Content Area (Height: ~450)
             var twoColGO = CreateBox(page.transform, "TwoColumnsArea", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 450), Color.clear);
@@ -955,7 +957,7 @@ namespace SailorsCompanion.UI
             var hintBox = CreateBox(page.transform, "QoLHintBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 32), WoodTitleBar);
             EnsureLayout(hintBox, -1, 32);
             CreateBox(hintBox.transform, "HintAccent", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 2), WoodTrimAccent);
-            string defaultHint = string.IsNullOrEmpty(initialTooltip) ? "💡 <b>Hint:</b> Choose a preset profile above or toggle individual survival options." : initialTooltip;
+            string defaultHint = string.IsNullOrEmpty(initialTooltip) ? "💡 <b>Hotkeys:</b> [F7] Magnet | [F8] Recall | [F9] Summon | [F10] Radar | [F4] Sails | [F3] Engines | [F] Fly" : initialTooltip;
             _qolTooltipText = CreateText(hintBox.transform, "HintText", defaultHint, 14, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleLeft);
             _qolTooltipText.rectTransform.offsetMin = new Vector2(12, 0);
             _qolTooltipText.rectTransform.offsetMax = new Vector2(-12, 0);
@@ -1010,7 +1012,7 @@ namespace SailorsCompanion.UI
             CreateToggleItem(leftCol.transform, "🛠️ Free Instant Crafting (Craft any recipe with 0 materials)", Plugin.FreeCrafting.Value, v => Plugin.FreeCrafting.Value = v, 36f, 14);
 
             CreateCategoryHeader(leftCol.transform, "💖 INSTANT VITALS RECOVERY", 28f);
-            var vitalsBtn = CreateButton(leftCol.transform, "Btn_MaxVitals", "⚡ Instant Replenish All Vitals (Health, Food, Water, O2)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), () =>
+            var vitalsBtn = CreateActionTile(leftCol.transform, "Btn_MaxVitals", "⚡ Replenish All Vitals (Health, O2, Food)", "[RESTORE]", () =>
             {
                 var p = PlayerHelper.GetLocalPlayer();
                 if (p?.Stats != null)
@@ -1021,8 +1023,8 @@ namespace SailorsCompanion.UI
                     p.Stats.stat_oxygen?.SetToMaxValue();
                     TeleportManager.SetNotification("⚡ Vitals fully replenished to 100%!");
                 }
-            }, WoodButtonCrimson, TextWhite, 14);
-            EnsureLayout(vitalsBtn, -1, 42);
+            }, 40f, 85f);
+            EnsureLayout(vitalsBtn, -1, 40);
 
             // === RIGHT COLUMN: RAFT, TIME & WEATHER CONTROLS ===
             var rightCol = CreateBox(twoColGO.transform, "RightCheatsCol", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Color.clear);
@@ -1031,35 +1033,35 @@ namespace SailorsCompanion.UI
             rLayout.childForceExpandWidth = true;
 
             CreateCategoryHeader(rightCol.transform, "⛵ RAFT TELEPORTATION & CONTROL", 28f);
-            var teleRow = CreateBox(rightCol.transform, "TeleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
-            EnsureLayout(teleRow, -1, 36);
+            var teleRow = CreateBox(rightCol.transform, "TeleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), Color.clear);
+            EnsureLayout(teleRow, -1, 38);
             var teleLayout = teleRow.AddComponent<HorizontalLayoutGroup>();
             teleLayout.spacing = 8;
             teleLayout.childForceExpandWidth = true;
-            CreateButton(teleRow.transform, "Btn_Recall", "⚡ Recall to Raft [F8]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => TeleportManager.TeleportPlayerToRaft(), WoodButtonNormal, TextParchmentLight, 13);
-            CreateButton(teleRow.transform, "Btn_Summon", "⛵ Summon Raft [F9]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => TeleportManager.TeleportRaftToPlayer(), WoodButtonNormal, TextParchmentLight, 13);
-            CreateButton(teleRow.transform, "Btn_Anchor", "⚓ Toggle Anchor", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => TeleportManager.ToggleRaftAnchor(), WoodButtonNormal, TextParchmentLight, 13);
+            CreateActionTile(teleRow.transform, "Btn_Recall", "⚡ Recall to Raft", "[F8] KEY", () => TeleportManager.TeleportPlayerToRaft(), 38f, 78f);
+            CreateActionTile(teleRow.transform, "Btn_Summon", "⛵ Summon Raft", "[F9] KEY", () => TeleportManager.TeleportRaftToPlayer(), 38f, 78f);
+            CreateActionTile(teleRow.transform, "Btn_Anchor", "⚓ Toggle Anchor", "[ANCHOR]", () => TeleportManager.ToggleRaftAnchor(), 38f, 80f);
 
             CreateCategoryHeader(rightCol.transform, "☀️ WORLD TIME CONTROLLER", 28f);
-            var timeRow = CreateBox(rightCol.transform, "TimeRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
-            EnsureLayout(timeRow, -1, 36);
+            var timeRow = CreateBox(rightCol.transform, "TimeRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), Color.clear);
+            EnsureLayout(timeRow, -1, 38);
             var timeLayout = timeRow.AddComponent<HorizontalLayoutGroup>();
             timeLayout.spacing = 8;
             timeLayout.childForceExpandWidth = true;
-            CreateButton(timeRow.transform, "Btn_Morning", "🌅 Morning (08:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(8f), WoodButtonNormal, TextParchmentLight, 13);
-            CreateButton(timeRow.transform, "Btn_Noon", "☀️ Noon (12:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(12f), WoodButtonNormal, TextParchmentLight, 13);
-            CreateButton(timeRow.transform, "Btn_Night", "🌙 Night (22:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(22f), WoodButtonNormal, TextParchmentLight, 13);
+            CreateActionTile(timeRow.transform, "Btn_Morning", "🌅 Morning", "[08:00]", () => SetTime(8f), 38f, 70f);
+            CreateActionTile(timeRow.transform, "Btn_Noon", "☀️ Noon", "[12:00]", () => SetTime(12f), 38f, 70f);
+            CreateActionTile(timeRow.transform, "Btn_Night", "🌙 Night", "[22:00]", () => SetTime(22f), 38f, 70f);
 
             CreateCategoryHeader(rightCol.transform, "🌧️ DYNAMIC WEATHER CONTROLLER", 28f);
-            var weatherRow = CreateBox(rightCol.transform, "WeatherRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
-            EnsureLayout(weatherRow, -1, 36);
+            var weatherRow = CreateBox(rightCol.transform, "WeatherRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), Color.clear);
+            EnsureLayout(weatherRow, -1, 38);
             var weatherLayout = weatherRow.AddComponent<HorizontalLayoutGroup>();
             weatherLayout.spacing = 8;
             weatherLayout.childForceExpandWidth = true;
-            CreateButton(weatherRow.transform, "Btn_Sunny", "☀️ Sunny", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Default), WoodButtonNormal, TextParchmentLight, 13);
-            CreateButton(weatherRow.transform, "Btn_Calm", "🌊 Calm", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Calm), WoodButtonNormal, TextParchmentLight, 13);
-            CreateButton(weatherRow.transform, "Btn_Rain", "🌧️ Rain", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Rain), WoodButtonNormal, TextParchmentLight, 13);
-            CreateButton(weatherRow.transform, "Btn_Fog", "🌫️ Fog", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Fog), WoodButtonNormal, TextParchmentLight, 13);
+            CreateActionTile(weatherRow.transform, "Btn_Sunny", "☀️ Sunny", "[CLEAR]", () => SetWeather(UniqueWeatherType.Default), 38f, 65f);
+            CreateActionTile(weatherRow.transform, "Btn_Calm", "🌊 Calm", "[CALM]", () => SetWeather(UniqueWeatherType.Calm), 38f, 65f);
+            CreateActionTile(weatherRow.transform, "Btn_Rain", "🌧️ Rain", "[RAIN]", () => SetWeather(UniqueWeatherType.Rain), 38f, 65f);
+            CreateActionTile(weatherRow.transform, "Btn_Fog", "🌫️ Fog", "[FOG]", () => SetWeather(UniqueWeatherType.Fog), 38f, 65f);
 
             // Flight Instructions Box
             var flyBox = CreateBox(rightCol.transform, "FlyBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 100), WoodPlankEven);
@@ -1127,59 +1129,55 @@ namespace SailorsCompanion.UI
                 _navStyleBtns.Add(sBtn);
             }
 
-            // Quick Teleport & Island Scan Row
-            var navTeleRow = CreateBox(page.transform, "NavTeleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
-            EnsureLayout(navTeleRow, -1, 36);
+            // Quick Teleport & Island Scan Row: Action Tiles with Hotkey Badges (Height: 40)
+            var navTeleRow = CreateBox(page.transform, "NavTeleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), Color.clear);
+            EnsureLayout(navTeleRow, -1, 40);
             var navTeleLayout = navTeleRow.AddComponent<HorizontalLayoutGroup>();
             navTeleLayout.spacing = 8;
             navTeleLayout.childForceExpandWidth = true;
 
-            var teleBtnGO = CreateButton(navTeleRow.transform, "Btn_NavTeleToRaft", "⚡ Recall to Raft [F8]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateActionTile(navTeleRow.transform, "Btn_NavTeleToRaft", "⚡ Recall to Raft", "[F8] KEY", () =>
             {
                 TeleportManager.TeleportPlayerToRaft();
-            }, WoodButtonNormal, TextParchmentLight, 14);
-            _navRecallBtnText = teleBtnGO.GetComponentInChildren<Text>();
+            }, out _navRecallBtnText, 40f, 78f);
 
-            string summonLabel = "⛵ Summon Raft [F9]";
-            CreateButton(navTeleRow.transform, "Btn_NavSummonRaft", summonLabel, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateActionTile(navTeleRow.transform, "Btn_NavSummonRaft", "⛵ Summon Raft", "[F9] KEY", () =>
             {
                 TeleportManager.TeleportRaftToPlayer();
-            }, WoodButtonNormal, TextParchmentLight, 14);
+            }, 40f, 78f);
 
-            CreateButton(navTeleRow.transform, "Btn_NavAnchor", "⚓ Toggle Anchor", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateActionTile(navTeleRow.transform, "Btn_NavAnchor", "⚓ Toggle Anchor", "[ANCHOR]", () =>
             {
                 TeleportManager.ToggleRaftAnchor();
-            }, WoodButtonNormal, TextParchmentLight, 14);
+            }, 40f, 80f);
 
-            var scanBtnGO = CreateButton(navTeleRow.transform, "Btn_NavScanIsland", "🔍 Scan Island (10s)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateActionTile(navTeleRow.transform, "Btn_NavScanIsland", "🔍 Island Radar", "[F10] KEY", () =>
             {
                 ItemDetector.TriggerPulseScan();
-            }, WoodButtonNormal, TextParchmentLight, 14);
-            _navScannerBtnText = scanBtnGO.GetComponentInChildren<Text>();
+            }, out _navScannerBtnText, 40f, 82f);
 
-            // Raft Propulsion & Smart Boat Control Row
-            var boatRow = CreateBox(page.transform, "BoatControlRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
-            EnsureLayout(boatRow, -1, 36);
+            // Raft Propulsion & Smart Boat Control Row: Action Tiles with Hotkey Badges (Height: 40)
+            var boatRow = CreateBox(page.transform, "BoatControlRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), Color.clear);
+            EnsureLayout(boatRow, -1, 40);
             var boatLayout = boatRow.AddComponent<HorizontalLayoutGroup>();
             boatLayout.spacing = 8;
             boatLayout.childForceExpandWidth = true;
 
-            CreateButton(boatRow.transform, "Btn_ToggleSails", "⛵ Toggle All Sails", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateActionTile(boatRow.transform, "Btn_ToggleSails", "⛵ Toggle All Sails", "[F4] KEY", () =>
             {
                 BoatController.ToggleAllSails();
-            }, WoodButtonNormal, TextParchmentLight, 14);
+            }, 40f, 78f);
 
-            CreateButton(boatRow.transform, "Btn_ToggleEngines", "⚙️ Toggle All Engines", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateActionTile(boatRow.transform, "Btn_ToggleEngines", "⚙️ Toggle Engines", "[F3] KEY", () =>
             {
                 BoatController.ToggleAllEngines();
-            }, WoodButtonNormal, TextParchmentLight, 14);
+            }, 40f, 78f);
 
             string initialModeName = GetSailModeDisplayName();
-            var modeBtnGO = CreateButton(boatRow.transform, "Btn_SailMode", initialModeName, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+            CreateActionTile(boatRow.transform, "Btn_SailMode", initialModeName, "[CYCLE]", () =>
             {
                 CycleSailMode();
-            }, TabActiveBg, TabActiveText, 13);
-            _navSailModeBtnText = modeBtnGO.GetComponentInChildren<Text>();
+            }, out _navSailModeBtnText, 40f, 78f);
 
             // Live Navigation Telemetry Console (Height: 185)
             var statusBox = CreateBox(page.transform, "StatusBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 185), WoodPlankEven);
@@ -1857,6 +1855,95 @@ namespace SailorsCompanion.UI
             return go;
         }
 
+        private GameObject CreateActionTile(Transform parent, string name, string title, string hotkey, Action onClick, out Text titleTextOut, float preferredHeight = 38f, float chipWidth = 78f)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            EnsureLayout(go, -1, preferredHeight, true);
+
+            var img = go.AddComponent<Image>();
+            img.color = ActionTileBg;
+
+            var outline = go.AddComponent<Outline>();
+            outline.effectColor = ActionTileBorder;
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
+
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+            var cb = btn.colors;
+            cb.normalColor = ActionTileBg;
+            cb.highlightedColor = ActionTileHover;
+            cb.pressedColor = new Color(0.18f, 0.10f, 0.05f, 1.0f);
+            cb.selectedColor = ActionTileBg;
+            btn.colors = cb;
+
+            if (onClick != null) btn.onClick.AddListener(() => onClick());
+
+            var innerLayout = go.AddComponent<HorizontalLayoutGroup>();
+            innerLayout.padding = new RectOffset(12, 8, 3, 3);
+            innerLayout.spacing = 8;
+            innerLayout.childForceExpandWidth = false;
+            innerLayout.childForceExpandHeight = true;
+            innerLayout.childControlWidth = true;
+            innerLayout.childControlHeight = true;
+
+            var titleGO = new GameObject("Title");
+            titleGO.transform.SetParent(go.transform, false);
+            var titleTxt = titleGO.AddComponent<Text>();
+            titleTxt.font = GetGameFont();
+            titleTxt.text = title;
+            titleTxt.fontSize = 14;
+            titleTxt.fontStyle = FontStyle.Bold;
+            titleTxt.color = TextWhite;
+            titleTxt.alignment = TextAnchor.MiddleLeft;
+            titleTxt.supportRichText = true;
+            titleTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            titleTxt.verticalOverflow = VerticalWrapMode.Truncate;
+
+            var titleLe = titleGO.AddComponent<LayoutElement>();
+            titleLe.flexibleWidth = 1f;
+            titleTextOut = titleTxt;
+
+            if (!string.IsNullOrEmpty(hotkey))
+            {
+                var chipGO = new GameObject("HotkeyChip");
+                chipGO.transform.SetParent(go.transform, false);
+                var chipLe = chipGO.AddComponent<LayoutElement>();
+                chipLe.preferredWidth = chipWidth;
+                chipLe.preferredHeight = Mathf.Max(24f, preferredHeight - 10f);
+                chipLe.flexibleWidth = 0f;
+
+                var chipImg = chipGO.AddComponent<Image>();
+                chipImg.color = new Color(0.12f, 0.07f, 0.03f, 0.95f);
+                var chipOutline = chipGO.AddComponent<Outline>();
+                chipOutline.effectColor = new Color(1.0f, 0.82f, 0.35f, 0.85f);
+                chipOutline.effectDistance = new Vector2(1, -1);
+
+                var chipTxtGO = new GameObject("ChipText");
+                chipTxtGO.transform.SetParent(chipGO.transform, false);
+                var chipTxtRt = chipTxtGO.AddComponent<RectTransform>();
+                chipTxtRt.anchorMin = Vector2.zero;
+                chipTxtRt.anchorMax = Vector2.one;
+                chipTxtRt.offsetMin = Vector2.zero;
+                chipTxtRt.offsetMax = Vector2.zero;
+
+                var chipTxt = chipTxtGO.AddComponent<Text>();
+                chipTxt.font = GetGameFont();
+                chipTxt.text = hotkey;
+                chipTxt.fontSize = 12;
+                chipTxt.fontStyle = FontStyle.Bold;
+                chipTxt.color = TextGoldHeading;
+                chipTxt.alignment = TextAnchor.MiddleCenter;
+            }
+
+            return go;
+        }
+
+        private GameObject CreateActionTile(Transform parent, string name, string title, string hotkey, Action onClick, float preferredHeight = 38f, float chipWidth = 78f)
+        {
+            return CreateActionTile(parent, name, title, hotkey, onClick, out _, preferredHeight, chipWidth);
+        }
+
         #region [START] UI TOGGLE ITEM WITH RAFT RECESSED CHECKBOX
         // ============================================================================
         // [START] UI TOGGLE ITEM WITH RAFT RECESSED CHECKBOX (Authentic In-Game Settings Style)
@@ -2178,8 +2265,8 @@ namespace SailorsCompanion.UI
                     catch {}
                 }
 
-                // Update live Navigation tab data if visible (throttled to 5Hz to prevent frame lag)
-                if (_activeTab == 2 && _navStatusText != null && Time.unscaledTime - _lastNavTabUpdate > 0.2f)
+                // Update live Navigation tab & Survival QoL data if visible (throttled to 5Hz to prevent frame lag)
+                if ((_activeTab == 0 || _activeTab == 2) && Time.unscaledTime - _lastNavTabUpdate > 0.2f)
                 {
                     _lastNavTabUpdate = Time.unscaledTime;
                     UpdateNavTabText();
@@ -2231,11 +2318,11 @@ namespace SailorsCompanion.UI
                     int mins = sec / 60;
                     int s = sec % 60;
                     string cdStr = mins > 0 ? $"{mins}m {s}s" : $"{s}s";
-                    _navRecallBtnText.text = $"⏳ Recall [F8] ({cdStr})";
+                    _navRecallBtnText.text = $"⏳ Recall ({cdStr})";
                 }
                 else
                 {
-                    _navRecallBtnText.text = "⚡ Recall to Raft [F8]";
+                    _navRecallBtnText.text = "⚡ Recall to Raft";
                 }
             }
 
@@ -2256,7 +2343,7 @@ namespace SailorsCompanion.UI
                     }
                     else
                     {
-                        _navScannerBtnText.text = "🔍 Scan Island (10s)";
+                        _navScannerBtnText.text = "🔍 Island Radar";
                     }
                 }
             }
@@ -2278,7 +2365,7 @@ namespace SailorsCompanion.UI
                     }
                     else
                     {
-                        _qolMagnetBtnText.text = "🧲 Ocean Magnet (45s)";
+                        _qolMagnetBtnText.text = "🧲 Ocean Magnet";
                     }
                 }
             }
