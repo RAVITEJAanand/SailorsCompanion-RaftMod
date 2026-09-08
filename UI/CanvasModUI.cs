@@ -600,7 +600,7 @@ namespace SailorsCompanion.UI
             }
         }
 
-        private GameObject CreateCategoryHeader(Transform parent, string title, float height = 22f)
+        private GameObject CreateCategoryHeader(Transform parent, string title, float height = 28f)
         {
             var headerGO = CreateBox(parent, "Header_" + title, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, height), WoodTitleBar);
             EnsureLayout(headerGO, -1, height);
@@ -608,7 +608,7 @@ namespace SailorsCompanion.UI
             // Subtle golden wood trim bottom edge
             CreateBox(headerGO.transform, "Trim", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 2), WoodTrimAccent);
 
-            var txt = CreateText(headerGO.transform, "Txt", title, 12, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
+            var txt = CreateText(headerGO.transform, "Txt", title, 14, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
             txt.rectTransform.offsetMin = new Vector2(12, 0);
             return headerGO;
         }
@@ -669,9 +669,9 @@ namespace SailorsCompanion.UI
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            // 0. Preset Profiles Selector Row (Height: 32)
-            var profileRow = CreateBox(page.transform, "ProfileSelectorRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 32), Color.clear);
-            EnsureLayout(profileRow, -1, 32);
+            // 0. Preset Profiles Selector Row (Height: 36)
+            var profileRow = CreateBox(page.transform, "ProfileSelectorRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
+            EnsureLayout(profileRow, -1, 36);
             var profLayout = profileRow.AddComponent<HorizontalLayoutGroup>();
             profLayout.spacing = 8;
             profLayout.childForceExpandWidth = true;
@@ -692,15 +692,15 @@ namespace SailorsCompanion.UI
                     {
                         ApplyProfile(ProfileKeys[pIdx]);
                     }
-                }, ProfileInactiveColor, new Color(0.70f, 0.75f, 0.82f), 13);
+                }, ProfileInactiveColor, TextParchmentLight, 15);
                 _profileButtonImgs[i] = btn.GetComponent<Image>();
                 _profileButtonTexts[i] = btn.GetComponentInChildren<Text>();
             }
             UpdateProfileButtonsVisuals();
 
-            // 1. Quick Action Bar: 4 Primary Utility Buttons (Height: 34)
-            var actionRow = CreateBox(page.transform, "QuickActionBar", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 34), Color.clear);
-            EnsureLayout(actionRow, -1, 34);
+            // 1. Quick Action Bar: 4 Primary Utility Buttons (Height: 36)
+            var actionRow = CreateBox(page.transform, "QuickActionBar", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
+            EnsureLayout(actionRow, -1, 36);
             var actionLayout = actionRow.AddComponent<HorizontalLayoutGroup>();
             actionLayout.spacing = 8;
             actionLayout.childForceExpandWidth = true;
@@ -709,25 +709,25 @@ namespace SailorsCompanion.UI
             {
                 ChestSorter.QuickStackToNearbyChests();
                 SetQoLTooltip("📦 <b>Quick Stack:</b> Deposited backpack items into matching nearby chests.");
-            }, WoodButtonNormal, TextParchmentLight, 13);
+            }, WoodButtonNormal, TextParchmentLight, 14);
 
             CreateButton(actionRow.transform, "Btn_EmptyNets", "🕸️ Empty Nets", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 NetsHelper.EmptyAllNets(silent: false);
                 SetQoLTooltip("🕸️ <b>Empty Nets:</b> Scooped all trapped flotsam from collection nets into your inventory.");
-            }, WoodButtonNormal, TextParchmentLight, 13);
+            }, WoodButtonNormal, TextParchmentLight, 14);
 
             CreateButton(actionRow.transform, "Btn_WaterPlots", "🌱 Water Crops", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 FarmingHelper.WaterAllPlots(silent: false);
                 SetQoLTooltip("🌱 <b>Water Plots:</b> Hydrated all crop plots, grass plots, and tree planters.");
-            }, WoodButtonNormal, TextParchmentLight, 13);
+            }, WoodButtonNormal, TextParchmentLight, 14);
 
             var magnetBtnGO = CreateButton(actionRow.transform, "Btn_Magnet", "🧲 Ocean Magnet (45s)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
             {
                 MagneticCollector.ToggleMagnet();
                 SetQoLTooltip("🧲 <b>Ocean Magnet:</b> Smoothly pulls floating flotsam and debris towards your raft.");
-            }, WoodButtonNormal, TextParchmentLight, 13);
+            }, WoodButtonNormal, TextParchmentLight, 14);
             _qolMagnetBtnText = magnetBtnGO.GetComponentInChildren<Text>();
 
             // 2. Main Two-Column Content Area (Height: ~450)
@@ -746,62 +746,62 @@ namespace SailorsCompanion.UI
             leftLayout.childForceExpandHeight = false;
 
             // CATEGORY 1: INVENTORY & STORAGE AUTOMATION
-            CreateCategoryHeader(leftCol.transform, "📦 INVENTORY & STORAGE AUTOMATION", 26f);
+            CreateCategoryHeader(leftCol.transform, "📦 INVENTORY & STORAGE AUTOMATION", 28f);
 
             CreateToggleItem(leftCol.transform, "🛠️ Craft from Storage (Auto-pulls within 22m)", Plugin.CraftFromStorage?.Value ?? true, v =>
             {
                 if (Plugin.CraftFromStorage != null) Plugin.CraftFromStorage.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🛠️ Craft from Storage: ENABLED" : "🛠️ Craft from Storage: DISABLED");
-            }, 36f, 13, "🛠️ <b>Craft from Storage:</b> Automatically pulls needed ingredients from nearby storage containers when crafting.");
+            }, 38f, 14, "🛠️ <b>Craft from Storage:</b> Automatically pulls needed ingredients from nearby storage containers when crafting.");
 
             CreateToggleItem(leftCol.transform, "🕸️ Auto-Empty Nets (Auto-gathers trapped flotsam)", Plugin.AutoEmptyCollectionNets?.Value ?? false, v =>
             {
                 if (Plugin.AutoEmptyCollectionNets != null) Plugin.AutoEmptyCollectionNets.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🕸️ Auto-Empty Nets: ENABLED" : "🕸️ Auto-Empty Nets: DISABLED");
-            }, 36f, 13, "🕸️ <b>Auto-Empty Nets:</b> Periodically sweeps collection nets so they never get clogged.");
+            }, 38f, 14, "🕸️ <b>Auto-Empty Nets:</b> Periodically sweeps collection nets so they never get clogged.");
 
             // CATEGORY 2: ISLAND & REEF HARVESTING
-            CreateCategoryHeader(leftCol.transform, "🏝️ ISLAND & REEF HARVESTING", 26f);
+            CreateCategoryHeader(leftCol.transform, "🏝️ ISLAND & REEF HARVESTING", 28f);
 
             CreateToggleItem(leftCol.transform, "🏝️ Island Hand Pickup (Collect flowers/fruits barehanded)", Plugin.IslandHandPickup?.Value ?? true, v =>
             {
                 if (Plugin.IslandHandPickup != null) Plugin.IslandHandPickup.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🏝️ Island Hand Pickup: ENABLED" : "🏝️ Island Hand Pickup: DISABLED");
-            }, 36f, 13, "🏝️ <b>Island Hand Pickup:</b> Pick up flowers, fruits, and surface items on islands without needing a hook.");
+            }, 38f, 14, "🏝️ <b>Island Hand Pickup:</b> Pick up flowers, fruits, and surface items on islands without needing a hook.");
 
             CreateToggleItem(leftCol.transform, "🌊 Reef Hand Harvesting (Mine sand, clay, ore by hand)", Plugin.ReefHandHarvesting?.Value ?? true, v =>
             {
                 if (Plugin.ReefHandHarvesting != null) Plugin.ReefHandHarvesting.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🌊 Reef Hand Harvesting: ENABLED" : "🌊 Reef Hand Harvesting: DISABLED");
-            }, 36f, 13, "🌊 <b>Reef Hand Harvesting:</b> Allows mining underwater reef resource nodes directly by hand without requiring a hook tool.");
+            }, 38f, 14, "🌊 <b>Reef Hand Harvesting:</b> Allows mining underwater reef resource nodes directly by hand without requiring a hook tool.");
 
             CreateToggleItem(leftCol.transform, "⚡ Rapid Reef Mining (0.4s Fast extraction before sharks)", Plugin.ReefFastHarvest?.Value ?? true, v =>
             {
                 if (Plugin.ReefFastHarvest != null) Plugin.ReefFastHarvest.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "⚡ Rapid Reef Mining: ENABLED" : "⚡ Rapid Reef Mining: DISABLED");
-            }, 36f, 13, "⚡ <b>Rapid Reef Mining:</b> Reduces mining channeling time from 3s to 0.4s so you can scavenge quickly before Bruce attacks.");
+            }, 38f, 14, "⚡ <b>Rapid Reef Mining:</b> Reduces mining channeling time from 3s to 0.4s so you can scavenge quickly before Bruce attacks.");
 
             // CATEGORY 3: FARMING & SUSTENANCE
-            CreateCategoryHeader(leftCol.transform, "🌱 FARMING & SUSTENANCE", 26f);
+            CreateCategoryHeader(leftCol.transform, "🌱 FARMING & SUSTENANCE", 28f);
 
             CreateToggleItem(leftCol.transform, "🌱 Auto-Water Crops (Never let crop plots dry out)", Plugin.AutoWaterCrops?.Value ?? false, v =>
             {
                 if (Plugin.AutoWaterCrops != null) Plugin.AutoWaterCrops.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🌱 Auto-Watering: ENABLED" : "🌱 Auto-Watering: DISABLED");
-            }, 36f, 13, "🌱 <b>Auto-Water:</b> Continuously maintains full hydration on crop plots and livestock grass.");
+            }, 38f, 14, "🌱 <b>Auto-Water:</b> Continuously maintains full hydration on crop plots and livestock grass.");
 
             CreateToggleItem(leftCol.transform, "🌾 Crop & Tree Growth Boost (Accelerate growth cycles)", Plugin.EnableCropGrowthBoost?.Value ?? false, v =>
             {
                 if (Plugin.EnableCropGrowthBoost != null) Plugin.EnableCropGrowthBoost.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🌾 Crop Growth Boost: ENABLED" : "🌾 Crop Growth Boost: DISABLED");
-            }, 36f, 13, "🌾 <b>Crop Growth Boost:</b> Toggles custom growth multiplier for farming plots and tree planters.");
+            }, 38f, 14, "🌾 <b>Crop Growth Boost:</b> Toggles custom growth multiplier for farming plots and tree planters.");
 
 
             // === RIGHT COLUMN ===
@@ -812,31 +812,31 @@ namespace SailorsCompanion.UI
             rightLayout.childForceExpandHeight = false;
 
             // CATEGORY 4: RAFT & CREATURE DEFENSE
-            CreateCategoryHeader(rightCol.transform, "🦈 RAFT & CREATURE DEFENSE", 26f);
+            CreateCategoryHeader(rightCol.transform, "🦈 RAFT & CREATURE DEFENSE", 28f);
 
             CreateToggleItem(rightCol.transform, "🐾 Animal & Enemy Health Bars (Floating HP & distance)", Plugin.ShowAnimalHealthBars?.Value ?? true, v =>
             {
                 if (Plugin.ShowAnimalHealthBars != null) Plugin.ShowAnimalHealthBars.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🐾 Animal Health Bars: ENABLED" : "🐾 Animal Health Bars: DISABLED");
-            }, 36f, 13, "🐾 <b>Creature Health Bars:</b> Displays overhead health bars and distance meters on animals and predators.");
+            }, 38f, 14, "🐾 <b>Creature Health Bars:</b> Displays overhead health bars and distance meters on animals and predators.");
 
             CreateToggleItem(rightCol.transform, "🦈 Anti-Shark Raft Protection (Bruce won't attack raft)", Plugin.AntiSharkRaftDamage?.Value ?? false, v =>
             {
                 if (Plugin.AntiSharkRaftDamage != null) Plugin.AntiSharkRaftDamage.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🦈 Anti-Shark: ENABLED" : "🦈 Anti-Shark: DISABLED");
-            }, 36f, 13, "🦈 <b>Anti-Shark Protection:</b> Bruce the shark will ignore raft foundations and focus only on players in water.");
+            }, 38f, 14, "🦈 <b>Anti-Shark Protection:</b> Bruce the shark will ignore raft foundations and focus only on players in water.");
 
             CreateToggleItem(rightCol.transform, "🔨 Infinite Tool Durability (Tools, weapons & armor never break)", Plugin.InfiniteDurability?.Value ?? false, v =>
             {
                 if (Plugin.InfiniteDurability != null) Plugin.InfiniteDurability.Value = v;
                 MarkProfileCustom();
                 TeleportManager.SetNotification(v ? "🔨 Infinite Durability: ENABLED" : "🔨 Infinite Durability: DISABLED");
-            }, 36f, 13, "🔨 <b>Infinite Durability:</b> Prevents hooks, weapons, tools, and armor from breaking from use.");
+            }, 38f, 14, "🔨 <b>Infinite Durability:</b> Prevents hooks, weapons, tools, and armor from breaking from use.");
 
             // CATEGORY 5: BALANCED MULTIPLIERS & SPEEDS
-            CreateCategoryHeader(rightCol.transform, "🏃 BALANCED MULTIPLIERS & SPEEDS", 26f);
+            CreateCategoryHeader(rightCol.transform, "🏃 BALANCED MULTIPLIERS & SPEEDS", 28f);
 
             float maxGrowth = Plugin.IsCreativeMode ? 10.0f : 2.0f;
             float maxStack = Plugin.IsCreativeMode ? 999f : 200f;
@@ -863,7 +863,7 @@ namespace SailorsCompanion.UI
                     if (Plugin.CropGrowthMultiplier != null) Plugin.CropGrowthMultiplier.Value = v;
                     MarkProfileCustom();
                 }, "🌾 <b>Crop Growth:</b> Multiplies crop and tree growth speed (1.0x–2.0x recommended).",
-                36f);
+                38f);
 
             CreateDualStepperRow(rightCol.transform,
                 "📦 Stack Limit", 20f, maxStack, 20f, curStack, "", v =>
@@ -876,7 +876,7 @@ namespace SailorsCompanion.UI
                     if (Plugin.HookPullSpeedMultiplier != null) Plugin.HookPullSpeedMultiplier.Value = v;
                     MarkProfileCustom();
                 }, "🎣 <b>Reel Speed:</b> Accelerates pulling hooks from the water (1.0x–2.0x recommended).",
-                36f);
+                38f);
 
             CreateDualStepperRow(rightCol.transform,
                 "🏊 Swim Speed", 1.0f, maxSwim, 0.1f, curSwim, "x", v =>
@@ -889,25 +889,25 @@ namespace SailorsCompanion.UI
                     if (Plugin.SprintSpeedMultiplier != null) Plugin.SprintSpeedMultiplier.Value = v;
                     MarkProfileCustom();
                 }, "🏃 <b>Sprint Speed:</b> Subtle movement speed increase across raft and land (1.0x–1.5x recommended).",
-                36f);
+                38f);
 
             // CATEGORY 6: ADVANCED PRO HOTKEYS
-            CreateCategoryHeader(rightCol.transform, "⌨️ ADVANCED PRO HOTKEYS", 26f);
+            CreateCategoryHeader(rightCol.transform, "⌨️ ADVANCED PRO HOTKEYS", 28f);
 
             CreateToggleItem(rightCol.transform, "⌨️ Enable Quick Hotkeys ([F4] Sails, [F3] Engines, [F7] Magnet, [F10] Scan)", Plugin.EnableHotkeys?.Value ?? false, v =>
             {
                 if (Plugin.EnableHotkeys != null) Plugin.EnableHotkeys.Value = v;
                 TeleportManager.SetNotification(v ? "⌨️ Quick Hotkeys: ENABLED ([F4] Sails, [F3] Engines, [F7] Magnet, [F10] Scan)" : "⌨️ Quick Hotkeys: DISABLED (UI Buttons only)");
-            }, 36f, 12, "⌨️ <b>Quick Hotkeys:</b> Enables direct gameplay keys for speed actions without opening menus ([F4] Sails, [F3] Engines, [F7] Magnet, [F10] Scanner).");
+            }, 38f, 13, "⌨️ <b>Quick Hotkeys:</b> Enables direct gameplay keys for speed actions without opening menus ([F4] Sails, [F3] Engines, [F7] Magnet, [F10] Scanner).");
 
-            // 3. Tooltip / Hint Box (Height: 28)
-            var hintBox = CreateBox(page.transform, "QoLHintBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 28), WoodTitleBar);
-            EnsureLayout(hintBox, -1, 28);
+            // 3. Tooltip / Hint Box (Height: 32)
+            var hintBox = CreateBox(page.transform, "QoLHintBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 32), WoodTitleBar);
+            EnsureLayout(hintBox, -1, 32);
             CreateBox(hintBox.transform, "HintAccent", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 2), WoodTrimAccent);
             string defaultHint = string.IsNullOrEmpty(initialTooltip) ? "💡 <b>Hint:</b> Choose a preset profile above or toggle individual survival options." : initialTooltip;
-            _qolTooltipText = CreateText(hintBox.transform, "HintText", defaultHint, 12, FontStyle.Normal, TextParchmentWarm, TextAnchor.MiddleLeft);
-            _qolTooltipText.rectTransform.offsetMin = new Vector2(10, 0);
-            _qolTooltipText.rectTransform.offsetMax = new Vector2(-10, 0);
+            _qolTooltipText = CreateText(hintBox.transform, "HintText", defaultHint, 14, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleLeft);
+            _qolTooltipText.rectTransform.offsetMin = new Vector2(12, 0);
+            _qolTooltipText.rectTransform.offsetMax = new Vector2(-12, 0);
 
             return page;
         }
@@ -1795,70 +1795,13 @@ namespace SailorsCompanion.UI
         private string FormatMultiplierBadge(string label, float val, string format, string unit)
         {
             string valStr = val.ToString(format);
-            string badge;
-            if (label.Contains("Stack"))
-            {
-                if (val <= 20.5f)
-                    badge = "<color=#78E08F><size=11>[🟢 Vanilla 20]</size></color>";
-                else if (val <= 100.5f)
-                    badge = "<color=#70A1FF><size=11>[🟢 Balanced OP]</size></color>";
-                else if (val <= 200.5f)
-                    badge = "<color=#ECCC68><size=11>[🟡 Easy Mode]</size></color>";
-                else
-                    badge = "<color=#FF6B6B><size=11>[🔴 Creative]</size></color>";
-            }
-            else if (label.Contains("Swim"))
-            {
-                if (val <= 1.05f)
-                    badge = "<color=#78E08F><size=11>[🟢 Normal]</size></color>";
-                else if (val <= 1.25f)
-                    badge = "<color=#70A1FF><size=11>[🟢 Balanced OP]</size></color>";
-                else if (val <= 1.55f)
-                    badge = "<color=#ECCC68><size=11>[🟡 Easy Mode]</size></color>";
-                else
-                    badge = "<color=#FF6B6B><size=11>[🔴 Creative]</size></color>";
-            }
-            else if (label.Contains("Sprint"))
-            {
-                if (val <= 1.05f)
-                    badge = "<color=#78E08F><size=11>[🟢 Normal]</size></color>";
-                else if (val <= 1.25f)
-                    badge = "<color=#70A1FF><size=11>[🟢 Balanced OP]</size></color>";
-                else if (val <= 1.55f)
-                    badge = "<color=#ECCC68><size=11>[🟡 Easy Mode]</size></color>";
-                else
-                    badge = "<color=#FF6B6B><size=11>[🔴 High]</size></color>";
-            }
-            else if (label.Contains("Weapon"))
-            {
-                if (val <= 1.05f)
-                    badge = "<color=#78E08F><size=11>[🟢 Vanilla 1x]</size></color>";
-                else if (val <= 1.55f)
-                    badge = "<color=#70A1FF><size=11>[🟢 Balanced 1.5x]</size></color>";
-                else if (val <= 2.55f)
-                    badge = "<color=#ECCC68><size=11>[🟡 Boosted]</size></color>";
-                else
-                    badge = "<color=#FF6B6B><size=11>[🔴 High/OP]</size></color>";
-            }
-            else // Crop Growth, Reel Speed, etc.
-            {
-                if (val <= 1.05f)
-                    badge = "<color=#78E08F><size=11>[🟢 Normal]</size></color>";
-                else if (val <= 1.55f)
-                    badge = "<color=#70A1FF><size=11>[🟢 Balanced OP]</size></color>";
-                else if (val <= 2.05f)
-                    badge = "<color=#ECCC68><size=11>[🟡 Easy Mode]</size></color>";
-                else
-                    badge = "<color=#FF6B6B><size=11>[🔴 High]</size></color>";
-            }
-
-            return $"{label}: <b>{valStr}{unit}</b> {badge}";
+            return $"{label}: <color=#FFD54F><b>{valStr}{unit}</b></color>";
         }
 
         private void CreateDualStepperRow(Transform parent,
             string label1, float min1, float max1, float step1, float initial1, string unit1, Action<float> cb1, string tooltip1,
             string label2, float min2, float max2, float step2, float initial2, string unit2, Action<float> cb2, string tooltip2,
-            float rowHeight = 32f)
+            float rowHeight = 38f)
         {
             var row = CreateBox(parent, "DualStepperRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), Color.clear);
             EnsureLayout(row, -1, rowHeight);
@@ -1879,7 +1822,7 @@ namespace SailorsCompanion.UI
 
             var layout = box.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = 6;
-            layout.padding = new RectOffset(10, 6, 2, 2);
+            layout.padding = new RectOffset(12, 8, 2, 2);
             layout.childForceExpandHeight = false;
             layout.childForceExpandWidth = false;
             layout.childControlWidth = true;
@@ -1888,33 +1831,33 @@ namespace SailorsCompanion.UI
             float currentVal = initialVal;
             string format = (step < 1f) ? "F1" : "F0";
 
-            var labelTxt = CreateText(box.transform, "Label", FormatMultiplierBadge(label, currentVal, format, unit), 11, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleLeft);
+            var labelTxt = CreateText(box.transform, "Label", FormatMultiplierBadge(label, currentVal, format, unit), 15, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleLeft);
             var lLe = labelTxt.gameObject.AddComponent<LayoutElement>();
             lLe.flexibleWidth = 1f;
 
-            var minusBtn = CreateButton(box.transform, "Btn_Minus", " - ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(30, height - 6), () =>
+            var minusBtn = CreateButton(box.transform, "Btn_Minus", "－", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(34, height - 6), () =>
             {
                 currentVal = Mathf.Max(min, currentVal - step);
                 labelTxt.text = FormatMultiplierBadge(label, currentVal, format, unit);
                 MarkProfileCustom();
                 if (!string.IsNullOrEmpty(tooltip)) SetQoLTooltip(tooltip);
                 onChange?.Invoke(currentVal);
-            }, WoodButtonNormal, TextParchmentLight, 14);
+            }, WoodButtonNormal, TextParchmentLight, 18);
             var mLe = minusBtn.AddComponent<LayoutElement>();
-            mLe.preferredWidth = 30;
+            mLe.preferredWidth = 34;
             mLe.preferredHeight = height - 6;
             mLe.flexibleWidth = 0f;
 
-            var plusBtn = CreateButton(box.transform, "Btn_Plus", " + ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(30, height - 6), () =>
+            var plusBtn = CreateButton(box.transform, "Btn_Plus", "＋", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(34, height - 6), () =>
             {
                 currentVal = Mathf.Min(max, currentVal + step);
                 labelTxt.text = FormatMultiplierBadge(label, currentVal, format, unit);
                 MarkProfileCustom();
                 if (!string.IsNullOrEmpty(tooltip)) SetQoLTooltip(tooltip);
                 onChange?.Invoke(currentVal);
-            }, WoodButtonNormal, TextParchmentLight, 14);
+            }, WoodButtonNormal, TextParchmentLight, 18);
             var pLe = plusBtn.AddComponent<LayoutElement>();
-            pLe.preferredWidth = 30;
+            pLe.preferredWidth = 34;
             pLe.preferredHeight = height - 6;
             pLe.flexibleWidth = 0f;
         }
