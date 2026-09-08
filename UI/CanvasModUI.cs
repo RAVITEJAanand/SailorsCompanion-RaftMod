@@ -103,7 +103,7 @@ namespace SailorsCompanion.UI
         private int _toggleItemCounter = 0;
 
         // UI Scaling Constant (1.3x Proportional Scale)
-        public const float MenuUiScale = 1.3f;
+        public const float MenuUiScale = 1.0f;
 
         // Update Banner
         private GameObject _updateBannerGO;
@@ -167,6 +167,13 @@ namespace SailorsCompanion.UI
         {
             if (_gameFont != null) return _gameFont;
 
+            try
+            {
+                _gameFont = Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI Semibold", "Segoe UI", "Arial", "Tahoma" }, 24);
+            }
+            catch {}
+            if (_gameFont != null) return _gameFont;
+
             var texts = Resources.FindObjectsOfTypeAll<Text>();
             foreach (var t in texts)
             {
@@ -176,13 +183,6 @@ namespace SailorsCompanion.UI
                     return _gameFont;
                 }
             }
-
-            try
-            {
-                _gameFont = Font.CreateDynamicFontFromOSFont(new[] { "Arial", "Segoe UI", "Tahoma" }, 14);
-            }
-            catch {}
-            if (_gameFont != null) return _gameFont;
 
             var fonts = Resources.FindObjectsOfTypeAll<Font>();
             foreach (var f in fonts)
