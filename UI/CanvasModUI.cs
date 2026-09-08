@@ -2236,11 +2236,49 @@ namespace SailorsCompanion.UI
                         Plugin.EnableHUD.Value = !Plugin.EnableHUD.Value;
                     }
                 }
+                // Fly / NoClip Hotkey (Strictly single key, safely locked in Survival mode)
                 KeyCode keyFly = Plugin.KeyFly != null ? Plugin.KeyFly.Value : KeyCode.F;
-                if (InputHelper.WasKeyPressed(keyFly) || InputHelper.WasKeyPressed(KeyCode.F7))
+                if (InputHelper.WasKeyPressed(keyFly))
                 {
-                    Plugin.EnableFlyMode.Value = !Plugin.EnableFlyMode.Value;
+                    if (Plugin.IsSurvivalMode)
+                    {
+                        TeleportManager.SetNotification("🔒 Fly / NoClip is locked in Survival Mode. Switch to Creative Mode in [F5] menu.");
+                    }
+                    else
+                    {
+                        Plugin.EnableFlyMode.Value = !Plugin.EnableFlyMode.Value;
+                        TeleportManager.SetNotification(Plugin.EnableFlyMode.Value ? "🕊️ Fly / NoClip: ON" : "🕊️ Fly / NoClip: OFF");
+                    }
                 }
+
+                // Quick Gameplay Hotkeys ([F4] Sails, [F3] Engines, [F7] Magnet, [F10] Radar)
+                if (Plugin.EnableHotkeys != null && Plugin.EnableHotkeys.Value)
+                {
+                    KeyCode keySails = Plugin.KeySailToggle != null ? Plugin.KeySailToggle.Value : KeyCode.F4;
+                    if (InputHelper.WasKeyPressed(keySails))
+                    {
+                        BoatController.ToggleAllSails();
+                    }
+
+                    KeyCode keyEngines = Plugin.KeyEngineToggle != null ? Plugin.KeyEngineToggle.Value : KeyCode.F3;
+                    if (InputHelper.WasKeyPressed(keyEngines))
+                    {
+                        BoatController.ToggleAllEngines();
+                    }
+
+                    KeyCode keyMagnet = Plugin.KeyMagnetToggle != null ? Plugin.KeyMagnetToggle.Value : KeyCode.F7;
+                    if (InputHelper.WasKeyPressed(keyMagnet))
+                    {
+                        MagneticCollector.ToggleMagnet();
+                    }
+
+                    KeyCode keyScan = Plugin.KeyScannerPulse != null ? Plugin.KeyScannerPulse.Value : KeyCode.F10;
+                    if (InputHelper.WasKeyPressed(keyScan))
+                    {
+                        ItemDetector.TriggerPulseScan();
+                    }
+                }
+
                 KeyCode keyTeleRaft = Plugin.KeyTeleportToRaft != null ? Plugin.KeyTeleportToRaft.Value : KeyCode.F8;
                 if (InputHelper.WasKeyPressed(keyTeleRaft))
                 {

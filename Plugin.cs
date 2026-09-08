@@ -263,26 +263,25 @@ namespace SailorsCompanion
                 {
                     CanvasModUI.Instance?.ToggleModWindow();
                 }
-            }
 
-            // Optional Advanced Hotkeys (only active when enabled by user)
-            if (EnableHotkeys != null && EnableHotkeys.Value)
-            {
-                if (KeySailToggle != null && InputHelper.WasKeyPressed(KeySailToggle.Value))
+                if (EnableHotkeys != null && EnableHotkeys.Value)
                 {
-                    BoatController.ToggleAllSails();
-                }
-                if (KeyEngineToggle != null && InputHelper.WasKeyPressed(KeyEngineToggle.Value))
-                {
-                    BoatController.ToggleAllEngines();
-                }
-                if (KeyMagnetToggle != null && InputHelper.WasKeyPressed(KeyMagnetToggle.Value))
-                {
-                    MagneticCollector.ToggleMagnet();
-                }
-                if (KeyScannerPulse != null && InputHelper.WasKeyPressed(KeyScannerPulse.Value))
-                {
-                    ItemDetector.TriggerPulseScan();
+                    if (KeySailToggle != null && InputHelper.WasKeyPressed(KeySailToggle.Value))
+                    {
+                        BoatController.ToggleAllSails();
+                    }
+                    if (KeyEngineToggle != null && InputHelper.WasKeyPressed(KeyEngineToggle.Value))
+                    {
+                        BoatController.ToggleAllEngines();
+                    }
+                    if (KeyMagnetToggle != null && InputHelper.WasKeyPressed(KeyMagnetToggle.Value))
+                    {
+                        MagneticCollector.ToggleMagnet();
+                    }
+                    if (KeyScannerPulse != null && InputHelper.WasKeyPressed(KeyScannerPulse.Value))
+                    {
+                        ItemDetector.TriggerPulseScan();
+                    }
                 }
             }
 
