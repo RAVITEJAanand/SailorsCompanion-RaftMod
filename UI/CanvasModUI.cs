@@ -27,6 +27,11 @@ namespace SailorsCompanion.UI
 
         // Dynamic Text References
         private Text _navStatusText;
+        private Text _teleHeadingText;
+        private Text _teleRaftText;
+        private Text _teleSharkText;
+        private Text _teleCoordsText;
+        private Text _teleNotifText;
         private List<GameObject> _navStyleBtns = new List<GameObject>();
         private Text _researchStatusText;
 
@@ -70,6 +75,7 @@ namespace SailorsCompanion.UI
         private static readonly Color WoodRowBorder       = new Color(0.20f, 0.11f, 0.06f, 0.90f); // Plank Gap Seam #331C0F
 
         // Text Colors
+        private static readonly Color TextWhite           = new Color(1.00f, 1.00f, 1.00f, 1.00f); // Pure Crisp White
         private static readonly Color TextParchmentLight  = new Color(0.95f, 0.90f, 0.80f, 1.00f); // Warm Ivory / Bone #F2E6CC
         private static readonly Color TextParchmentWarm   = new Color(0.86f, 0.77f, 0.62f, 1.00f); // Warm Birch #DBC49E
         private static readonly Color TextGoldHeading     = new Color(0.96f, 0.78f, 0.38f, 1.00f); // Gold Stencil #F5C761
@@ -139,6 +145,15 @@ namespace SailorsCompanion.UI
             if (prefHeight > 0) le.preferredHeight = prefHeight;
             le.flexibleWidth = flexibleWidth ? 1f : 0f;
             return le;
+        }
+
+        private static void FillParent(GameObject go)
+        {
+            var rt = go.GetComponent<RectTransform>() ?? go.AddComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
         }
 
         private void EnsureEventSystem()
@@ -616,37 +631,73 @@ namespace SailorsCompanion.UI
         private GameObject CreateLockCard(Transform parent, string title, string description, Action onUnlock)
         {
             var page = CreateBox(parent, "Page_Locked", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            var layout = page.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 18;
-            layout.padding = new RectOffset(60, 60, 40, 40);
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
+            var pageLayout = page.AddComponent<VerticalLayoutGroup>();
+            pageLayout.padding = new RectOffset(40, 40, 30, 30);
+            pageLayout.childAlignment = TextAnchor.MiddleCenter;
+            pageLayout.childForceExpandWidth = false;
+            pageLayout.childForceExpandHeight = false;
 
-            var card = CreateBox(page.transform, "LockCard", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 260), WoodPlankEven);
-            EnsureLayout(card, -1, 260);
+            var card = CreateBox(page.transform, "LockPlaque", Vector2.zero, Vector2.zero, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(920, 430), WoodPlankEven);
+            EnsureLayout(card, 920, 430, false);
 
-            // Rustic wood timber border
+            // Double border: Dark Timber Frame + Gold Trim
             var cardBorder = CreateBox(card.transform, "CardBorder", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, WoodWindowBorder);
             var cbRt = cardBorder.GetComponent<RectTransform>();
-            cbRt.offsetMin = new Vector2(-2, -2);
-            cbRt.offsetMax = new Vector2(2, 2);
+            cbRt.offsetMin = new Vector2(-4, -4);
+            cbRt.offsetMax = new Vector2(4, 4);
             var cbLe = cardBorder.AddComponent<LayoutElement>();
             cbLe.ignoreLayout = true;
             cardBorder.transform.SetAsFirstSibling();
 
+            var goldTrim = CreateBox(card.transform, "GoldTrim", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
+            var gtOutline = goldTrim.AddComponent<Outline>();
+            gtOutline.effectColor = WoodTrimAccent;
+            gtOutline.effectDistance = new Vector2(2, -2);
+            var gtLe = goldTrim.AddComponent<LayoutElement>();
+            gtLe.ignoreLayout = true;
+
             var cardLayout = card.AddComponent<VerticalLayoutGroup>();
-            cardLayout.padding = new RectOffset(30, 30, 24, 24);
-            cardLayout.spacing = 16;
+            cardLayout.padding = new RectOffset(36, 36, 26, 26);
+            cardLayout.spacing = 14;
             cardLayout.childForceExpandWidth = true;
+            cardLayout.childForceExpandHeight = false;
 
-            var titleTxt = CreateText(card.transform, "LockTitle", $"🔒 <b><color=#F5C761>{title} is Locked in Survival Mode</color></b>", 20, FontStyle.Bold, TextParchmentLight, TextAnchor.MiddleCenter);
-            EnsureLayout(titleTxt.gameObject, -1, 32);
+            // Plaque Header Bar
+            var plaqueHead = CreateBox(card.transform, "PlaqueHead", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), WoodTitleBar);
+            EnsureLayout(plaqueHead, -1, 42);
+            CreateBox(plaqueHead.transform, "TopTrim", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, 2), WoodTrimAccent);
+            CreateBox(plaqueHead.transform, "BotTrim", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 2), WoodTrimAccent);
+            CreateText(plaqueHead.transform, "HeadTxt", "🔒  <b>SURVIVAL MODE RESTRICTION</b>  🔒", 16, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleCenter);
 
-            var descTxt = CreateText(card.transform, "LockDesc", description, 15, FontStyle.Normal, TextParchmentWarm, TextAnchor.MiddleCenter);
-            EnsureLayout(descTxt.gameObject, -1, 80);
+            var titleTxt = CreateText(card.transform, "LockTitle", $"<size=22><color=#FFFFFF><b>{title}</b></color></size>\n<size=14><color=#EBB861>Temporarily Disabled to Preserve Survival Immersion</color></size>", 18, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleCenter);
+            EnsureLayout(titleTxt.gameObject, -1, 56);
 
-            var switchBtn = CreateButton(card.transform, "Btn_SwitchCreative", "⚡ Switch to Creative / Sandbox Mode to Unlock", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 48), onUnlock, WoodButtonCrimson, TextParchmentLight, 15);
-            EnsureLayout(switchBtn, -1, 48);
+            var descBox = CreateBox(card.transform, "DescBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 110), new Color(0.14f, 0.08f, 0.04f, 0.95f));
+            EnsureLayout(descBox, -1, 110);
+            var dbOutline = descBox.AddComponent<Outline>();
+            dbOutline.effectColor = WoodRowBorder;
+            dbOutline.effectDistance = new Vector2(1, -1);
+            var descTxt = CreateText(descBox.transform, "LockDesc", description, 15, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleCenter);
+            descTxt.lineSpacing = 1.35f;
+            FillParent(descTxt.gameObject);
+
+            // Dual Action Buttons Row
+            var btnRow = CreateBox(card.transform, "BtnRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 48), Color.clear);
+            EnsureLayout(btnRow, -1, 48);
+            var btnLayout = btnRow.AddComponent<HorizontalLayoutGroup>();
+            btnLayout.spacing = 16;
+            btnLayout.childForceExpandWidth = true;
+            btnLayout.childForceExpandHeight = true;
+
+            var unlockBtn = CreateButton(btnRow.transform, "Btn_UnlockCreative", "⚡ Switch to Creative Mode to Unlock", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, onUnlock, WoodButtonCrimson, TextWhite, 15);
+            var uOutline = unlockBtn.AddComponent<Outline>();
+            uOutline.effectColor = WoodTrimAccent;
+            uOutline.effectDistance = new Vector2(1.5f, -1.5f);
+
+            var backBtn = CreateButton(btnRow.transform, "Btn_BackToQoL", "🎒 Return to Survival QoL Settings", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SelectTab(0), WoodButtonNormal, TextParchmentLight, 15);
+            var bOutline = backBtn.AddComponent<Outline>();
+            bOutline.effectColor = WoodTrimAccent * 0.7f;
+            bOutline.effectDistance = new Vector2(1.5f, -1.5f);
 
             return page;
         }
@@ -925,25 +976,41 @@ namespace SailorsCompanion.UI
             if (Plugin.IsSurvivalMode)
             {
                 return CreateLockCard(parent, "Cheats & God Mode",
-                    "Survival Mode preserves authentic game balance, hunger/thirst tension, and immersion.\n\nGod Mode, Infinite Oxygen, Fly / Noclip, Free Instant Crafting, and Weather controls are reserved for Creative Mode.\n\nSwitch to Creative / Sandbox Mode at the top or below to unlock all cheats.",
+                    "Survival Mode preserves authentic game balance, hunger/thirst tension, and progression immersion.\n\nGod Mode, Infinite Oxygen, Fly / Noclip, Free Instant Crafting, and Weather controls are reserved for Creative Sandbox.\n\nSwitch to Creative / Sandbox Mode below to unlock all god powers immediately.",
                     () => SetModMode("Creative"));
             }
 
             var page = CreateBox(parent, "Page_Cheats", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            var layout = page.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 8;
-            layout.padding = new RectOffset(6, 6, 4, 4);
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
+            var pageLayout = page.AddComponent<VerticalLayoutGroup>();
+            pageLayout.spacing = 6;
+            pageLayout.padding = new RectOffset(6, 6, 4, 4);
+            pageLayout.childForceExpandWidth = true;
+            pageLayout.childForceExpandHeight = false;
 
-            CreateToggleItem(page.transform, "🛡️ God Mode (Invulnerable to all damage & shark bites)", Plugin.GodMode.Value, v => Plugin.GodMode.Value = v, 39f, 15);
-            CreateToggleItem(page.transform, "⚔️ 1-Hit Kill / Infinite Damage (Instantly slay any creature in 1 strike)", Plugin.OneHitKill?.Value ?? false, v => { if (Plugin.OneHitKill != null) Plugin.OneHitKill.Value = v; }, 39f, 15);
-            CreateToggleItem(page.transform, "🤿 Infinite Oxygen (Dive freely without running out of air)", Plugin.InfiniteOxygen.Value, v => Plugin.InfiniteOxygen.Value = v, 39f, 15);
-            CreateToggleItem(page.transform, "🥩 Freeze Hunger & Thirst (Never starve or dehydrate)", Plugin.NoHungerThirst.Value, v => Plugin.NoHungerThirst.Value = v, 39f, 15);
-            CreateToggleItem(page.transform, "🕊️ Fly / Noclip Mode (Hotkey: [F] | WASD + Space/Shift)", Plugin.EnableFlyMode.Value, v => Plugin.EnableFlyMode.Value = v, 39f, 15);
-            CreateToggleItem(page.transform, "🛠️ Free Instant Crafting (Craft any recipe without materials)", Plugin.FreeCrafting.Value, v => Plugin.FreeCrafting.Value = v, 39f, 15);
+            // Two-Column Creative Sandbox Area (Height: 490)
+            var twoColGO = CreateBox(page.transform, "CheatsTwoColumns", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 490), Color.clear);
+            EnsureLayout(twoColGO, -1, 490);
+            var twoColLayout = twoColGO.AddComponent<HorizontalLayoutGroup>();
+            twoColLayout.spacing = 14;
+            twoColLayout.childForceExpandWidth = true;
+            twoColLayout.childForceExpandHeight = true;
 
-            CreateButtonItem(page.transform, "⚡ Instant Max Vitals (Full Health, Food, Water, Oxygen)", () =>
+            // === LEFT COLUMN: PLAYER GOD CHEATS & VITALS ===
+            var leftCol = CreateBox(twoColGO.transform, "LeftCheatsCol", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Color.clear);
+            var lLayout = leftCol.AddComponent<VerticalLayoutGroup>();
+            lLayout.spacing = 6;
+            lLayout.childForceExpandWidth = true;
+
+            CreateCategoryHeader(leftCol.transform, "⚡ PLAYER GOD CHEATS & INVULNERABILITY", 28f);
+            CreateToggleItem(leftCol.transform, "🛡️ God Mode (Invulnerable to damage & sharks)", Plugin.GodMode.Value, v => Plugin.GodMode.Value = v, 36f, 14);
+            CreateToggleItem(leftCol.transform, "⚔️ 1-Hit Kill / Infinite Damage (Slay creatures in 1 hit)", Plugin.OneHitKill?.Value ?? false, v => { if (Plugin.OneHitKill != null) Plugin.OneHitKill.Value = v; }, 36f, 14);
+            CreateToggleItem(leftCol.transform, "🤿 Infinite Oxygen (Dive freely without running out of air)", Plugin.InfiniteOxygen.Value, v => Plugin.InfiniteOxygen.Value = v, 36f, 14);
+            CreateToggleItem(leftCol.transform, "🥩 Freeze Hunger & Thirst (Never starve or dehydrate)", Plugin.NoHungerThirst.Value, v => Plugin.NoHungerThirst.Value = v, 36f, 14);
+            CreateToggleItem(leftCol.transform, "🕊️ Fly / Noclip Mode (Hotkey: [F] | Space/Shift fly)", Plugin.EnableFlyMode.Value, v => Plugin.EnableFlyMode.Value = v, 36f, 14);
+            CreateToggleItem(leftCol.transform, "🛠️ Free Instant Crafting (Craft any recipe with 0 materials)", Plugin.FreeCrafting.Value, v => Plugin.FreeCrafting.Value = v, 36f, 14);
+
+            CreateCategoryHeader(leftCol.transform, "💖 INSTANT VITALS RECOVERY", 28f);
+            var vitalsBtn = CreateButton(leftCol.transform, "Btn_MaxVitals", "⚡ Instant Replenish All Vitals (Health, Food, Water, O2)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), () =>
             {
                 var p = PlayerHelper.GetLocalPlayer();
                 if (p?.Stats != null)
@@ -952,54 +1019,62 @@ namespace SailorsCompanion.UI
                     p.Stats.stat_hunger?.Normal?.SetToMaxValue();
                     p.Stats.stat_thirst?.Normal?.SetToMaxValue();
                     p.Stats.stat_oxygen?.SetToMaxValue();
-                    TeleportManager.SetNotification("⚡ Vitals replenished to 100%!");
+                    TeleportManager.SetNotification("⚡ Vitals fully replenished to 100%!");
                 }
-            });
+            }, WoodButtonCrimson, TextWhite, 14);
+            EnsureLayout(vitalsBtn, -1, 42);
 
-            // Raft Teleportation & Recovery Row
-            var teleRow = CreateBox(page.transform, "TeleportRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), Color.clear);
-            EnsureLayout(teleRow, -1, 40);
+            // === RIGHT COLUMN: RAFT, TIME & WEATHER CONTROLS ===
+            var rightCol = CreateBox(twoColGO.transform, "RightCheatsCol", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Color.clear);
+            var rLayout = rightCol.AddComponent<VerticalLayoutGroup>();
+            rLayout.spacing = 6;
+            rLayout.childForceExpandWidth = true;
+
+            CreateCategoryHeader(rightCol.transform, "⛵ RAFT TELEPORTATION & CONTROL", 28f);
+            var teleRow = CreateBox(rightCol.transform, "TeleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
+            EnsureLayout(teleRow, -1, 36);
             var teleLayout = teleRow.AddComponent<HorizontalLayoutGroup>();
-            teleLayout.spacing = 10;
+            teleLayout.spacing = 8;
             teleLayout.childForceExpandWidth = true;
+            CreateButton(teleRow.transform, "Btn_Recall", "⚡ Recall to Raft [F8]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => TeleportManager.TeleportPlayerToRaft(), WoodButtonNormal, TextParchmentLight, 13);
+            CreateButton(teleRow.transform, "Btn_Summon", "⛵ Summon Raft [F9]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => TeleportManager.TeleportRaftToPlayer(), WoodButtonNormal, TextParchmentLight, 13);
+            CreateButton(teleRow.transform, "Btn_Anchor", "⚓ Toggle Anchor", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => TeleportManager.ToggleRaftAnchor(), WoodButtonNormal, TextParchmentLight, 13);
 
-            CreateButton(teleRow.transform, "Btn_TeleToRaft", "⚡ Recall to Raft [F8]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
-            {
-                TeleportManager.TeleportPlayerToRaft();
-            }, WoodButtonNormal, TextParchmentLight, 15);
-
-            CreateButton(teleRow.transform, "Btn_SummonRaft", "⛵ Summon Raft Here [F9]", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
-            {
-                TeleportManager.TeleportRaftToPlayer();
-            }, WoodButtonNormal, TextParchmentLight, 15);
-
-            CreateButton(teleRow.transform, "Btn_ToggleAnchor", "⚓ Toggle Anchor", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
-            {
-                TeleportManager.ToggleRaftAnchor();
-            }, WoodButtonNormal, TextParchmentLight, 15);
-
-            // Time buttons row
-            var timeRow = CreateBox(page.transform, "TimeRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), Color.clear);
-            EnsureLayout(timeRow, -1, 38);
+            CreateCategoryHeader(rightCol.transform, "☀️ WORLD TIME CONTROLLER", 28f);
+            var timeRow = CreateBox(rightCol.transform, "TimeRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
+            EnsureLayout(timeRow, -1, 36);
             var timeLayout = timeRow.AddComponent<HorizontalLayoutGroup>();
-            timeLayout.spacing = 10;
+            timeLayout.spacing = 8;
             timeLayout.childForceExpandWidth = true;
+            CreateButton(timeRow.transform, "Btn_Morning", "🌅 Morning (08:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(8f), WoodButtonNormal, TextParchmentLight, 13);
+            CreateButton(timeRow.transform, "Btn_Noon", "☀️ Noon (12:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(12f), WoodButtonNormal, TextParchmentLight, 13);
+            CreateButton(timeRow.transform, "Btn_Night", "🌙 Night (22:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(22f), WoodButtonNormal, TextParchmentLight, 13);
 
-            CreateButton(timeRow.transform, "Btn_Morning", "🌅 Morning (08:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(8f), WoodButtonNormal, TextParchmentLight, 14);
-            CreateButton(timeRow.transform, "Btn_Noon", "☀️ Noon (12:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(12f), WoodButtonNormal, TextParchmentLight, 14);
-            CreateButton(timeRow.transform, "Btn_Night", "🌙 Night (22:00)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetTime(22f), WoodButtonNormal, TextParchmentLight, 14);
-
-            // Weather buttons row
-            var weatherRow = CreateBox(page.transform, "WeatherRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), Color.clear);
-            EnsureLayout(weatherRow, -1, 38);
+            CreateCategoryHeader(rightCol.transform, "🌧️ DYNAMIC WEATHER CONTROLLER", 28f);
+            var weatherRow = CreateBox(rightCol.transform, "WeatherRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
+            EnsureLayout(weatherRow, -1, 36);
             var weatherLayout = weatherRow.AddComponent<HorizontalLayoutGroup>();
-            weatherLayout.spacing = 10;
+            weatherLayout.spacing = 8;
             weatherLayout.childForceExpandWidth = true;
+            CreateButton(weatherRow.transform, "Btn_Sunny", "☀️ Sunny", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Default), WoodButtonNormal, TextParchmentLight, 13);
+            CreateButton(weatherRow.transform, "Btn_Calm", "🌊 Calm", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Calm), WoodButtonNormal, TextParchmentLight, 13);
+            CreateButton(weatherRow.transform, "Btn_Rain", "🌧️ Rain", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Rain), WoodButtonNormal, TextParchmentLight, 13);
+            CreateButton(weatherRow.transform, "Btn_Fog", "🌫️ Fog", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Fog), WoodButtonNormal, TextParchmentLight, 13);
 
-            CreateButton(weatherRow.transform, "Btn_Sunny", "☀️ Sunny", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Default), WoodButtonNormal, TextParchmentLight, 14);
-            CreateButton(weatherRow.transform, "Btn_Calm", "🌊 Calm", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Calm), WoodButtonNormal, TextParchmentLight, 14);
-            CreateButton(weatherRow.transform, "Btn_Rain", "🌧️ Rain", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Rain), WoodButtonNormal, TextParchmentLight, 14);
-            CreateButton(weatherRow.transform, "Btn_Fog", "🌫️ Fog", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SetWeather(UniqueWeatherType.Fog), WoodButtonNormal, TextParchmentLight, 14);
+            // Flight Instructions Box
+            var flyBox = CreateBox(rightCol.transform, "FlyBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 100), WoodPlankEven);
+            EnsureLayout(flyBox, -1, 100);
+            var fbOutline = flyBox.AddComponent<Outline>();
+            fbOutline.effectColor = WoodRowBorder;
+            fbOutline.effectDistance = new Vector2(1, -1);
+            var fbLayout = flyBox.AddComponent<VerticalLayoutGroup>();
+            fbLayout.padding = new RectOffset(16, 16, 8, 8);
+            fbLayout.spacing = 4;
+            var fbTitle = CreateText(flyBox.transform, "T", "🕊️ <b>Free Flight & Noclip Controls [F]</b>", 14, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
+            EnsureLayout(fbTitle.gameObject, -1, 20);
+            var fbDesc = CreateText(flyBox.transform, "D", "• <b>[F]</b>: Toggle Flight mode  |  <b>[WASD]</b>: Fly in any direction.\n• <b>[Space]</b>: Ascend  |  <b>[Left Shift]</b>: Descend  |  <b>[Left Ctrl]</b>: Turbo Speed boost.", 13, FontStyle.Normal, TextParchmentLight, TextAnchor.UpperLeft);
+            fbDesc.lineSpacing = 1.25f;
+            EnsureLayout(fbDesc.gameObject, -1, 60);
 
             return page;
         }
@@ -1106,19 +1181,47 @@ namespace SailorsCompanion.UI
             }, TabActiveBg, TabActiveText, 13);
             _navSailModeBtnText = modeBtnGO.GetComponentInChildren<Text>();
 
-            // Live Navigation Data Box
-            var statusBox = CreateBox(page.transform, "StatusBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 160), WoodPlankEven);
-            EnsureLayout(statusBox, -1, 160);
+            // Live Navigation Telemetry Console (Height: 185)
+            var statusBox = CreateBox(page.transform, "StatusBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 185), WoodPlankEven);
+            EnsureLayout(statusBox, -1, 185);
+            var sbOutline = statusBox.AddComponent<Outline>();
+            sbOutline.effectColor = WoodRowBorder;
+            sbOutline.effectDistance = new Vector2(1, -1);
             var boxLayout = statusBox.AddComponent<VerticalLayoutGroup>();
-            boxLayout.padding = new RectOffset(18, 18, 12, 12);
+            boxLayout.padding = new RectOffset(12, 12, 10, 10);
             boxLayout.spacing = 8;
             boxLayout.childForceExpandWidth = true;
 
-            var title = CreateText(statusBox.transform, "NavTitle", "<b>🧭 <color=#F5C761>Live Navigation</color> & Shark Radar Data</b>", 17, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
-            EnsureLayout(title.gameObject, -1, 26);
+            var title = CreateText(statusBox.transform, "NavTitle", "<b>🧭 <color=#F5C761>Live Nautical Telemetry</color> & Sensor Console</b>", 16, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
+            EnsureLayout(title.gameObject, -1, 24);
 
-            _navStatusText = CreateText(statusBox.transform, "NavStatus", "Loading live navigation data...", 15, FontStyle.Normal, TextParchmentLight, TextAnchor.UpperLeft);
-            EnsureLayout(_navStatusText.gameObject, -1, 120);
+            // 4-Tile Instrument Row
+            var gaugeRow = CreateBox(statusBox.transform, "GaugeRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 95), Color.clear);
+            EnsureLayout(gaugeRow, -1, 95);
+            var gLayout = gaugeRow.AddComponent<HorizontalLayoutGroup>();
+            gLayout.spacing = 8;
+            gLayout.childForceExpandWidth = true;
+            gLayout.childForceExpandHeight = true;
+
+            _teleHeadingText = BuildTelemetryTile(gaugeRow.transform, "Tile_Heading", "🧭 COMPASS HEADING", "---° (Standby)", "Awaiting World Load");
+            _teleRaftText = BuildTelemetryTile(gaugeRow.transform, "Tile_Raft", "⛵ RAFT POSITION", "Standby", "Velocity: 0.0 kts");
+            _teleSharkText = BuildTelemetryTile(gaugeRow.transform, "Tile_Shark", "🦈 BRUCE SONAR", "Sonar Clear", "Threat: Normal");
+            _teleCoordsText = BuildTelemetryTile(gaugeRow.transform, "Tile_Coords", "📍 WORLD GPS", "X: 0.0  Y: 0.0  Z: 0.0", "Sea Level (Y=0.0)");
+
+            // Notification / Quick Ticker Bar
+            var notifRow = CreateBox(statusBox.transform, "NotifRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 32), CheckboxWoodBg);
+            EnsureLayout(notifRow, -1, 32);
+            var nrOutline = notifRow.AddComponent<Outline>();
+            nrOutline.effectColor = WoodTrimAccent * 0.7f;
+            nrOutline.effectDistance = new Vector2(1, -1);
+            _teleNotifText = CreateText(notifRow.transform, "TickerTxt", "💡 <color=#E0D0B5>Hotkeys:</color> <color=#F5C761>[F5]</color> Menu  |  <color=#F5C761>[F6]</color> HUD  |  <color=#F5C761>[Shift+F6]</color> Style  |  <color=#F5C761>[F4]</color> Sails  |  <color=#F5C761>[F3]</color> Engines  |  <color=#F5C761>[F8]</color> Recall  |  <color=#F5C761>[F9]</color> Summon", 13, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleCenter);
+
+            // Hidden fallback for any legacy code
+            var dummyGO = new GameObject("NavStatusDummy");
+            dummyGO.transform.SetParent(statusBox.transform, false);
+            dummyGO.SetActive(false);
+            _navStatusText = dummyGO.AddComponent<Text>();
+            _navStatusText.font = GetGameFont();
 
             // Version & Update Check Row
             var verRow = CreateBox(page.transform, "VerRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), WoodTitleBar);
@@ -1138,6 +1241,28 @@ namespace SailorsCompanion.UI
             }, WoodButtonNormal, TextParchmentLight, 14);
 
             return page;
+        }
+
+        private Text BuildTelemetryTile(Transform parent, string name, string header, string initialVal, string initialSub)
+        {
+            var tile = CreateBox(parent, name, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Color(0.14f, 0.08f, 0.04f, 0.95f));
+            var outline = tile.AddComponent<Outline>();
+            outline.effectColor = WoodTrimAccent * 0.75f;
+            outline.effectDistance = new Vector2(1, -1);
+
+            var layout = tile.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(10, 10, 8, 8);
+            layout.spacing = 3;
+            layout.childForceExpandWidth = true;
+
+            var head = CreateText(tile.transform, "H", header, 12, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleCenter);
+            EnsureLayout(head.gameObject, -1, 16);
+
+            var valTxt = CreateText(tile.transform, "V", $"<b><color=#FFFFFF>{initialVal}</color></b>\n<size=12><color=#DBC49E>{initialSub}</color></size>", 15, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleCenter);
+            valTxt.lineSpacing = 1.2f;
+            EnsureLayout(valTxt.gameObject, -1, 48);
+
+            return valTxt;
         }
         // ============================================================================
         // [END] TAB 2: NAVIGATION HUD & SHARK RADAR
@@ -1159,66 +1284,84 @@ namespace SailorsCompanion.UI
 
             if (Plugin.IsSurvivalMode)
             {
-                var infoBox = CreateBox(page.transform, "InfoBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 95), WoodPlankEven);
-                EnsureLayout(infoBox, -1, 95);
+                var infoBox = CreateBox(page.transform, "InfoBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 80), WoodPlankEven);
+                EnsureLayout(infoBox, -1, 80);
+                var ibOutline = infoBox.AddComponent<Outline>();
+                ibOutline.effectColor = WoodRowBorder;
+                ibOutline.effectDistance = new Vector2(1, -1);
                 var boxLayout = infoBox.AddComponent<VerticalLayoutGroup>();
                 boxLayout.padding = new RectOffset(18, 18, 10, 10);
-                boxLayout.spacing = 6;
+                boxLayout.spacing = 4;
                 boxLayout.childForceExpandWidth = true;
 
-                var title = CreateText(infoBox.transform, "Title", "🔬 <b><color=#F5C761>Progressive Research</color> & Story Blueprints</b>", 17, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
+                var title = CreateText(infoBox.transform, "Title", "🔬 <b><color=#F5C761>Progressive Story Research</color> & Chapter Blueprints</b>", 17, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
                 EnsureLayout(title.gameObject, -1, 24);
 
-                var desc = CreateText(infoBox.transform, "Desc", "In Survival Mode, unlock crafting knowledge step-by-step or by story chapter to avoid spoiling game progression.", 14, FontStyle.Normal, TextParchmentWarm, TextAnchor.UpperLeft);
-                EnsureLayout(desc.gameObject, -1, 46);
+                var desc = CreateText(infoBox.transform, "Desc", "In Survival Mode, recipes and story discoveries are unlocked chapter-by-chapter to protect the rewarding story journey of Raft.", 14, FontStyle.Normal, TextParchmentLight, TextAnchor.UpperLeft);
+                EnsureLayout(desc.gameObject, -1, 38);
 
-                // Progressive Buttons
-                var btnBase = CreateButton(page.transform, "Btn_BaseTech", "🔬 <b><color=#F5C761>1. Research Base Table Materials</color></b> <color=#F2E6CC>(Wood, Plastic, Metal, Scrap, Goo, Bricks)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 46), () =>
+                // Progressive Tech Cards
+                var btnBase = CreateButton(page.transform, "Btn_BaseTech", "🔬 <b><color=#F5C761>1. Research Base Table Materials</color></b> <color=#F2E6CC>(Wood, Plastic, Metal, Scrap, Clay, Bricks, Goo)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 50), () =>
                 {
                     ResearchBaseMaterials();
                 }, WoodButtonNormal, TextParchmentLight, 14);
-                EnsureLayout(btnBase, -1, 46);
+                var bOutline = btnBase.AddComponent<Outline>();
+                bOutline.effectColor = WoodTrimAccent * 0.7f;
+                bOutline.effectDistance = new Vector2(1, -1);
+                EnsureLayout(btnBase, -1, 50);
 
-                var btnCh1 = CreateButton(page.transform, "Btn_Chapter1", "📻 <b><color=#F5C761>2. Unlock Chapter 1 Blueprints</color></b> <color=#F2E6CC>(Radio Tower & Vasagatan)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 46), () =>
+                var btnCh1 = CreateButton(page.transform, "Btn_Chapter1", "📻 <b><color=#F5C761>2. Unlock Chapter 1 Blueprints</color></b> <color=#F2E6CC>(Radio Tower & Vasagatan — Receiver, Antenna, Engine)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 50), () =>
                 {
                     UnlockChapterBlueprints(1, "Radio Tower & Vasagatan", new[] { "antenna", "receiver", "headlight", "machete", "steering", "engine" });
                 }, WoodButtonNormal, TextParchmentLight, 14);
-                EnsureLayout(btnCh1, -1, 46);
+                var c1Outline = btnCh1.AddComponent<Outline>();
+                c1Outline.effectColor = WoodTrimAccent * 0.7f;
+                c1Outline.effectDistance = new Vector2(1, -1);
+                EnsureLayout(btnCh1, -1, 50);
 
-                var btnCh2 = CreateButton(page.transform, "Btn_Chapter2", "🐻 <b><color=#F5C761>3. Unlock Chapter 2 Blueprints</color></b> <color=#F2E6CC>(Balboa, Caravan Island, Tangaroa)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 46), () =>
+                var btnCh2 = CreateButton(page.transform, "Btn_Chapter2", "🐻 <b><color=#F5C761>3. Unlock Chapter 2 Blueprints</color></b> <color=#F2E6CC>(Balboa, Caravan Island, Tangaroa — Biofuel, Charger, Pipes)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 50), () =>
                 {
                     UnlockChapterBlueprints(2, "Balboa / Caravan / Tangaroa", new[] { "biofuel", "storage", "charger", "grill", "pipe", "firework" });
                 }, WoodButtonNormal, TextParchmentLight, 14);
-                EnsureLayout(btnCh2, -1, 46);
+                var c2Outline = btnCh2.AddComponent<Outline>();
+                c2Outline.effectColor = WoodTrimAccent * 0.7f;
+                c2Outline.effectDistance = new Vector2(1, -1);
+                EnsureLayout(btnCh2, -1, 50);
 
-                var btnCh3 = CreateButton(page.transform, "Btn_Chapter3", "🏙️ <b><color=#F5C761>4. Unlock Chapter 3 Blueprints</color></b> <color=#F2E6CC>(Varuna Point, Temperance, Utopia)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 46), () =>
+                var btnCh3 = CreateButton(page.transform, "Btn_Chapter3", "🏙️ <b><color=#F5C761>4. Unlock Chapter 3 Blueprints</color></b> <color=#F2E6CC>(Varuna Point, Temperance, Utopia — Adv Battery, Windmill, Titanium)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 50), () =>
                 {
                     UnlockChapterBlueprints(3, "Varuna / Temperance / Utopia", new[] { "batteryadvanced", "anchorstationaryadvanced", "backpackadvanced", "smelter", "windmill", "titanium", "biofuelextractoradvanced" });
                 }, WoodButtonNormal, TextParchmentLight, 14);
-                EnsureLayout(btnCh3, -1, 46);
+                var c3Outline = btnCh3.AddComponent<Outline>();
+                c3Outline.effectColor = WoodTrimAccent * 0.7f;
+                c3Outline.effectDistance = new Vector2(1, -1);
+                EnsureLayout(btnCh3, -1, 50);
 
-                _researchStatusText = CreateText(page.transform, "Status", "<color=#DBC49E>Status: Ready. Select a chapter or base research to learn recipes.</color>", 14, FontStyle.Italic, TextParchmentLight, TextAnchor.MiddleCenter);
-                EnsureLayout(_researchStatusText.gameObject, -1, 26);
+                var statusBox = CreateBox(page.transform, "StatusBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), WoodTitleBar);
+                EnsureLayout(statusBox, -1, 36);
+                CreateBox(statusBox.transform, "Trim", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 1.5f), WoodTrimAccent);
+                _researchStatusText = CreateText(statusBox.transform, "Status", "💡 <color=#E0D0B5>Status: Ready. Click any chapter above to learn blueprints into your research station.</color>", 14, FontStyle.Italic, TextParchmentLight, TextAnchor.MiddleCenter);
             }
             else
             {
-                var infoBox = CreateBox(page.transform, "InfoBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 140), WoodPlankEven);
-                EnsureLayout(infoBox, -1, 140);
+                var infoBox = CreateBox(page.transform, "InfoBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 80), WoodPlankEven);
+                EnsureLayout(infoBox, -1, 80);
+                var ibOutline = infoBox.AddComponent<Outline>();
+                ibOutline.effectColor = WoodRowBorder;
+                ibOutline.effectDistance = new Vector2(1, -1);
                 var boxLayout = infoBox.AddComponent<VerticalLayoutGroup>();
-                boxLayout.padding = new RectOffset(20, 20, 14, 14);
-                boxLayout.spacing = 10;
+                boxLayout.padding = new RectOffset(18, 18, 10, 10);
+                boxLayout.spacing = 4;
                 boxLayout.childForceExpandWidth = true;
 
-                var title = CreateText(infoBox.transform, "Title", "⚡ <b><color=#F5C761>Creative Sandbox</color> Blueprint Station</b>", 18, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
-                EnsureLayout(title.gameObject, -1, 28);
+                var title = CreateText(infoBox.transform, "Title", "⚡ <b><color=#F5C761>Creative Sandbox</color> Blueprint Master Station</b>", 17, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
+                EnsureLayout(title.gameObject, -1, 24);
 
-                var desc = CreateText(infoBox.transform, "Desc", "Creative Mode allows instant learning of every item, engine, weapon, tool, furniture, and story blueprint in the game without requiring materials or visiting islands.", 15, FontStyle.Normal, TextParchmentWarm, TextAnchor.UpperLeft);
-                EnsureLayout(desc.gameObject, -1, 60);
+                var desc = CreateText(infoBox.transform, "Desc", "Creative Mode allows instant learning of every item, engine, weapon, tool, furniture, and story blueprint without visiting islands.", 14, FontStyle.Normal, TextParchmentLight, TextAnchor.UpperLeft);
+                EnsureLayout(desc.gameObject, -1, 38);
 
-                _researchStatusText = CreateText(page.transform, "Status", "<color=#DBC49E>Status: Ready. Click below to unlock all items.</color>", 15, FontStyle.Italic, TextParchmentLight, TextAnchor.MiddleCenter);
-                EnsureLayout(_researchStatusText.gameObject, -1, 28);
-
-                var unlockBtn = CreateButton(page.transform, "Btn_UnlockAllRD", "⚡ UNLOCK ALL R&D RECIPES & BLUEPRINTS NOW", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 54), () =>
+                // Master Unlock Banner Button
+                var unlockBtn = CreateButton(page.transform, "Btn_UnlockAllRD", "⚡ UNLOCK ALL 300+ R&D RECIPES & STORY BLUEPRINTS NOW", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 56), () =>
                 {
                     try
                     {
@@ -1230,7 +1373,7 @@ namespace SailorsCompanion.UI
                         Cheat.UnlockAllCrafting = true;
                         if (_researchStatusText != null)
                         {
-                            _researchStatusText.text = "<color=#34D399><b>✅ SUCCESS: All R&D recipes and blueprints unlocked!</b></color>";
+                            _researchStatusText.text = "<b><color=#34D399>✅ SUCCESS: All 300+ R&D recipes and blueprints learned permanently!</color></b>";
                         }
                         Debug.Log("[Sailor's Companion] Unlocked all R&D recipes and blueprints!");
                     }
@@ -1242,8 +1385,36 @@ namespace SailorsCompanion.UI
                         }
                         Debug.LogError("[Sailor's Companion] R&D error: " + ex);
                     }
-                }, WoodButtonCrimson, TextParchmentLight, 16);
-                EnsureLayout(unlockBtn, -1, 54);
+                }, WoodButtonCrimson, TextWhite, 16);
+                var uOutline = unlockBtn.AddComponent<Outline>();
+                uOutline.effectColor = WoodTrimAccent;
+                uOutline.effectDistance = new Vector2(2, -2);
+                EnsureLayout(unlockBtn, -1, 56);
+
+                CreateCategoryHeader(page.transform, "📖 TARGETED STORY CHAPTER UNLOCKS", 28f);
+
+                var btnCh1 = CreateButton(page.transform, "Btn_Chapter1", "📻 <b><color=#F5C761>Chapter 1 Blueprints</color></b> (Radio Tower & Vasagatan)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
+                {
+                    UnlockChapterBlueprints(1, "Radio Tower & Vasagatan", new[] { "antenna", "receiver", "headlight", "machete", "steering", "engine" });
+                }, WoodButtonNormal, TextParchmentLight, 14);
+                EnsureLayout(btnCh1, -1, 44);
+
+                var btnCh2 = CreateButton(page.transform, "Btn_Chapter2", "🐻 <b><color=#F5C761>Chapter 2 Blueprints</color></b> (Balboa, Caravan Island, Tangaroa)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
+                {
+                    UnlockChapterBlueprints(2, "Balboa / Caravan / Tangaroa", new[] { "biofuel", "storage", "charger", "grill", "pipe", "firework" });
+                }, WoodButtonNormal, TextParchmentLight, 14);
+                EnsureLayout(btnCh2, -1, 44);
+
+                var btnCh3 = CreateButton(page.transform, "Btn_Chapter3", "🏙️ <b><color=#F5C761>Chapter 3 Blueprints</color></b> (Varuna Point, Temperance, Utopia)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
+                {
+                    UnlockChapterBlueprints(3, "Varuna / Temperance / Utopia", new[] { "batteryadvanced", "anchorstationaryadvanced", "backpackadvanced", "smelter", "windmill", "titanium", "biofuelextractoradvanced" });
+                }, WoodButtonNormal, TextParchmentLight, 14);
+                EnsureLayout(btnCh3, -1, 44);
+
+                var statusBox = CreateBox(page.transform, "StatusBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), WoodTitleBar);
+                EnsureLayout(statusBox, -1, 36);
+                CreateBox(statusBox.transform, "Trim", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 1.5f), WoodTrimAccent);
+                _researchStatusText = CreateText(statusBox.transform, "Status", "💡 <color=#E0D0B5>Status: Ready. Click Master Unlock to learn everything, or choose specific chapters above.</color>", 14, FontStyle.Italic, TextParchmentLight, TextAnchor.MiddleCenter);
             }
 
             return page;
@@ -1359,6 +1530,26 @@ namespace SailorsCompanion.UI
             var banner = CreateBox(page.transform, "Banner", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), WoodTitleBar);
             EnsureLayout(banner, -1, 38);
             var bannerTxt = CreateText(banner.transform, "Txt", "📦 <b>Item Spawner:</b> Search any item in Raft and add stacks directly into your inventory.", 15, FontStyle.Normal, TextGoldHeading, TextAnchor.MiddleCenter);
+
+            // Category Quick-Filter Chips Row
+            var catRow = CreateBox(page.transform, "CatFilterRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 32), Color.clear);
+            EnsureLayout(catRow, -1, 32);
+            var catLayout = catRow.AddComponent<HorizontalLayoutGroup>();
+            catLayout.spacing = 6;
+            catLayout.childForceExpandWidth = true;
+
+            string[] catLabels = { "🌐 All", "🪵 Resources", "🔨 Tools", "🍲 Food", "🏠 Decor & Base", "📻 Story" };
+            string[] catFilters = { "", "plank plastic scrap metal titanium copper stone", "hook axe spear bow arrow machete headlight", "fish meat beet potato mango melon water soup", "foundation wall door window table chair bed paint", "blueprint receiver antenna key cassette note" };
+
+            for (int c = 0; c < catLabels.Length; c++)
+            {
+                int cIdx = c;
+                CreateButton(catRow.transform, $"Btn_Cat_{c}", catLabels[c], Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+                {
+                    if (_itemSearchInput != null) _itemSearchInput.text = catFilters[cIdx];
+                    RefreshItemSpawnerList(catFilters[cIdx]);
+                }, WoodButtonNormal, TextParchmentLight, 13);
+            }
 
             // Search row
             var searchRow = CreateBox(page.transform, "SearchRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), Color.clear);
@@ -2100,7 +2291,11 @@ namespace SailorsCompanion.UI
             var p = PlayerHelper.GetLocalPlayer();
             if (p == null)
             {
-                _navStatusText.text = "<color=#94A3B8>Enter a game world to see live navigation, raft tracking, and shark distance data.</color>";
+                if (_teleHeadingText != null) _teleHeadingText.text = "<b><color=#AD9473>Standby</color></b>\n<size=12><color=#7A6A55>Enter world to read compass</color></size>";
+                if (_teleRaftText != null) _teleRaftText.text = "<b><color=#AD9473>Standby</color></b>\n<size=12><color=#7A6A55>Waiting for save file</color></size>";
+                if (_teleSharkText != null) _teleSharkText.text = "<b><color=#34D399>Sonar Clear</color></b>\n<size=12><color=#7A6A55>No hostile predator detected</color></size>";
+                if (_teleCoordsText != null) _teleCoordsText.text = "<b><color=#AD9473>X: 0.0  Y: 0.0  Z: 0.0</color></b>\n<size=12><color=#7A6A55>Waiting for world telemetry</color></size>";
+                if (_navStatusText != null) _navStatusText.text = "<color=#94A3B8>Enter a game world to see live navigation, raft tracking, and shark distance data.</color>";
                 return;
             }
 
@@ -2110,6 +2305,11 @@ namespace SailorsCompanion.UI
             int cIndex = Mathf.RoundToInt(yaw / 45f) % 8;
             if (cIndex < 0) cIndex += 8;
 
+            if (_teleHeadingText != null)
+            {
+                _teleHeadingText.text = $"<b><color=#FFD54F><size=17>{yaw:000}° ({cardinals[cIndex]})</size></color></b>\n<size=12><color=#E6CEAC>Facing {cardinals[cIndex]} Direction</color></size>";
+            }
+
             string raftStr = "Raft: Not detected";
             if (_cachedNavRaft == null || !_cachedNavRaft.gameObject.activeInHierarchy)
             {
@@ -2118,7 +2318,17 @@ namespace SailorsCompanion.UI
             if (_cachedNavRaft != null)
             {
                 float dist = Vector3.Distance(p.transform.position, _cachedNavRaft.transform.position);
-                raftStr = $"Raft: <b>{dist:F0}m</b> away  |  State: <b>{(_cachedNavRaft.IsAnchored ? "Anchored" : "Drifting")}</b>  |  Speed: <b>{_cachedNavRaft.Velocity.magnitude * 1.94f:F1} knots</b>";
+                string stateStr = _cachedNavRaft.IsAnchored ? "<color=#F87171>Anchored</color>" : "<color=#34D399>Drifting</color>";
+                float knots = _cachedNavRaft.Velocity.magnitude * 1.94f;
+                raftStr = $"Raft: <b>{dist:F0}m</b> away  |  State: <b>{(_cachedNavRaft.IsAnchored ? "Anchored" : "Drifting")}</b>  |  Speed: <b>{knots:F1} knots</b>";
+                if (_teleRaftText != null)
+                {
+                    _teleRaftText.text = $"<b><color=#FFFFFF>{dist:F0}m Away</color></b> | {stateStr}\n<size=12><color=#E6CEAC>Velocity: <b>{knots:F1} knots</b></color></size>";
+                }
+            }
+            else if (_teleRaftText != null)
+            {
+                _teleRaftText.text = "<b><color=#F87171>Not Detected</color></b>\n<size=12><color=#E6CEAC>Raft reference missing</color></size>";
             }
 
             string sharkStr = "Bruce: Peaceful";
@@ -2130,19 +2340,45 @@ namespace SailorsCompanion.UI
             {
                 float sDist = Vector3.Distance(p.transform.position, _cachedNavShark.transform.position);
                 sharkStr = $"Bruce the Shark: <b>{sDist:F0}m</b> away";
+                if (_teleSharkText != null)
+                {
+                    string alertColor = sDist < 25f ? "#EF4444" : (sDist < 50f ? "#F59E0B" : "#34D399");
+                    string threat = sDist < 25f ? "DANGER: Close!" : (sDist < 50f ? "Prowling nearby" : "Far away / Calm");
+                    _teleSharkText.text = $"<b><color={alertColor}>{sDist:F0}m Away</color></b>\n<size=12><color=#E6CEAC>{threat}</color></size>";
+                }
+            }
+            else if (_teleSharkText != null)
+            {
+                _teleSharkText.text = "<b><color=#34D399>No Shark Detected</color></b>\n<size=12><color=#E6CEAC>Ocean waters are clear</color></size>";
+            }
+
+            if (_teleCoordsText != null)
+            {
+                _teleCoordsText.text = $"<b><color=#FFD54F>X: {p.transform.position.x:F1}  Z: {p.transform.position.z:F1}</color></b>\n<size=12><color=#E6CEAC>Altitude: <b>Y: {p.transform.position.y:F1}m</b></color></size>";
             }
 
             string notifStr = "";
             if (!string.IsNullOrEmpty(TeleportManager.LastStatusMessage) && (Time.unscaledTime - TeleportManager.LastStatusTime < 8.0f))
             {
                 notifStr = $"\n<color=#EF4444><b>Notification:</b> {TeleportManager.LastStatusMessage}</color>";
+                if (_teleNotifText != null)
+                {
+                    _teleNotifText.text = $"📢 <color=#EF4444><b>Notification:</b> {TeleportManager.LastStatusMessage}</color>";
+                }
+            }
+            else if (_teleNotifText != null)
+            {
+                _teleNotifText.text = "💡 <color=#E0D0B5>Hotkeys:</color> <color=#F5C761>[F5]</color> Menu  |  <color=#F5C761>[F6]</color> HUD  |  <color=#F5C761>[Shift+F6]</color> Style  |  <color=#F5C761>[F4]</color> Sails  |  <color=#F5C761>[F3]</color> Engines  |  <color=#F5C761>[F8]</color> Recall  |  <color=#F5C761>[F9]</color> Summon";
             }
 
-            _navStatusText.text = $"• Player Position: <b>X: {p.transform.position.x:F1}, Y: {p.transform.position.y:F1}, Z: {p.transform.position.z:F1}</b>\n" +
-                                  $"• Facing Direction: <b>{yaw:000}° ({cardinals[cIndex]})</b>\n" +
-                                  $"• {raftStr}\n" +
-                                  $"• {sharkStr}{notifStr}\n\n" +
-                                  $"<size=13><color=#CBD5E1>Hotkeys: [F5] Menu  |  [F6] HUD  |  [Shift+F6] Cycle Style  |  [F] Fly  |  [F8] Recall  |  [F9] Summon</color></size>";
+            if (_navStatusText != null)
+            {
+                _navStatusText.text = $"• Player Position: <b>X: {p.transform.position.x:F1}, Y: {p.transform.position.y:F1}, Z: {p.transform.position.z:F1}</b>\n" +
+                                      $"• Facing Direction: <b>{yaw:000}° ({cardinals[cIndex]})</b>\n" +
+                                      $"• {raftStr}\n" +
+                                      $"• {sharkStr}{notifStr}\n\n" +
+                                      $"<size=13><color=#CBD5E1>Hotkeys: [F5] Menu  |  [F6] HUD  |  [Shift+F6] Cycle Style  |  [F] Fly  |  [F8] Recall  |  [F9] Summon</color></size>";
+            }
 
             UpdateNavStyleButtonVisuals();
         }
