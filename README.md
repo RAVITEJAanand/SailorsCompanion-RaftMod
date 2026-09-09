@@ -150,6 +150,10 @@ Switch optimized mod profiles instantly from the top row:
 - **Client-Side Safe**: Navigation HUD, Radar, Teleport to Raft, Fly Mode, Tool Durability, and Item Spawner work seamlessly when joining multiplayer sessions.
 - **Host Recommended**: World-altering features (Weather modification, Summon Raft, Anti-Shark Foundation Protection, Island Scanning) operate best when you are the host or playing singleplayer.
 
+## 🤝 Recommended Companion Mod
+
+Pair with **[Inventory Master](https://www.nexusmods.com/raft/mods/156)** ([GitHub](https://github.com/RAVITEJAanand/InventoryMaster-RaftMod)) for one-click inventory & chest auto-sorting, permanent 15-slot backpack expansion, 20-slot hotbar swapping, item locking, drop protection, and smart transfers.
+
 ---
 
 ## 💬 Community & Support
