@@ -133,7 +133,14 @@ namespace SailorsCompanion.Features
                             if (toTransfer > 0)
                             {
                                 cSlot.itemInstance.Amount -= toTransfer;
-                                playerInv.AddItem(targetItem.UniqueName, toTransfer);
+
+                                // Use silent slot injection instead of playerInv.AddItem().
+                                // AddItem() triggers Hotbar.ReselectCurrentSlot() → PlayerItemManager.SwitchState()
+                                // → UseItemController.Deselect() → ThrowableComponent.OnDeSelect()
+                                // → ChargeMeter.Reset() which crashes with NullReferenceException when
+                                // a throwable item (spear, stone, etc.) is held during crafting.
+                                SilentlyAddItemToInventory(playerInv, targetItem, toTransfer);
+
                                 needed -= toTransfer;
 
                                 if (cSlot.itemInstance.Amount <= 0)
@@ -153,6 +160,60 @@ namespace SailorsCompanion.Features
                 }
             }
         }
+
+        // ============================================================================
+        // [START] HELPER: SILENT SLOT-LEVEL ITEM INJECTION
+        // Adds items directly into inventory slots without triggering the hotbar
+        // reselection event chain (Hotbar.ReselectCurrentSlot → PlayerItemManager →
+        // UseItemController → ThrowableComponent → ChargeMeter.Reset crash).
+        // ============================================================================
+        private static void SilentlyAddItemToInventory(Inventory inv, Item_Base item, int amount)
+        {
+            if (inv == null || item == null || amount <= 0 || inv.allSlots == null) return;
+
+            int remaining = amount;
+
+            // Pass 1: Stack into existing partial slots of the same item
+            foreach (var slot in inv.allSlots)
+            {
+                if (remaining <= 0) break;
+                if (slot == null || slot.IsEmpty || !slot.HasValidItemInstance()) continue;
+                if (slot.itemInstance.baseItem.UniqueIndex != item.UniqueIndex) continue;
+
+                int stackMax = item.MaxUses > 0 ? item.MaxUses : 20;
+                int space = stackMax - slot.itemInstance.Amount;
+                if (space <= 0) continue;
+
+                int add = Mathf.Min(space, remaining);
+                slot.itemInstance.Amount += add;
+                remaining -= add;
+                slot.RefreshComponents();
+            }
+
+            // Pass 2: Fill empty slots with new stacks
+            foreach (var slot in inv.allSlots)
+            {
+                if (remaining <= 0) break;
+                if (slot == null || !slot.IsEmpty) continue;
+
+                int stackMax = item.MaxUses > 0 ? item.MaxUses : 20;
+                int add = Mathf.Min(stackMax, remaining);
+
+                var instance = new ItemInstance(item, add, item.MaxUses);
+                slot.SetItem(instance);
+                remaining -= add;
+                slot.RefreshComponents();
+            }
+
+            if (remaining > 0)
+            {
+                Debug.LogWarning($"[Sailor's Companion] CraftingFromStorage: Inventory full, could not add {remaining}x {item.UniqueName}.");
+            }
+        }
+        // ============================================================================
+        // [END] HELPER: SILENT SLOT-LEVEL ITEM INJECTION
+        // ============================================================================
+
         // ============================================================================
         // [END] HELPER: PULL MISSING INGREDIENTS FROM NEARBY CHESTS
         // ============================================================================

@@ -16,6 +16,9 @@ namespace SailorsCompanion.Patches
     [HarmonyPatch(typeof(Hook), "HandleGathering")]
     public static class Hook_HandleGathering_Patch
     {
+        // Timestamp of the last frame where the player was actively reef-mining.
+        // Updated every frame while gatherTime is overridden so the shark ward
+        // stays active for the full 5s after the player stops mining.
         public static float LastReefMiningTime = -9999f;
 
         [HarmonyPrefix]
@@ -27,10 +30,9 @@ namespace SailorsCompanion.Patches
             {
                 // Accelerate mining from 2.5s down to 0.7s (3.5x faster!)
                 __instance.gatherTime = 0.7f;
-            }
 
-            if (item != null)
-            {
+                // Refresh the ward timer every frame while actively mining,
+                // not just when item is non-null (item can be null mid-gather).
                 LastReefMiningTime = Time.time;
             }
         }
@@ -47,10 +49,6 @@ namespace SailorsCompanion.Patches
             if (Plugin.ReefFastHarvest != null && Plugin.ReefFastHarvest.Value)
             {
                 __instance.gatherTime = 0.7f;
-            }
-
-            if (item != null)
-            {
                 Hook_HandleGathering_Patch.LastReefMiningTime = Time.time;
             }
         }
@@ -68,8 +66,8 @@ namespace SailorsCompanion.Patches
             {
                 if (Time.time - Hook_HandleGathering_Patch.LastReefMiningTime < 5.0f)
                 {
-                    // Shark is repelled during reef mining! Force drive-by without damage
-                    __instance.ForceDriveBy(false);
+                    // Block the attack outright during the 5s mining ward window.
+                    // Do NOT call ForceDriveBy — that still triggers a swim-through.
                     return false;
                 }
             }
@@ -87,15 +85,21 @@ namespace SailorsCompanion.Patches
             {
                 if (Time.time - Hook_HandleGathering_Patch.LastReefMiningTime < 5.0f)
                 {
-                    // Shark ignores the mining player as a target during reef mining
-                    __instance.targetToAttack = null;
-                    return false;
+                    // Only suppress targeting if this shark is trying to target the local player.
+                    // Prevents AI errors when multiple sharks are tracking different entities.
+                    var localPlayer = PlayerHelper.GetLocalPlayer();
+                    if (localPlayer != null && __instance.targetToAttack == localPlayer.gameObject)
+                    {
+                        __instance.targetToAttack = null;
+                        return false;
+                    }
                 }
             }
             return true;
         }
     }
     // [END] SHARK REPEL WARD DURING MINING
+
 
     // [START] CHANNELING PICKUP ACCELERATION
     [HarmonyPatch(typeof(PickupChanneling), "Awake")]

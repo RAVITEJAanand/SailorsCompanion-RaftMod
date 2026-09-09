@@ -40,15 +40,19 @@ namespace SailorsCompanion.Features
         // ============================================================================
         private void Update()
         {
-            if (Plugin.IslandHandPickup == null || !Plugin.IslandHandPickup.Value)
+            if (Time.time - _lastHandScanTime < HAND_SCAN_INTERVAL) return;
+            _lastHandScanTime = Time.time;
+
+            // Island Hand Pickup: collect surface flowers, fruits, etc. without hook
+            if (Plugin.IslandHandPickup != null && Plugin.IslandHandPickup.Value)
             {
-                return;
+                CheckIslandHandPickup();
             }
 
-            if (Time.time - _lastHandScanTime >= HAND_SCAN_INTERVAL)
+            // Reef Hand Harvesting: accelerate channeling pickupTime
+            if (Plugin.ReefHandHarvesting != null && Plugin.ReefHandHarvesting.Value)
             {
-                _lastHandScanTime = Time.time;
-                CheckProximityHarvest();
+                CheckReefChannelingAcceleration();
             }
         }
         // ============================================================================
@@ -56,31 +60,87 @@ namespace SailorsCompanion.Features
         // ============================================================================
 
         // ============================================================================
-        // [START] ACTION: PROXIMITY HARVEST & LOOSE ITEM CHECK
-        // Purpose: Accelerates channeling on focused reef resources and allows
-        //          instant hand pickup when within close range.
+        // [START] ACTION: ISLAND SURFACE ITEM AUTO-COLLECT
+        // Purpose: Scans for nearby PickupItems on island terrain (not on raft blocks,
+        //          not ocean floating debris) and silently collects them into inventory
+        //          without requiring a hook to be equipped.
         // ============================================================================
-        private void CheckProximityHarvest()
+        private void CheckIslandHandPickup()
         {
             var player = PlayerHelper.GetLocalPlayer();
-            if (player == null || player.PickupScript == null) return;
+            if (player == null) return;
 
-            // Check if player is focusing a PickupChanneling resource (Sand, Clay, Scrap, Ore)
-            if (Plugin.ReefHandHarvesting != null && Plugin.ReefHandHarvesting.Value)
+            // Only apply on islands — skip if the player is underwater (oxygen stat is depleting)
+            if (player.Stats?.stat_oxygen != null && player.Stats.stat_oxygen.NormalValue < 1f) return;
+
+            var playerPos = player.transform.position;
+            var playerInv = player.Inventory;
+            if (playerInv == null) return;
+
+            var allPickups = UnityEngine.Object.FindObjectsOfType<PickupItem>();
+            if (allPickups == null) return;
+
+            foreach (var pickup in allPickups)
             {
-                PickupChanneling channeling = Traverse.Create(player.PickupScript).Field("pickupChanneling").GetValue<PickupChanneling>();
-                if (channeling != null)
+                if (pickup == null || !pickup.canBePickedUp) continue;
+                if (!pickup.gameObject.activeInHierarchy) continue;
+
+                // Skip ocean floating debris (ItemNet, flotsam on ocean)
+                if (pickup is ItemNet) continue;
+                if (pickup.pickupItemType != PickupItemType.Default) continue;
+
+                // Skip items attached to raft blocks (storage, machines, etc.)
+                if (pickup.GetComponentInParent<Block>() != null) continue;
+
+                // Skip items already being collected by a collection net
+                if (pickup.GetComponent<ItemCollector>() != null) continue;
+
+                float dist = Vector3.Distance(playerPos, pickup.transform.position);
+                if (dist > HAND_PICKUP_RANGE) continue;
+
+                // Collect: add to inventory and destroy the pickup
+                try
                 {
-                    // If fast harvest is enabled, set pickupTime to 0.3s for rapid mining
-                    if (Plugin.ReefFastHarvest != null && Plugin.ReefFastHarvest.Value)
+                    string itemName = pickup.itemInstance?.baseItem?.UniqueName;
+                    if (string.IsNullOrEmpty(itemName)) continue;
+
+                    int added = playerInv.AddItem(itemName, 1);
+                    if (added > 0)
                     {
-                        channeling.pickupTime = 0.3f;
+                        UnityEngine.Object.Destroy(pickup.gameObject);
                     }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[Sailor's Companion] IslandHandPickup: failed to collect {pickup.name}: {ex.Message}");
                 }
             }
         }
         // ============================================================================
-        // [END] ACTION: PROXIMITY HARVEST & LOOSE ITEM CHECK
+        // [END] ACTION: ISLAND SURFACE ITEM AUTO-COLLECT
+        // ============================================================================
+
+        // ============================================================================
+        // [START] ACTION: REEF CHANNELING ACCELERATION
+        // Purpose: Accelerates channeling on focused reef resources so players can
+        //          mine safely before shark attacks.
+        // ============================================================================
+        private void CheckReefChannelingAcceleration()
+        {
+            var player = PlayerHelper.GetLocalPlayer();
+            if (player == null || player.PickupScript == null) return;
+
+            PickupChanneling channeling = Traverse.Create(player.PickupScript).Field("pickupChanneling").GetValue<PickupChanneling>();
+            if (channeling != null)
+            {
+                if (Plugin.ReefFastHarvest != null && Plugin.ReefFastHarvest.Value)
+                {
+                    channeling.pickupTime = 0.3f;
+                }
+            }
+        }
+        // ============================================================================
+        // [END] ACTION: REEF CHANNELING ACCELERATION
         // ============================================================================
     }
     // ============================================================================

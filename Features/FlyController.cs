@@ -37,7 +37,7 @@ namespace SailorsCompanion.Features
                 return;
             }
 
-            if (Plugin.EnableFlyMode.Value)
+            if (Plugin.EnableFlyMode != null && Plugin.EnableFlyMode.Value)
             {
                 if (!_isFlying || _currentPlayer != localPlayer)
                 {
@@ -112,16 +112,16 @@ namespace SailorsCompanion.Features
             if (InputHelper.IsKeyHeld(KeyCode.D)) move += cam.transform.right;
             if (InputHelper.IsKeyHeld(KeyCode.A)) move -= cam.transform.right;
 
-            // Vertical Ascend & Descend
+            // Vertical Ascend & Descend (LeftControl = down, LeftShift = speed boost)
             if (InputHelper.IsKeyHeld(KeyCode.Space)) move += Vector3.up;
-            if (InputHelper.IsKeyHeld(KeyCode.LeftShift) || InputHelper.IsKeyHeld(KeyCode.LeftControl)) move -= Vector3.up;
+            if (InputHelper.IsKeyHeld(KeyCode.LeftControl)) move -= Vector3.up;
 
             if (move.sqrMagnitude > 0.001f)
             {
-                float speed = Plugin.FlySpeed.Value;
-                if (InputHelper.IsKeyHeld(KeyCode.LeftAlt))
+                float speed = Plugin.FlySpeed != null ? Plugin.FlySpeed.Value : 14f;
+                if (InputHelper.IsKeyHeld(KeyCode.LeftShift))
                 {
-                    speed *= 2.5f; // Turbo boost
+                    speed *= 2.5f; // Turbo boost (LeftShift)
                 }
 
                 player.transform.position += move.normalized * speed * Time.deltaTime;
