@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using SailorsCompanion.Features;
+using SailorsCompanion.Patches;
 
 namespace SailorsCompanion.UI
 {
@@ -167,6 +168,7 @@ namespace SailorsCompanion.UI
                 if (existing != null)
                 {
                     UnityEngine.EventSystems.EventSystem.current = existing;
+                    es = existing;
                 }
                 else
                 {
@@ -177,6 +179,13 @@ namespace SailorsCompanion.UI
                     DontDestroyOnLoad(esGO);
                     UnityEngine.EventSystems.EventSystem.current = es;
                 }
+            }
+
+            if (es != null)
+            {
+                if (!es.enabled) es.enabled = true;
+                if (!es.gameObject.activeInHierarchy) es.gameObject.SetActive(true);
+                es.SetSelectedGameObject(null);
             }
         }
 
@@ -2558,6 +2567,18 @@ namespace SailorsCompanion.UI
             {
                 EnsureEventSystem();
                 RefreshUpdateBanner();
+
+                try
+                {
+                    var cic = CustomInputConfig.Instance;
+                    if (cic != null)
+                    {
+                        cic.EnableInput();
+                        cic.SwitchCurrentActionMap("UI");
+                    }
+                }
+                catch { }
+
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
                 try
@@ -2579,7 +2600,7 @@ namespace SailorsCompanion.UI
             {
                 try
                 {
-                    if (CanvasHelper.ActiveMenu == MenuType.Cheat)
+                    if (CanvasHelper.ActiveMenu == MenuType.Cheat && !CursorPatchHelper.ShouldForceCursorFree())
                     {
                         CanvasHelper.ActiveMenu = MenuType.None;
                     }
@@ -2592,12 +2613,27 @@ namespace SailorsCompanion.UI
                     bool isOtherMenuOpen = false;
                     try
                     {
-                        if (CanvasHelper.ActiveMenu != MenuType.None)
+                        if (CanvasHelper.ActiveMenu != MenuType.None && CanvasHelper.ActiveMenu != MenuType.Cheat)
                         {
                             isOtherMenuOpen = true;
                         }
                     }
                     catch {}
+
+                    if (CursorPatchHelper.ShouldForceCursorFree())
+                    {
+                        isOtherMenuOpen = true;
+                    }
+
+                    try
+                    {
+                        var cic = CustomInputConfig.Instance;
+                        if (cic != null && !isOtherMenuOpen)
+                        {
+                            cic.SwitchCurrentActionMap("Player");
+                        }
+                    }
+                    catch { }
 
                     if (!isOtherMenuOpen)
                     {
