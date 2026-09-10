@@ -86,136 +86,85 @@ namespace SailorsCompanion.Features
         // ============================================================================
 
         // ============================================================================
-        // [START] HELPER: PULL MISSING INGREDIENTS FROM NEARBY CHESTS
+        // [START] RECURSION GUARD FOR COST CONSUMPTION
         // ============================================================================
-        public static void PullMissingIngredientsFromChests(Inventory playerInv, CostMultiple[] costMultiples)
+        public static bool IsConsumingCosts { get; set; } = false;
+
+        // ============================================================================
+        // [START] HELPER: DEDUCT COSTS DIRECTLY FROM PLAYER AND NEARBY CHESTS
+        // Deducts items directly from player inventory and nearby chests without
+        // ever injecting items into the player's personal inventory slots.
+        // ============================================================================
+        public static void ConsumeCostsFromPlayerAndChests(Inventory playerInv, CostMultiple[] costMultiples)
         {
             if (playerInv == null || costMultiples == null || costMultiples.Length == 0) return;
 
-            var player = PlayerHelper.GetLocalPlayer();
-            if (player == null) return;
-
-            var nearbyChests = GetNearbyChestsCached(player.transform.position);
-            if (nearbyChests.Count == 0) return;
-
-            foreach (var cost in costMultiples)
+            IsConsumingCosts = true;
+            try
             {
-                if (cost == null || cost.items == null || cost.items.Length == 0) continue;
-
-                // Check how many of this ingredient the player currently has on hand
-                int currentInInv = 0;
-                foreach (var item in cost.items)
+                // Clone the cost multiples so amounts can be reduced in-place cleanly
+                CostMultiple[] remaining = new CostMultiple[costMultiples.Length];
+                for (int i = 0; i < costMultiples.Length; i++)
                 {
-                    if (item != null) currentInInv += playerInv.GetItemCount(item.UniqueName);
+                    if (costMultiples[i] != null)
+                    {
+                        remaining[i] = new CostMultiple(costMultiples[i].items, costMultiples[i].amount);
+                    }
                 }
 
-                int needed = cost.amount - currentInInv;
-                if (needed <= 0) continue; // Player already has enough
+                // 1. Deduct what the player has in personal inventory first
+                playerInv.RemoveCostMultiple(remaining, true);
 
-                // Pull needed amount from nearby chests
+                // 2. If a chest/secondary inventory is currently open, deduct from it next
+                if (playerInv.secondInventory != null)
+                {
+                    playerInv.secondInventory.RemoveCostMultiple(remaining, true);
+                }
+
+                // 3. Check if any cost is still needed
+                bool anyNeeded = false;
+                for (int i = 0; i < remaining.Length; i++)
+                {
+                    if (remaining[i] != null && remaining[i].amount > 0)
+                    {
+                        anyNeeded = true;
+                        break;
+                    }
+                }
+                if (!anyNeeded) return;
+
+                // 4. Deduct remaining needed amounts directly from nearby chests
+                var player = PlayerHelper.GetLocalPlayer();
+                if (player == null) return;
+
+                var nearbyChests = GetNearbyChestsCached(player.transform.position);
                 foreach (var chest in nearbyChests)
                 {
                     if (chest == null) continue;
-
                     var chestInv = chest.GetInventoryReference();
-                    if (chestInv == null || chestInv.allSlots == null) continue;
+                    if (chestInv == null || chestInv == playerInv.secondInventory) continue;
 
-                    foreach (var targetItem in cost.items)
+                    chestInv.RemoveCostMultiple(remaining, true);
+
+                    bool stillNeeded = false;
+                    for (int i = 0; i < remaining.Length; i++)
                     {
-                        if (targetItem == null) continue;
-
-                        foreach (var cSlot in chestInv.allSlots)
+                        if (remaining[i] != null && remaining[i].amount > 0)
                         {
-                            if (cSlot == null || cSlot.IsEmpty || !cSlot.HasValidItemInstance()) continue;
-                            if (cSlot.itemInstance.baseItem.UniqueIndex != targetItem.UniqueIndex) continue;
-
-                            int toTransfer = Mathf.Min(cSlot.itemInstance.Amount, needed);
-                            if (toTransfer > 0)
-                            {
-                                cSlot.itemInstance.Amount -= toTransfer;
-
-                                // Use silent slot injection instead of playerInv.AddItem().
-                                // AddItem() triggers Hotbar.ReselectCurrentSlot() → PlayerItemManager.SwitchState()
-                                // → UseItemController.Deselect() → ThrowableComponent.OnDeSelect()
-                                // → ChargeMeter.Reset() which crashes with NullReferenceException when
-                                // a throwable item (spear, stone, etc.) is held during crafting.
-                                SilentlyAddItemToInventory(playerInv, targetItem, toTransfer);
-
-                                needed -= toTransfer;
-
-                                if (cSlot.itemInstance.Amount <= 0)
-                                {
-                                    cSlot.Reset();
-                                }
-                                cSlot.RefreshComponents();
-
-                                if (needed <= 0) break;
-                            }
+                            stillNeeded = true;
+                            break;
                         }
-
-                        if (needed <= 0) break;
                     }
-
-                    if (needed <= 0) break;
+                    if (!stillNeeded) break;
                 }
             }
-        }
-
-        // ============================================================================
-        // [START] HELPER: SILENT SLOT-LEVEL ITEM INJECTION
-        // Adds items directly into inventory slots without triggering the hotbar
-        // reselection event chain (Hotbar.ReselectCurrentSlot → PlayerItemManager →
-        // UseItemController → ThrowableComponent → ChargeMeter.Reset crash).
-        // ============================================================================
-        private static void SilentlyAddItemToInventory(Inventory inv, Item_Base item, int amount)
-        {
-            if (inv == null || item == null || amount <= 0 || inv.allSlots == null) return;
-
-            int remaining = amount;
-
-            // Pass 1: Stack into existing partial slots of the same item
-            foreach (var slot in inv.allSlots)
+            finally
             {
-                if (remaining <= 0) break;
-                if (slot == null || slot.IsEmpty || !slot.HasValidItemInstance()) continue;
-                if (slot.itemInstance.baseItem.UniqueIndex != item.UniqueIndex) continue;
-
-                int stackMax = item.MaxUses > 0 ? item.MaxUses : 20;
-                int space = stackMax - slot.itemInstance.Amount;
-                if (space <= 0) continue;
-
-                int add = Mathf.Min(space, remaining);
-                slot.itemInstance.Amount += add;
-                remaining -= add;
-                slot.RefreshComponents();
-            }
-
-            // Pass 2: Fill empty slots with new stacks
-            foreach (var slot in inv.allSlots)
-            {
-                if (remaining <= 0) break;
-                if (slot == null || !slot.IsEmpty) continue;
-
-                int stackMax = item.MaxUses > 0 ? item.MaxUses : 20;
-                int add = Mathf.Min(stackMax, remaining);
-
-                var instance = new ItemInstance(item, add, item.MaxUses);
-                slot.SetItem(instance);
-                remaining -= add;
-                slot.RefreshComponents();
-            }
-
-            if (remaining > 0)
-            {
-                Debug.LogWarning($"[Sailor's Companion] CraftingFromStorage: Inventory full, could not add {remaining}x {item.UniqueName}.");
+                IsConsumingCosts = false;
             }
         }
         // ============================================================================
-        // [END] HELPER: SILENT SLOT-LEVEL ITEM INJECTION
-        // ============================================================================
-
-        // ============================================================================
-        // [END] HELPER: PULL MISSING INGREDIENTS FROM NEARBY CHESTS
+        // [END] HELPER: DEDUCT COSTS DIRECTLY FROM PLAYER AND NEARBY CHESTS
         // ============================================================================
     }
     // ============================================================================
@@ -249,30 +198,5 @@ namespace SailorsCompanion.Features
     }
     // ============================================================================
     // [END] HARMONY PATCH: COST BOX INVENTORY COUNT WITH NEARBY CHESTS
-    // ============================================================================
-
-    // ============================================================================
-    // [START] HARMONY PATCH: AUTO-PULL CHEST INGREDIENTS BEFORE CRAFT
-    // ============================================================================
-    [HarmonyPatch(typeof(Inventory), "RemoveCostMultipleIncludeSecondaryInventories")]
-    public static class Patch_Inventory_RemoveCostMultiple
-    {
-        static void Prefix(Inventory __instance, CostMultiple[] costMultiple)
-        {
-            try
-            {
-                if (Plugin.CraftFromStorage != null && Plugin.CraftFromStorage.Value)
-                {
-                    CraftingFromStorage.PullMissingIngredientsFromChests(__instance, costMultiple);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"[Sailor's Companion] Error pulling chest ingredients: {ex.Message}");
-            }
-        }
-    }
-    // ============================================================================
-    // [END] HARMONY PATCH: AUTO-PULL CHEST INGREDIENTS BEFORE CRAFT
     // ============================================================================
 }
