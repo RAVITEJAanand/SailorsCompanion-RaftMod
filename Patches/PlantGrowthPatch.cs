@@ -15,10 +15,22 @@ namespace SailorsCompanion.Patches
         // ============================================================================
         // [START] HARMONY PREFIX: MULTIPLY GROW TIMER DELTA
         // ============================================================================
+        private static bool? _isFarmersCompanionLoaded = null;
+
         static void Prefix(ref float amount)
         {
             try
             {
+                if (!_isFarmersCompanionLoaded.HasValue)
+                {
+                    _isFarmersCompanionLoaded = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("com.konduri.farmerscompanion");
+                }
+                if (_isFarmersCompanionLoaded.Value)
+                {
+                    // Farmer's Companion is actively managing crop and tree growth; yield 100% control
+                    return;
+                }
+
                 if (Plugin.EnableCropGrowthBoost != null && Plugin.EnableCropGrowthBoost.Value)
                 {
                     float mult = Plugin.CropGrowthMultiplier != null ? Plugin.CropGrowthMultiplier.Value : 1.5f;

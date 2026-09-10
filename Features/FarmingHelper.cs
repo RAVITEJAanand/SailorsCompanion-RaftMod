@@ -33,8 +33,20 @@ namespace SailorsCompanion.Features
         // ============================================================================
         // [START] PERIODIC AUTO-WATER LOOP
         // ============================================================================
+        private static bool? _isFarmersCompanionLoaded = null;
+
         private void Update()
         {
+            if (!_isFarmersCompanionLoaded.HasValue)
+            {
+                _isFarmersCompanionLoaded = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("com.konduri.farmerscompanion");
+            }
+            if (_isFarmersCompanionLoaded.Value)
+            {
+                // Farmer's Companion is handling smart watering; skip Sailor's Companion loop
+                return;
+            }
+
             if (Plugin.AutoWaterCrops != null && Plugin.AutoWaterCrops.Value)
             {
                 if (Time.time - _lastAutoWaterTime >= AUTO_WATER_INTERVAL)
