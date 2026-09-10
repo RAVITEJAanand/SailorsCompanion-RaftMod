@@ -129,7 +129,6 @@ namespace SailorsCompanion.UI
                 Instance = this;
                 gameObject.hideFlags = HideFlags.HideAndDontSave;
                 DontDestroyOnLoad(gameObject);
-                EnsureEventSystem();
                 GetGameFont();
                 BuildCanvasUI();
                 Debug.Log("[Sailor's Companion] CanvasModUI initialized successfully!");
@@ -217,7 +216,6 @@ namespace SailorsCompanion.UI
 
         public void BuildCanvasUI()
         {
-            EnsureEventSystem();
             GetGameFont();
 
             if (_canvasGO == null)
@@ -2558,6 +2556,7 @@ namespace SailorsCompanion.UI
 
             if (open)
             {
+                EnsureEventSystem();
                 RefreshUpdateBanner();
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
