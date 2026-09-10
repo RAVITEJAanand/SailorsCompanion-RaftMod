@@ -314,8 +314,8 @@ namespace SailorsCompanion.UI
                 titleColor: FarmersGreen,
                 version: "v1.0.0",
                 author: "KONDURI (RAVITEJAanand)",
-                featureList: "• <b>Auto Water Crops & Grass Plots</b> [F1]\n• <b>Auto Harvest Ripe Crops & Auto Replant</b>\n• <b>Fast Crop & Palm Tree Growth Boost</b>\n• <b>Auto-Shear Llamas & Milk Goats</b>",
-                hotkeysSummary: "<color=#66FF66><b>[F1]</b></color> Farming Menu   •   <color=#66FF66><b>[F1]</b></color> Multi-Harvest\n<color=#66FF66><b>Auto Water</b></color> Crops   •   <color=#66FF66><b>Auto Replant</b></color> Seeds",
+                featureList: "• <b>Auto Water Crops & Grass Plots</b>\n• <b>Auto Harvest Ripe Crops & Auto Replant</b>\n• <b>Fast Crop & Palm Tree Growth Boost</b>\n• <b>Auto-Shear Llamas & Milk Goats</b>",
+                hotkeysSummary: "<color=#66FF66><b>[F1]</b></color> Farming Menu   •   <color=#66FF66><b>Auto Water</b></color> Plots\n<color=#66FF66><b>Auto Harvest</b></color> Crops   •   <color=#66FF66><b>Auto Replant</b></color> Seeds",
                 openSettingsAction: () =>
                 {
                     Close();
