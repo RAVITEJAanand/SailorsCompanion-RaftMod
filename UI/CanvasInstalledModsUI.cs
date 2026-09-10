@@ -46,6 +46,7 @@ namespace SailorsCompanion.UI
         private static readonly Color BadgeActiveText   = new Color(0.25f, 1.00f, 0.55f, 1.00f); // Neon Mint Green
         private static readonly Color SailorsCyan       = new Color(0.10f, 0.92f, 1.00f, 1.00f); // Electric Cyan
         private static readonly Color InventoryGold     = new Color(1.00f, 0.72f, 0.20f, 1.00f); // Radiant Amber
+        private static readonly Color FarmersGreen      = new Color(0.35f, 0.95f, 0.35f, 1.00f); // Forest Sprout Green
 
         // Button Colors
         private static readonly Color ButtonWoodPrimary = new Color(0.42f, 0.26f, 0.15f, 1.00f); // Primary Wood Button
@@ -189,7 +190,7 @@ namespace SailorsCompanion.UI
             winRt.anchorMin = new Vector2(0.5f, 0.5f);
             winRt.anchorMax = new Vector2(0.5f, 0.5f);
             winRt.pivot = new Vector2(0.5f, 0.5f);
-            winRt.sizeDelta = new Vector2(1120, 650); // Generous, wide proportions
+            winRt.sizeDelta = new Vector2(1280, 650); // Generous, wide 3-column proportions
             winRt.anchoredPosition = Vector2.zero;
             winRt.localScale = new Vector3(1.05f, 1.05f, 1.0f); // High-res scaling
 
@@ -225,7 +226,7 @@ namespace SailorsCompanion.UI
             htImg.color = WoodTrimAccent;
 
             // Header Title (Size 22, Bold, High-Contrast Gold)
-            var titleTxt = CreateText(headerGO, "🛠️ <color=#FFD54F><b>RAFT MODS MANAGER</b></color>  <size=15><color=#E0D0B5>(2 Active Modifications Installed)</color></size>", 22, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
+            var titleTxt = CreateText(headerGO, "🛠️ <color=#FFD54F><b>RAFT MODS MANAGER</b></color>  <size=15><color=#E0D0B5>(3 Active Modifications Installed)</color></size>", 22, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
             var titleRt = titleTxt.GetComponent<RectTransform>();
             titleRt.anchorMin = new Vector2(0, 0);
             titleRt.anchorMax = new Vector2(1, 1);
@@ -275,34 +276,54 @@ namespace SailorsCompanion.UI
             BuildModCard(cardsContainerGO,
                 title: "⚓ Sailor's Companion",
                 titleColor: SailorsCyan,
-                version: "v1.1.0",
+                version: "v1.1.1",
                 author: "KONDURI (RAVITEJAanand)",
-                featureList: "• <b>Compass HUD & Hostile Shark Radar</b> [F6]\n• <b>Auto-Align Sails to Wind & Remote Anchor</b> [F4]\n• <b>Free Flight / Noclip [F], God Mode & Stamina</b>\n• <b>300+ Item Spawner & Material-Free Crafting</b> [F5]",
-                hotkeysSummary: "<color=#00F5FF><b>[F5]</b></color> Mod Menu   •   <color=#00F5FF><b>[F6]</b></color> Compass HUD   •   <color=#00F5FF><b>[F]</b></color> Fly Mode\n<color=#00F5FF><b>[F4]</b></color> Toggle Sails   •   <color=#00F5FF><b>[F3]</b></color> Toggle Engines   •   <color=#00F5FF><b>[F7]</b></color> Debris Magnet",
+                featureList: "• <b>Compass HUD & Hostile Shark Radar</b> [F6]\n• <b>Auto-Align Sails to Wind & Remote Anchor</b> [F4]\n• <b>Free Flight / Noclip, God Mode & Stamina</b> [F7]\n• <b>300+ Item Spawner & Material-Free Crafting</b> [F5]",
+                hotkeysSummary: "<color=#00F5FF><b>[F5]</b></color> Mod Menu   •   <color=#00F5FF><b>[F6]</b></color> Compass HUD   •   <color=#00F5FF><b>[F7]</b></color> Fly Mode\n<color=#00F5FF><b>[F4]</b></color> Toggle Sails   •   <color=#00F5FF><b>[F3]</b></color> Engines   •   <color=#00F5FF><b>[F10]</b></color> Magnet",
                 openSettingsAction: () =>
                 {
                     Close();
                     CanvasModUI.Instance?.ToggleModWindow();
                 },
                 openGithubUrl: "https://github.com/RAVITEJAanand/SailorsCompanion-RaftMod",
-                isLeft: true
+                xMin: 0.00f,
+                xMax: 0.322f
             );
 
-            // Card 2: Inventory Master (Right)
+            // Card 2: Inventory Master (Center)
             BuildModCard(cardsContainerGO,
                 title: "🎒 Inventory Master",
                 titleColor: InventoryGold,
                 version: "v1.0.0",
                 author: "KONDURI (RAVITEJAanand)",
-                featureList: "• <b>Permanent 15-Slot Backpack Expansion Unlock</b>\n• <b>Instant Categorical Inventory & Chest Sorter</b> [Z]\n• <b>20-Slot Hotbar Row Swap & One-Click Storage Dump</b> [V/X]\n• <b>5m Vacuum Auto-Pickup, Drop Guard [Q] & Auto-Refill</b>",
-                hotkeysSummary: "<color=#FFB300><b>[F2]</b></color> Settings Menu   •   <color=#FFB300><b>[Z]</b></color> Auto Sort   •   <color=#FFB300><b>[X]</b></color> Dump to Chest\n<color=#FFB300><b>[V]</b></color> Swap Hotbar Row   •   <color=#FFB300><b>[Alt+Click]</b></color> Lock Slot   •   <color=#FFB300><b>[Del]</b></color> Trash",
+                featureList: "• <b>Permanent 15-Slot Backpack Expansion Unlock</b>\n• <b>Instant Categorical Inventory & Chest Sorter</b> [Z]\n• <b>20-Slot Hotbar Row Swap & Storage Dump</b> [V/X]\n• <b>5m Vacuum Auto-Pickup & Drop Guard [Q]</b>",
+                hotkeysSummary: "<color=#FFB300><b>[F2]</b></color> Settings Menu   •   <color=#FFB300><b>[Z]</b></color> Auto Sort   •   <color=#FFB300><b>[X]</b></color> Dump\n<color=#FFB300><b>[V]</b></color> Swap Hotbar Row   •   <color=#FFB300><b>[Alt+Click]</b></color> Lock   •   <color=#FFB300><b>[Del]</b></color> Trash",
                 openSettingsAction: () =>
                 {
                     Close();
                     OpenInventoryMasterSettings();
                 },
                 openGithubUrl: "https://github.com/RAVITEJAanand/InventoryMaster-RaftMod",
-                isLeft: false
+                xMin: 0.339f,
+                xMax: 0.661f
+            );
+
+            // Card 3: Farmer's Companion (Right)
+            BuildModCard(cardsContainerGO,
+                title: "🌾 Farmer's Companion",
+                titleColor: FarmersGreen,
+                version: "v1.0.0",
+                author: "KONDURI (RAVITEJAanand)",
+                featureList: "• <b>Auto Water Crops & Grass Plots</b> [F1]\n• <b>Auto Harvest Ripe Crops & Auto Replant</b>\n• <b>Fast Crop & Palm Tree Growth Boost</b>\n• <b>Auto-Shear Llamas & Milk Goats</b>",
+                hotkeysSummary: "<color=#66FF66><b>[F1]</b></color> Farming Menu   •   <color=#66FF66><b>[F1]</b></color> Multi-Harvest\n<color=#66FF66><b>Auto Water</b></color> Crops   •   <color=#66FF66><b>Auto Replant</b></color> Seeds",
+                openSettingsAction: () =>
+                {
+                    Close();
+                    OpenFarmersCompanionSettings();
+                },
+                openGithubUrl: "https://github.com/RAVITEJAanand/FarmersCompanion-RaftMod",
+                xMin: 0.678f,
+                xMax: 1.00f
             );
 
             // 5. Footer Bar
@@ -330,7 +351,7 @@ namespace SailorsCompanion.UI
             ftImg.color = WoodTrimAccent;
 
             // Footer Text (Size 14)
-            var footTxt = CreateText(footerGO, "💡 <b>Quick Tip:</b> During active gameplay, press <b>[F5]</b> for Sailor's Companion or <b>[F2]</b> for Inventory Master.", 14, FontStyle.Normal, TextGoldHeading, TextAnchor.MiddleLeft);
+            var footTxt = CreateText(footerGO, "💡 <b>Quick Tip:</b> During active gameplay, press <b>[F5]</b> for Sailor's Companion, <b>[F2]</b> for Inventory Master, or <b>[F1]</b> for Farmer's Companion.", 14, FontStyle.Normal, TextGoldHeading, TextAnchor.MiddleLeft);
             var footTxtRt = footTxt.GetComponent<RectTransform>();
             footTxtRt.anchorMin = new Vector2(0, 0);
             footTxtRt.anchorMax = new Vector2(1, 1);
@@ -355,13 +376,13 @@ namespace SailorsCompanion.UI
             FillParent(footCloseTxt.gameObject);
         }
 
-        private void BuildModCard(GameObject parent, string title, Color titleColor, string version, string author, string featureList, string hotkeysSummary, Action openSettingsAction, string openGithubUrl, bool isLeft)
+        private void BuildModCard(GameObject parent, string title, Color titleColor, string version, string author, string featureList, string hotkeysSummary, Action openSettingsAction, string openGithubUrl, float xMin, float xMax)
         {
-            var cardGO = new GameObject(isLeft ? "Card_Sailors" : "Card_Inventory");
+            var cardGO = new GameObject("Card_" + title);
             cardGO.transform.SetParent(parent.transform, false);
             var cardRt = cardGO.AddComponent<RectTransform>();
-            cardRt.anchorMin = new Vector2(isLeft ? 0f : 0.515f, 0f);
-            cardRt.anchorMax = new Vector2(isLeft ? 0.485f : 1.0f, 1f);
+            cardRt.anchorMin = new Vector2(xMin, 0f);
+            cardRt.anchorMax = new Vector2(xMax, 1f);
             cardRt.offsetMin = Vector2.zero;
             cardRt.offsetMax = Vector2.zero;
 
@@ -557,6 +578,31 @@ namespace SailorsCompanion.UI
             catch (Exception ex)
             {
                 Debug.LogWarning("[Mods Manager] Failed to open Inventory Master menu: " + ex.Message);
+            }
+        }
+
+        private void OpenFarmersCompanionSettings()
+        {
+            try
+            {
+                var asmList = AppDomain.CurrentDomain.GetAssemblies();
+                foreach (var asm in asmList)
+                {
+                    var t = asm.GetType("FarmersCompanion.UI.CanvasFarmersCompanionUI") ?? asm.GetType("FarmersCompanion.UI.FarmingMenuUI");
+                    if (t != null)
+                    {
+                        var m = t.GetMethod("ToggleWindow", BindingFlags.Public | BindingFlags.Static);
+                        if (m != null)
+                        {
+                            m.Invoke(null, null);
+                            return;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Mods Manager] Failed to open Farmer's Companion menu: " + ex.Message);
             }
         }
 
