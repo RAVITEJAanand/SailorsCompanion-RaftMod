@@ -123,7 +123,7 @@ namespace SailorsCompanion.Patches
     public static class CraftingRemoveCostPatch
     {
         [HarmonyPrefix]
-        public static bool Prefix(Inventory __instance, CostMultiple[] costMultiple, bool flag)
+        public static bool Prefix(Inventory __instance, CostMultiple[] costMultiple, bool manipulateCostAmount)
         {
             if (Plugin.FreeCrafting != null && Plugin.FreeCrafting.Value)
             {
