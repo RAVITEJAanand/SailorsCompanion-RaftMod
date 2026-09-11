@@ -2,6 +2,8 @@ using System;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
+using SailorsCompanion.Features;
+using SailorsCompanion.Patches;
 
 namespace SailorsCompanion.UI
 {
@@ -104,20 +106,124 @@ namespace SailorsCompanion.UI
                 Instance.BuildCanvasUI();
             }
 
-            bool newState = !Instance._rootGO.activeSelf;
-            Instance._rootGO.SetActive(newState);
-
-            if (newState)
+            if (Instance._rootGO.activeSelf)
             {
-                Helper.SetCursorVisibleAndLockState(true, CursorLockMode.None);
+                Close();
+                return;
             }
+
+            Instance._rootGO.SetActive(true);
+            Instance.EnsureEventSystem();
+
+            try
+            {
+                var cic = CustomInputConfig.Instance;
+                if (cic != null)
+                {
+                    cic.EnableInput();
+                    cic.SwitchCurrentActionMap("UI");
+                }
+            }
+            catch { }
+
+            try { Helper.SetCursorVisibleAndLockState(true, CursorLockMode.None); }
+            catch { Cursor.lockState = CursorLockMode.None; Cursor.visible = true; }
+
+            try
+            {
+                if (CanvasHelper.ActiveMenu == MenuType.None)
+                {
+                    CanvasHelper.ActiveMenu = MenuType.Cheat;
+                }
+            }
+            catch { }
         }
 
         public static void Close()
         {
-            if (Instance != null && Instance._rootGO != null)
+            if (Instance == null || Instance._rootGO == null) return;
+            if (!Instance._rootGO.activeSelf) return;
+
+            Instance._rootGO.SetActive(false);
+
+            // Restore whatever the game/other mod menus expect - same pattern as
+            // CanvasModUI.ToggleModWindow(), since this window is reachable both from
+            // the main menu (no player, no world) and the in-game pause menu.
+            try
             {
-                Instance._rootGO.SetActive(false);
+                if (CanvasHelper.ActiveMenu == MenuType.Cheat && !CursorPatchHelper.ShouldForceCursorFree())
+                {
+                    CanvasHelper.ActiveMenu = MenuType.None;
+                }
+            }
+            catch { }
+
+            bool isOtherMenuOpen = false;
+            try
+            {
+                if (CanvasHelper.ActiveMenu != MenuType.None && CanvasHelper.ActiveMenu != MenuType.Cheat)
+                {
+                    isOtherMenuOpen = true;
+                }
+            }
+            catch { }
+
+            if (CursorPatchHelper.ShouldForceCursorFree())
+            {
+                isOtherMenuOpen = true;
+            }
+
+            var localPlayer = PlayerHelper.GetLocalPlayer();
+
+            try
+            {
+                var cic = CustomInputConfig.Instance;
+                if (cic != null && localPlayer != null && !isOtherMenuOpen)
+                {
+                    cic.SwitchCurrentActionMap("Player");
+                }
+            }
+            catch { }
+
+            if (localPlayer != null && !isOtherMenuOpen)
+            {
+                try { Helper.SetCursorVisibleAndLockState(false, CursorLockMode.Locked); }
+                catch { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
+            }
+            else
+            {
+                try { Helper.SetCursorVisibleAndLockState(true, CursorLockMode.None); }
+                catch { Cursor.lockState = CursorLockMode.None; Cursor.visible = true; }
+            }
+        }
+
+        private void EnsureEventSystem()
+        {
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es == null)
+            {
+                var existing = FindObjectOfType<UnityEngine.EventSystems.EventSystem>();
+                if (existing != null)
+                {
+                    UnityEngine.EventSystems.EventSystem.current = existing;
+                    es = existing;
+                }
+                else
+                {
+                    var esGO = new GameObject("SailorsCompanion_InstalledModsUI_EventSystem");
+                    esGO.hideFlags = HideFlags.HideAndDontSave;
+                    es = esGO.AddComponent<UnityEngine.EventSystems.EventSystem>();
+                    esGO.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+                    DontDestroyOnLoad(esGO);
+                    UnityEngine.EventSystems.EventSystem.current = es;
+                }
+            }
+
+            if (es != null)
+            {
+                if (!es.enabled) es.enabled = true;
+                if (!es.gameObject.activeInHierarchy) es.gameObject.SetActive(true);
+                es.SetSelectedGameObject(null);
             }
         }
 

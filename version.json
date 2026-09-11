@@ -1,7 +1,7 @@
 {
-  "version": "1.1.3",
+  "version": "1.1.4",
   "name": "Sailor's Companion",
   "downloadUrl": "https://www.nexusmods.com/raft/mods/155",
   "raftModdingUrl": "https://www.raftmodding.com/mods/sailors-companion",
-  "notes": "v1.1.3: Fixed Creative-mode cheats (God Mode, 1-Hit Kill, Infinite Oxygen, Freeze Hunger & Thirst, Fly Mode, Free Crafting) staying silently active after switching back to Survival mode instead of actually being disabled."
+  "notes": "v1.1.4: Fixed main menu buttons (New World, Load World, Settings, etc.) becoming unresponsive after opening and closing the MODS button's Installed Mods Manager. Its Open/Close logic now properly restores the EventSystem, input action map, and cursor state, matching the same pattern already used by the other mod menus."
 }
