@@ -855,7 +855,7 @@ namespace SailorsCompanion.UI
             }, 38f, 14, "⚡ <b>Fast Reef Mining:</b> Mines underwater Sand, Clay, Scrap, and Ores 3.5x faster (~0.7s) with your Hook, and temporarily wards off Bruce the shark while mining.");
 
             // CATEGORY 3: FARMING & SUSTENANCE
-            bool hasFarmersCompanion = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("com.konduri.farmerscompanion");
+            bool hasFarmersCompanion = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("com.antigravity.farmerscompanion");
             CreateCategoryHeader(leftCol.transform, hasFarmersCompanion ? "🌱 FARMING (MANAGED BY FARMER'S COMPANION [F1])" : "🌱 FARMING & SUSTENANCE", 28f);
 
             if (hasFarmersCompanion)

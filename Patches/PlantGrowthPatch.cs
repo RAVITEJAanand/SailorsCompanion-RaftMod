@@ -23,7 +23,7 @@ namespace SailorsCompanion.Patches
             {
                 if (!_isFarmersCompanionLoaded.HasValue)
                 {
-                    _isFarmersCompanionLoaded = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("com.konduri.farmerscompanion");
+                    _isFarmersCompanionLoaded = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("com.antigravity.farmerscompanion");
                 }
                 if (_isFarmersCompanionLoaded.Value)
                 {
