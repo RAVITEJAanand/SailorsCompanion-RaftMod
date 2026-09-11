@@ -2551,7 +2551,6 @@ namespace SailorsCompanion.UI
             if (_modWindowGO == null) return;
             bool open = !_modWindowGO.activeSelf;
             _modWindowGO.SetActive(open);
-            ModGUI.IsOpen = false; // Keep single window
 
             if (open)
             {

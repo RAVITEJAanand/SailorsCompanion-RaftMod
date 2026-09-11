@@ -226,7 +226,6 @@ namespace SailorsCompanion
                 UnityEngine.Object.DontDestroyOnLoad(ManagerGO);
                 ManagerGO.AddComponent<CanvasModUI>();
                 ManagerGO.AddComponent<CanvasInstalledModsUI>();
-                ManagerGO.AddComponent<ModGUI>();
                 ManagerGO.AddComponent<HUDOverlay>();
                 ManagerGO.AddComponent<CreatureHealthOverlay>();
                 ManagerGO.AddComponent<FlyController>();

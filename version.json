@@ -1,7 +1,7 @@
 {
-  "version": "1.1.8",
+  "version": "1.1.9",
   "name": "Sailor's Companion",
   "downloadUrl": "https://www.nexusmods.com/raft/mods/155",
   "raftModdingUrl": "https://www.raftmodding.com/mods/sailors-companion",
-  "notes": "v1.1.8: Removed the Auto-Water Crops and Crop & Tree Growth Boost toggles and their background logic - that's Farmer's Companion's scope. The one-shot 'Water Crops' quick-action button is unaffected."
+  "notes": "v1.1.9: Removed ModGUI.cs, a fully-built 599-line alternate settings menu that had no hotkey or button ever wired to open it - completely unreachable dead code, cleaned up along with its two leftover references."
 }

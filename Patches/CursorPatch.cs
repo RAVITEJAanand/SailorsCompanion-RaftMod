@@ -21,7 +21,7 @@ namespace SailorsCompanion.Patches
         public static bool ShouldForceCursorFree()
         {
             // 1. Sailor's Companion Menus
-            if (CanvasModUI.IsWindowOpen || CanvasInstalledModsUI.IsOpen || ModGUI.IsOpen)
+            if (CanvasModUI.IsWindowOpen || CanvasInstalledModsUI.IsOpen)
             {
                 return true;
             }
