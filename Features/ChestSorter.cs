@@ -120,7 +120,11 @@ namespace SailorsCompanion.Features
                             if (cSlot != null && cSlot.IsEmpty)
                             {
                                 int toTransfer = pSlot.itemInstance.Amount;
-                                cSlot.SetItem(baseItem, toTransfer);
+                                // SetItem(Item_Base, int) always builds a fresh full-durability ItemInstance
+                                // (new ItemInstance(item, amount, item.MaxUses)), which would silently reset
+                                // a partially-worn tool/weapon's durability to 100%. Clone the real instance
+                                // (via the ItemInstance overload) so its actual Uses/durability is preserved.
+                                cSlot.SetItem(pSlot.itemInstance);
                                 pSlot.Reset();
                                 totalItemsMoved += toTransfer;
                                 chestModified = true;

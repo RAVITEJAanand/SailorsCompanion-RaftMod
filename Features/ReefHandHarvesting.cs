@@ -93,24 +93,26 @@ namespace SailorsCompanion.Features
                 // Skip items already being collected by a collection net
                 if (pickup.GetComponent<ItemCollector>() != null) continue;
 
+                // Never vacuum up items the player just intentionally dropped nearby -
+                // otherwise there is no way to actually put something down on an island.
+                // (Matches the same isDropped guard used by AutoPickupManager/MagneticCollector.)
+                if (pickup.isDropped) continue;
+
                 float dist = Vector3.Distance(playerPos, pickup.transform.position);
                 if (dist > HAND_PICKUP_RANGE) continue;
 
-                // Collect: add to inventory and destroy the pickup
+                // Collect: go through the game's own Pickup.PickupItem() so the FULL stack
+                // amount is added correctly (and networked pickups are removed/synced
+                // properly). The previous code called AddItem(itemName, 1) - always
+                // exactly 1 item regardless of the pickup's real stack Amount - and then
+                // unconditionally destroyed the whole PickupItem GameObject, silently
+                // deleting the rest of any stack larger than 1 (e.g. a pile of coconuts).
                 try
                 {
-                    string itemName = pickup.itemInstance?.baseItem?.UniqueName;
-                    if (string.IsNullOrEmpty(itemName)) continue;
+                    if (pickup.itemInstance == null || !pickup.itemInstance.Valid) continue;
+                    if (player.PickupScript == null) continue;
 
-                    // Inventory.AddItem returns the leftover amount that could NOT be
-                    // added (0 = fully added), not the amount that succeeded - destroying
-                    // the pickup only on a nonzero result silently duplicated the item
-                    // every poll while leaving it visibly stuck on the ground.
-                    int leftover = playerInv.AddItem(itemName, 1);
-                    if (leftover == 0)
-                    {
-                        UnityEngine.Object.Destroy(pickup.gameObject);
-                    }
+                    player.PickupScript.PickupItem(pickup, forcePickup: true, triggerHandAnimation: false);
                 }
                 catch (Exception ex)
                 {

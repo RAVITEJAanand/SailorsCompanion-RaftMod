@@ -1,7 +1,7 @@
 {
-  "version": "1.1.9",
+  "version": "1.1.10",
   "name": "Sailor's Companion",
   "downloadUrl": "https://www.nexusmods.com/raft/mods/155",
   "raftModdingUrl": "https://www.raftmodding.com/mods/sailors-companion",
-  "notes": "v1.1.9: Removed ModGUI.cs, a fully-built 599-line alternate settings menu that had no hotkey or button ever wired to open it - completely unreachable dead code, cleaned up along with its two leftover references."
+  "notes": "v1.1.10: Fixed a real item-loss bug in Island Hand Pickup - it only ever credited 1 item and destroyed the rest of any larger pile/stack within pickup range (this is what caused 'drop a stack, only get 1 back'); it also now leaves your own just-dropped items alone instead of instantly re-vacuuming them. Fixed Quick Stack silently resetting a moved tool/weapon's durability to full when placed into a new chest slot. Fixed the in-game Mods Manager showing stale version numbers and incorrect hotkeys (F7/F10) for Sailor's Companion's own features."
 }
