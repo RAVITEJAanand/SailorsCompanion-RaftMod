@@ -387,6 +387,21 @@ namespace SailorsCompanion.UI
         {
             if (Plugin.ModGameMode != null && Plugin.ModGameMode.Value == newMode) return;
             if (Plugin.ModGameMode != null) Plugin.ModGameMode.Value = newMode;
+
+            // Switching back to Survival must actually disable the Creative-only cheats,
+            // not just hide/lock their UI page. Otherwise a cheat enabled while in Creative
+            // (God Mode, 1-Hit Kill, Infinite Oxygen, Frozen Hunger/Thirst, Fly, Free Crafting)
+            // would silently keep running after the player relocks Survival Mode.
+            if (newMode == "Survival")
+            {
+                if (Plugin.GodMode != null) Plugin.GodMode.Value = false;
+                if (Plugin.OneHitKill != null) Plugin.OneHitKill.Value = false;
+                if (Plugin.InfiniteOxygen != null) Plugin.InfiniteOxygen.Value = false;
+                if (Plugin.NoHungerThirst != null) Plugin.NoHungerThirst.Value = false;
+                if (Plugin.EnableFlyMode != null) Plugin.EnableFlyMode.Value = false;
+                if (Plugin.FreeCrafting != null) Plugin.FreeCrafting.Value = false;
+            }
+
             UpdateModeButtonsVisuals();
 
             // Update Tab Titles

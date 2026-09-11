@@ -9,7 +9,7 @@ namespace SailorsCompanion
     {
         public const string PLUGIN_GUID = "com.antigravity.sailorscompanion";
         public const string PLUGIN_NAME = "Sailor's Companion";
-        public const string PLUGIN_VERSION = "1.1.2";
+        public const string PLUGIN_VERSION = "1.1.3";
     }
     // ============================================================================
     // [END] MOD METADATA & CONSTANTS
