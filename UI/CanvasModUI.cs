@@ -854,24 +854,6 @@ namespace SailorsCompanion.UI
                 TeleportManager.SetNotification(v ? "⚡ Fast Reef Mining: ENABLED (3.5x Speed + Shark Ward)" : "⚡ Fast Reef Mining: DISABLED");
             }, 38f, 14, "⚡ <b>Fast Reef Mining:</b> Mines underwater Sand, Clay, Scrap, and Ores 3.5x faster (~0.7s) with your Hook, and temporarily wards off Bruce the shark while mining.");
 
-            // CATEGORY 3: FARMING & SUSTENANCE
-            CreateCategoryHeader(leftCol.transform, "🌱 FARMING & SUSTENANCE", 28f);
-
-            CreateToggleItem(leftCol.transform, "🌱 Auto-Water Crops (Never let crop plots dry out)", Plugin.AutoWaterCrops?.Value ?? false, v =>
-            {
-                if (Plugin.AutoWaterCrops != null) Plugin.AutoWaterCrops.Value = v;
-                MarkProfileCustom();
-                TeleportManager.SetNotification(v ? "🌱 Auto-Watering: ENABLED" : "🌱 Auto-Watering: DISABLED");
-            }, 38f, 14, "🌱 <b>Auto-Water:</b> Continuously maintains full hydration on crop plots and livestock grass.");
-
-            CreateToggleItem(leftCol.transform, "🌾 Crop & Tree Growth Boost (Accelerate growth cycles)", Plugin.EnableCropGrowthBoost?.Value ?? false, v =>
-            {
-                if (Plugin.EnableCropGrowthBoost != null) Plugin.EnableCropGrowthBoost.Value = v;
-                MarkProfileCustom();
-                TeleportManager.SetNotification(v ? "🌾 Crop Growth Boost: ENABLED" : "🌾 Crop Growth Boost: DISABLED");
-            }, 38f, 14, "🌾 <b>Crop Growth Boost:</b> Toggles custom growth multiplier for farming plots and tree planters.");
-
-
             // === RIGHT COLUMN ===
             var rightCol = CreateBox(twoColGO.transform, "RightColumn", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Color.clear);
             var rightLayout = rightCol.AddComponent<VerticalLayoutGroup>();

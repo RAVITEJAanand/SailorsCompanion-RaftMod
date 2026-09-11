@@ -6,16 +6,15 @@ using SailorsCompanion.UI;
 namespace SailorsCompanion.Features
 {
     // ============================================================================
-    // [START] MODULE: FARMING HELPER & AUTOMATIC CROP WATERING
-    // Purpose: Automatically waters crops and animal grass plots across the raft,
-    //          keeping all farming healthy and eliminating tedious cup-watering.
+    // [START] MODULE: FARMING HELPER (ON-DEMAND WATERING)
+    // Purpose: Waters crops and animal grass plots across the raft on demand via
+    //          the "Water Crops" quick-action button. Continuous background
+    //          auto-watering and crop/tree growth boost are Farmer's Companion's
+    //          scope, not duplicated here.
     // ============================================================================
     public class FarmingHelper : MonoBehaviour
     {
         public static FarmingHelper Instance { get; private set; }
-
-        private float _lastAutoWaterTime = 0f;
-        private const float AUTO_WATER_INTERVAL = 8f; // check every 8 seconds
 
         // ============================================================================
         // [START] LIFECYCLE INITIALIZATION
@@ -28,24 +27,6 @@ namespace SailorsCompanion.Features
         }
         // ============================================================================
         // [END] LIFECYCLE INITIALIZATION
-        // ============================================================================
-
-        // ============================================================================
-        // [START] PERIODIC AUTO-WATER LOOP
-        // ============================================================================
-        private void Update()
-        {
-            if (Plugin.AutoWaterCrops != null && Plugin.AutoWaterCrops.Value)
-            {
-                if (Time.time - _lastAutoWaterTime >= AUTO_WATER_INTERVAL)
-                {
-                    _lastAutoWaterTime = Time.time;
-                    WaterAllPlots(silent: true);
-                }
-            }
-        }
-        // ============================================================================
-        // [END] PERIODIC AUTO-WATER LOOP
         // ============================================================================
 
         private static readonly List<Cropplot> _cachedPlots = new List<Cropplot>();

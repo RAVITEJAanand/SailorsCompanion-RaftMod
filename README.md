@@ -96,7 +96,6 @@ Switch optimized mod profiles instantly from the top row:
 
 ### 🦈 Raft & World Automations
 - **Anti-Shark Raft Protection**: Prevents Bruce the Shark from ever biting or destroying your raft foundations.
-- **Continuous Auto-Water Crops**: Keeps crop plots and livestock grass plots hydrated automatically.
 - **Continuous Auto-Empty Nets**: Gathers flotsam trapped in collection nets directly into your inventory.
 - **Craft from Nearby Storage**: Automatically pulls crafting materials from storage chests within 22m.
 - **Infinite Tool Durability**: Hooks, weapons, equipment, and armor never degrade.

@@ -1,7 +1,7 @@
 {
-  "version": "1.1.7",
+  "version": "1.1.8",
   "name": "Sailor's Companion",
   "downloadUrl": "https://www.nexusmods.com/raft/mods/155",
   "raftModdingUrl": "https://www.raftmodding.com/mods/sailors-companion",
-  "notes": "v1.1.7: Fixed Island Hand Pickup silently duplicating items every 0.2s instead of collecting them, caused by an inverted check on Inventory.AddItem's return value (it returns the leftover amount, not the amount added). Fixed Fast Reef Mining's redundant polling code fighting the correct Harmony-patch implementation over pickupTime using an unrelated, wrongly-checked config flag; removed the dead/conflicting code."
+  "notes": "v1.1.8: Removed the Auto-Water Crops and Crop & Tree Growth Boost toggles and their background logic - that's Farmer's Companion's scope. The one-shot 'Water Crops' quick-action button is unaffected."
 }
