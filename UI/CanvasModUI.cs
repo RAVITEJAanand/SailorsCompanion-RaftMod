@@ -801,7 +801,7 @@ namespace SailorsCompanion.UI
             // === LEFT COLUMN ===
             var leftCol = CreateBox(twoColGO.transform, "LeftColumn", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Color.clear);
             var leftLayout = leftCol.AddComponent<VerticalLayoutGroup>();
-            leftLayout.spacing = 4;
+            leftLayout.spacing = 10;
             leftLayout.childForceExpandWidth = true;
             leftLayout.childForceExpandHeight = false;
 
@@ -868,7 +868,7 @@ namespace SailorsCompanion.UI
             // === RIGHT COLUMN ===
             var rightCol = CreateBox(twoColGO.transform, "RightColumn", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Color.clear);
             var rightLayout = rightCol.AddComponent<VerticalLayoutGroup>();
-            rightLayout.spacing = 4;
+            rightLayout.spacing = 10;
             rightLayout.childForceExpandWidth = true;
             rightLayout.childForceExpandHeight = false;
 
@@ -1979,10 +1979,10 @@ namespace SailorsCompanion.UI
             tLe.flexibleWidth = 1f;
             tLe.preferredHeight = rowHeight - 4;
 
-            // Raft Recessed Square Wooden Checkbox (26x26)
-            var checkContainer = CreateBox(row.transform, "CheckContainer", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(26, 26), CheckboxWoodBg);
+            // Raft Recessed Wooden Toggle Pill (54x26, ON/OFF text)
+            var checkContainer = CreateBox(row.transform, "CheckContainer", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(54, 26), CheckboxWoodBg);
             var cbLe = checkContainer.AddComponent<LayoutElement>();
-            cbLe.preferredWidth = 26;
+            cbLe.preferredWidth = 54;
             cbLe.preferredHeight = 26;
             cbLe.flexibleWidth = 0f;
 
@@ -1993,13 +1993,14 @@ namespace SailorsCompanion.UI
             cbRt.offsetMax = new Vector2(1, 1);
             cbBorder.transform.SetAsFirstSibling();
 
-            var checkTxt = CreateText(checkContainer.transform, "Checkmark", initialValue ? "✔" : "", 17, FontStyle.Bold, CheckmarkGold, TextAnchor.MiddleCenter);
+            var checkTxt = CreateText(checkContainer.transform, "Checkmark", initialValue ? "ON" : "OFF", 12, FontStyle.Bold, initialValue ? CheckmarkGold : Color.gray, TextAnchor.MiddleCenter);
 
             bool state = initialValue;
 
             void UpdateVisuals(bool isOn)
             {
-                checkTxt.text = isOn ? "✔" : "";
+                checkTxt.text = isOn ? "ON" : "OFF";
+                checkTxt.color = isOn ? CheckmarkGold : Color.gray;
             }
 
             // Click button on checkbox container
