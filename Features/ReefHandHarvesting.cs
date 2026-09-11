@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using HarmonyLib;
 using UnityEngine;
 using SailorsCompanion.UI;
 
@@ -49,11 +47,11 @@ namespace SailorsCompanion.Features
                 CheckIslandHandPickup();
             }
 
-            // Reef Hand Harvesting: accelerate channeling pickupTime
-            if (Plugin.ReefHandHarvesting != null && Plugin.ReefHandHarvesting.Value)
-            {
-                CheckReefChannelingAcceleration();
-            }
+            // Reef channeling acceleration is handled by HarvestingPatch.cs's Harmony
+            // patches on PickupChanneling.Awake/InitiateChannel, gated on
+            // Plugin.ReefFastHarvest - polling it here too (previously gated on the
+            // unrelated Plugin.ReefHandHarvesting flag) fought over pickupTime every
+            // frame and produced inconsistent mining speed.
         }
         // ============================================================================
         // [END] PER-FRAME HAND HARVESTING & PICKUP MONITOR
@@ -104,8 +102,12 @@ namespace SailorsCompanion.Features
                     string itemName = pickup.itemInstance?.baseItem?.UniqueName;
                     if (string.IsNullOrEmpty(itemName)) continue;
 
-                    int added = playerInv.AddItem(itemName, 1);
-                    if (added > 0)
+                    // Inventory.AddItem returns the leftover amount that could NOT be
+                    // added (0 = fully added), not the amount that succeeded - destroying
+                    // the pickup only on a nonzero result silently duplicated the item
+                    // every poll while leaving it visibly stuck on the ground.
+                    int leftover = playerInv.AddItem(itemName, 1);
+                    if (leftover == 0)
                     {
                         UnityEngine.Object.Destroy(pickup.gameObject);
                     }
@@ -118,29 +120,6 @@ namespace SailorsCompanion.Features
         }
         // ============================================================================
         // [END] ACTION: ISLAND SURFACE ITEM AUTO-COLLECT
-        // ============================================================================
-
-        // ============================================================================
-        // [START] ACTION: REEF CHANNELING ACCELERATION
-        // Purpose: Accelerates channeling on focused reef resources so players can
-        //          mine safely before shark attacks.
-        // ============================================================================
-        private void CheckReefChannelingAcceleration()
-        {
-            var player = PlayerHelper.GetLocalPlayer();
-            if (player == null || player.PickupScript == null) return;
-
-            PickupChanneling channeling = Traverse.Create(player.PickupScript).Field("pickupChanneling").GetValue<PickupChanneling>();
-            if (channeling != null)
-            {
-                if (Plugin.ReefFastHarvest != null && Plugin.ReefFastHarvest.Value)
-                {
-                    channeling.pickupTime = 0.3f;
-                }
-            }
-        }
-        // ============================================================================
-        // [END] ACTION: REEF CHANNELING ACCELERATION
         // ============================================================================
     }
     // ============================================================================
