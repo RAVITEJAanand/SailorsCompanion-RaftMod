@@ -1,7 +1,7 @@
 {
-  "version": "1.1.5",
+  "version": "1.1.6",
   "name": "Sailor's Companion",
   "downloadUrl": "https://www.nexusmods.com/raft/mods/155",
   "raftModdingUrl": "https://www.raftmodding.com/mods/sailors-companion",
-  "notes": "v1.1.5: Fixed Farmer's Companion detection checking the wrong plugin GUID, which meant Sailor's Companion's own Auto-Water and Crop/Tree Growth Boost kept running in the background even with Farmer's Companion installed and its equivalent settings turned off. It now correctly yields control when Farmer's Companion is present."
+  "notes": "v1.1.6: Removed the Farmer's Companion peer-detection for Auto-Water and Crop/Tree Growth Boost. Sailor's Companion's own farming toggles are now fully independent and always available/controllable, regardless of whether Farmer's Companion is installed - no more hidden cross-mod coupling."
 }

@@ -855,29 +855,21 @@ namespace SailorsCompanion.UI
             }, 38f, 14, "⚡ <b>Fast Reef Mining:</b> Mines underwater Sand, Clay, Scrap, and Ores 3.5x faster (~0.7s) with your Hook, and temporarily wards off Bruce the shark while mining.");
 
             // CATEGORY 3: FARMING & SUSTENANCE
-            bool hasFarmersCompanion = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("com.antigravity.farmerscompanion");
-            CreateCategoryHeader(leftCol.transform, hasFarmersCompanion ? "🌱 FARMING (MANAGED BY FARMER'S COMPANION [F1])" : "🌱 FARMING & SUSTENANCE", 28f);
+            CreateCategoryHeader(leftCol.transform, "🌱 FARMING & SUSTENANCE", 28f);
 
-            if (hasFarmersCompanion)
+            CreateToggleItem(leftCol.transform, "🌱 Auto-Water Crops (Never let crop plots dry out)", Plugin.AutoWaterCrops?.Value ?? false, v =>
             {
-                CreateText(leftCol.transform, "FC_Notice", "🌾 <color=#66FF66><b>Farmer's Companion Active:</b></color> Auto-water, smart usage, growth boosts, and livestock collection are actively handled by Farmer's Companion. Press <b>[F1]</b> to open menu.", 13, FontStyle.Normal, Color.white, TextAnchor.MiddleLeft);
-            }
-            else
-            {
-                CreateToggleItem(leftCol.transform, "🌱 Auto-Water Crops (Never let crop plots dry out)", Plugin.AutoWaterCrops?.Value ?? false, v =>
-                {
-                    if (Plugin.AutoWaterCrops != null) Plugin.AutoWaterCrops.Value = v;
-                    MarkProfileCustom();
-                    TeleportManager.SetNotification(v ? "🌱 Auto-Watering: ENABLED" : "🌱 Auto-Watering: DISABLED");
-                }, 38f, 14, "🌱 <b>Auto-Water:</b> Continuously maintains full hydration on crop plots and livestock grass.");
+                if (Plugin.AutoWaterCrops != null) Plugin.AutoWaterCrops.Value = v;
+                MarkProfileCustom();
+                TeleportManager.SetNotification(v ? "🌱 Auto-Watering: ENABLED" : "🌱 Auto-Watering: DISABLED");
+            }, 38f, 14, "🌱 <b>Auto-Water:</b> Continuously maintains full hydration on crop plots and livestock grass.");
 
-                CreateToggleItem(leftCol.transform, "🌾 Crop & Tree Growth Boost (Accelerate growth cycles)", Plugin.EnableCropGrowthBoost?.Value ?? false, v =>
-                {
-                    if (Plugin.EnableCropGrowthBoost != null) Plugin.EnableCropGrowthBoost.Value = v;
-                    MarkProfileCustom();
-                    TeleportManager.SetNotification(v ? "🌾 Crop Growth Boost: ENABLED" : "🌾 Crop Growth Boost: DISABLED");
-                }, 38f, 14, "🌾 <b>Crop Growth Boost:</b> Toggles custom growth multiplier for farming plots and tree planters.");
-            }
+            CreateToggleItem(leftCol.transform, "🌾 Crop & Tree Growth Boost (Accelerate growth cycles)", Plugin.EnableCropGrowthBoost?.Value ?? false, v =>
+            {
+                if (Plugin.EnableCropGrowthBoost != null) Plugin.EnableCropGrowthBoost.Value = v;
+                MarkProfileCustom();
+                TeleportManager.SetNotification(v ? "🌾 Crop Growth Boost: ENABLED" : "🌾 Crop Growth Boost: DISABLED");
+            }, 38f, 14, "🌾 <b>Crop Growth Boost:</b> Toggles custom growth multiplier for farming plots and tree planters.");
 
 
             // === RIGHT COLUMN ===
