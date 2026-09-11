@@ -65,6 +65,15 @@ namespace SailorsCompanion.Features
         // ============================================================================
         private void EnableFly(Network_Player player)
         {
+            // If we were already flying under a different player reference (e.g. a
+            // respawn/reconnect swapped the local player object), restore the old
+            // player's controller first so its CharacterController is never left
+            // permanently disabled.
+            if (_isFlying && _currentPlayer != player)
+            {
+                DisableFly();
+            }
+
             _currentPlayer = player;
             if (player.PersonController != null)
             {
@@ -83,6 +92,20 @@ namespace SailorsCompanion.Features
             {
                 _characterController.enabled = true;
             }
+
+            // Clear any stale fall/external velocity accumulated by PersonController
+            // while noclip was active, otherwise re-enabling the CharacterController
+            // can yank the player downward or launch them on the very next frame.
+            try
+            {
+                if (_currentPlayer != null && _currentPlayer.PersonController != null)
+                {
+                    _currentPlayer.PersonController.ResetExternalVelocity();
+                    _currentPlayer.PersonController.ResetFallDuration();
+                }
+            }
+            catch { }
+
             _isFlying = false;
             _characterController = null;
             _currentPlayer = null;

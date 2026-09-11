@@ -1,7 +1,7 @@
 {
-  "version": "1.1.1",
+  "version": "1.1.2",
   "name": "Sailor's Companion",
   "downloadUrl": "https://www.nexusmods.com/raft/mods/155",
   "raftModdingUrl": "https://www.raftmodding.com/mods/sailors-companion",
-  "notes": "v1.1.1: Fixed Collection Nets disappearing/sinking raft physics bug, fixed dropped item auto-pickup loop, added 3.5x Fast Reef Mining with Hook + Shark Repel Ward, and added inventory space check before clearing nets."
+  "notes": "v1.1.2: Fixed leftover velocity/fall-state after exiting Fly mode, fixed a leaked noclip Character Controller when the local player reference changed mid-flight, reduced Magnetic Debris Pull from scanning the whole scene 10x/sec to a cached 1s rescan, and cached the toast notification GUIStyle to cut per-frame GC allocations."
 }

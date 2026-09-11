@@ -27,6 +27,14 @@ namespace SailorsCompanion.Features
         private static float _lastPullScanTime = 0f;
         private const float PULL_SCAN_INTERVAL = 0.1f; // update physics 10 times a second
 
+        // FindObjectsOfType<PickupItem>() scans every PickupItem in the scene, which is
+        // too expensive to run 10x/second (PULL_SCAN_INTERVAL). Cache the candidate list
+        // and only rescan the scene once a second; the 10Hz loop just moves items already
+        // in the cache, pruning ones that were destroyed/picked up in the meantime.
+        private static readonly List<PickupItem> _cachedPickups = new List<PickupItem>();
+        private static float _lastPickupRescanTime = -9999f;
+        private const float PICKUP_RESCAN_INTERVAL = 1.0f;
+
         // ============================================================================
         // [START] LIFECYCLE INITIALIZATION
         // ============================================================================
@@ -153,10 +161,21 @@ namespace SailorsCompanion.Features
 
             try
             {
-                var pickups = UnityEngine.Object.FindObjectsOfType<PickupItem>();
-                if (pickups == null || pickups.Length == 0) return;
+                if (Time.unscaledTime - _lastPickupRescanTime > PICKUP_RESCAN_INTERVAL || _cachedPickups.Count == 0)
+                {
+                    _lastPickupRescanTime = Time.unscaledTime;
+                    _cachedPickups.Clear();
+                    var pickups = UnityEngine.Object.FindObjectsOfType<PickupItem>();
+                    if (pickups != null) _cachedPickups.AddRange(pickups);
+                }
+                else
+                {
+                    _cachedPickups.RemoveAll(p => p == null);
+                }
 
-                foreach (var item in pickups)
+                if (_cachedPickups.Count == 0) return;
+
+                foreach (var item in _cachedPickups)
                 {
                     if (item == null || !item.canBePickedUp || item.gameObject == null || !item.gameObject.activeInHierarchy) continue;
 

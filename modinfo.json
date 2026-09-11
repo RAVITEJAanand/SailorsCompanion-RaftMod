@@ -1,7 +1,7 @@
 {
   "name": "Sailor's Companion",
   "author": "Antigravity & Teja",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "slug": "sailors-companion",
   "description": "The definitive Raft Quality of Life & Survival suite: Smart Boat Control (Auto-Align Sails & Engines), Island & Reef Hand Harvesting (mine Sand, Clay, Scrap & Ores by hand without hook), Island 3D Pulse Scanner, Ocean Magnetic Debris Pull, Quick Stack to chests, Craft from storage, Weapon Damage Multiplier, Auto-watering crops, Raft Teleportation & Recall ([F8]/[F9]), R&D Blueprint auto-unlocker, Customizable Navigation HUD Overlay (4 Styles), Anti-Shark Raft Protection, Infinite Durability, Free Crafting, and Item Spawner.",
   "isModPermanent": false,

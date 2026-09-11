@@ -25,6 +25,7 @@ namespace SailorsCompanion.UI
         private Texture2D _btnNormalTex = null;
         private Texture2D _btnHoverTex = null;
         private Texture2D _btnActiveTex = null;
+        private GUIStyle _toastStyle = null;
 
         // Cached component references
         private static Raft _cachedRaft = null;
@@ -443,16 +444,19 @@ namespace SailorsCompanion.UI
             Rect r = new Rect(x, y, width, height);
             GUI.Box(r, GUIContent.none, _hudBoxStyle);
 
-            GUIStyle toastStyle = new GUIStyle(GUI.skin.label)
+            if (_toastStyle == null)
             {
-                fontSize = 13,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = new Color(0.38f, 0.85f, 0.98f) },
-                alignment = TextAnchor.MiddleCenter,
-                richText = true
-            };
+                _toastStyle = new GUIStyle(GUI.skin.label)
+                {
+                    fontSize = 13,
+                    fontStyle = FontStyle.Bold,
+                    normal = { textColor = new Color(0.38f, 0.85f, 0.98f) },
+                    alignment = TextAnchor.MiddleCenter,
+                    richText = true
+                };
+            }
 
-            GUI.Label(r, TeleportManager.LastStatusMessage, toastStyle);
+            GUI.Label(r, TeleportManager.LastStatusMessage, _toastStyle);
             GUI.color = prevColor;
         }
 
