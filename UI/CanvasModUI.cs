@@ -102,7 +102,7 @@ namespace SailorsCompanion.UI
         private Text _ovModeText, _ovProfileText;
 
         private Text _teleHeadingText, _teleRaftText, _teleSharkText, _teleCoordsText;
-        private Text _navSailModeBtnText, _navRecallBtnText, _navScannerBtnText, _qolMagnetBtnText;
+        private Text _navSailModeBtnText, _navRecallBtnText, _navScannerBtnText;
         private readonly Image[] _navStyleImgs = new Image[4];
         private readonly Text[]  _navStyleTexts = new Text[4];
 
