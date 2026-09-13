@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,12 +8,14 @@ using SailorsCompanion.Patches;
 
 namespace SailorsCompanion.UI
 {
-    #region [START] CANVAS INSTALLED MODS MANAGER UI (PREMIUM HIGH-RES EDITION)
+    #region [START] CANVAS INSTALLED MODS MANAGER UI (MODERN CLEAN EDITION)
     // ============================================================================
-    // [START] CANVAS INSTALLED MODS MANAGER UI (PREMIUM HIGH-RES EDITION)
-    // Purpose: Beautiful, high-resolution In-Game Mods Manager dialog accessible
-    //          via the main menu "MODS" button. Crystal clear typography, high
-    //          contrast, larger fonts (14-22px), and native Raft timber styling.
+    // [START] CANVAS INSTALLED MODS MANAGER UI (MODERN CLEAN EDITION)
+    // Purpose: "Modern Clean" in-game dialog listing every mod in the Konduri
+    //          Modding family as a flat dark card, reachable from the main menu
+    //          "MODS" button and the in-game pause menu "MOD MENU" button.
+    //          Each card reflects into its own mod's settings UI to open it -
+    //          this file never references the peer mods' assemblies directly.
     // ============================================================================
     public class CanvasInstalledModsUI : MonoBehaviour
     {
@@ -28,45 +31,59 @@ namespace SailorsCompanion.UI
 
         public static bool IsOpen => Instance != null && Instance._rootGO != null && Instance._rootGO.activeSelf;
 
-        // Raft Timber High-Contrast Color Palette
-        private static readonly Color BgDimmer          = new Color(0.0f, 0.0f, 0.0f, 0.76f);
-        private static readonly Color WoodWindowBg      = new Color(0.24f, 0.15f, 0.08f, 0.99f); // Deep Teak Timber
-        private static readonly Color WoodWindowBorder  = new Color(0.14f, 0.08f, 0.04f, 1.00f); // Dark Outer Timber
-        private static readonly Color WoodTitleBar      = new Color(0.19f, 0.11f, 0.05f, 1.00f); // Header Bar
-        private static readonly Color WoodTrimAccent    = new Color(0.85f, 0.70f, 0.42f, 1.00f); // Golden Wood Trim
-        private static readonly Color CardBg            = new Color(0.17f, 0.10f, 0.05f, 0.98f); // Recessed Plank Box
-        private static readonly Color PlaqueBg          = new Color(0.11f, 0.06f, 0.03f, 0.95f); // Dark Plaque Inset
+        #region [START] MODERN CLEAN PALETTE (shared across the mod family - do not change these hex values)
+        private static readonly Color ColBg          = new Color32(0x0F, 0x15, 0x18, 0xFF);
+        private static readonly Color ColPanel       = new Color32(0x16, 0x1F, 0x24, 0xFF);
+        private static readonly Color ColPanel2      = new Color32(0x1C, 0x27, 0x2D, 0xFF);
+        private static readonly Color ColRow         = new Color32(0x1A, 0x24, 0x2A, 0xFF);
+        private static readonly Color ColBorder      = new Color32(0x26, 0x33, 0x3B, 0xFF);
+        private static readonly Color ColBorderSoft  = new Color32(0x1E, 0x29, 0x30, 0xFF);
+        private static readonly Color ColText        = new Color32(0xEA, 0xF3, 0xF1, 0xFF);
+        private static readonly Color ColTextMuted   = new Color32(0x8F, 0xA3, 0xA9, 0xFF);
+        private static readonly Color ColTextFaint   = new Color32(0x5E, 0x73, 0x79, 0xFF);
+        private static readonly Color ColAccent      = new Color32(0x2F, 0xC7, 0xB0, 0xFF);
+        private static readonly Color ColAccentStrong= new Color32(0x20, 0xA7, 0x94, 0xFF);
+        private static readonly Color ColAccentWash  = new Color(0x2F / 255f, 0xC7 / 255f, 0xB0 / 255f, 0.16f);
+        private static readonly Color ColGold        = new Color32(0xE8, 0xB9, 0x4A, 0xFF);
+        private static readonly Color ColSuccess     = new Color32(0x5F, 0xBE, 0x7A, 0xFF);
+        private static readonly Color ColSuccessWash = new Color(0x5F / 255f, 0xBE / 255f, 0x7A / 255f, 0.16f);
+        private static readonly Color ColDanger      = new Color32(0xE0, 0x5A, 0x5A, 0xFF);
+        private static readonly Color ColOnAccentTxt = new Color32(0x06, 0x23, 0x1F, 0xFF);
+        #endregion
 
-        // High-Contrast Text Colors
-        private static readonly Color TextGoldHeading   = new Color(1.00f, 0.82f, 0.35f, 1.00f); // Bright Gold Stencil
-        private static readonly Color TextParchment     = new Color(0.96f, 0.94f, 0.88f, 1.00f); // Clean Crisp Ivory
-        private static readonly Color TextMutedGold     = new Color(0.90f, 0.78f, 0.55f, 1.00f); // Soft Gold
-        private static readonly Color TextSubtle        = new Color(0.80f, 0.72f, 0.60f, 1.00f); // Parchment Muted
+        // Per-mod brand accents (distinct per card - not part of the shared design-system palette above).
+        private static readonly Color SailorsCyan     = new Color(0.10f, 0.92f, 1.00f, 1.00f);
+        private static readonly Color InventoryGold   = new Color(1.00f, 0.72f, 0.20f, 1.00f);
+        private static readonly Color FarmersGreen    = new Color(0.35f, 0.95f, 0.35f, 1.00f);
+        private static readonly Color CollectionPurple= new Color(0.66f, 0.48f, 1.00f, 1.00f);
 
-        // Status & Theme Accents
-        private static readonly Color BadgeActiveBg     = new Color(0.06f, 0.42f, 0.18f, 1.00f); // Deep Emerald Pill
-        private static readonly Color BadgeActiveText   = new Color(0.25f, 1.00f, 0.55f, 1.00f); // Neon Mint Green
-        private static readonly Color SailorsCyan       = new Color(0.10f, 0.92f, 1.00f, 1.00f); // Electric Cyan
-        private static readonly Color InventoryGold     = new Color(1.00f, 0.72f, 0.20f, 1.00f); // Radiant Amber
-        private static readonly Color FarmersGreen      = new Color(0.35f, 0.95f, 0.35f, 1.00f); // Forest Sprout Green
-
-        // Button Colors
-        private static readonly Color ButtonWoodPrimary = new Color(0.42f, 0.26f, 0.15f, 1.00f); // Primary Wood Button
-        private static readonly Color ButtonWoodBorder  = new Color(0.85f, 0.68f, 0.35f, 0.90f); // Gold Button Border
-        private static readonly Color ButtonWoodDark    = new Color(0.26f, 0.16f, 0.09f, 1.00f); // Secondary Timber Button
-        private static readonly Color ButtonCloseRed    = new Color(0.65f, 0.16f, 0.14f, 0.98f); // Crimson Close Button
-
+        #region [START] UNITY LIFECYCLE
         private void Awake()
         {
             Instance = this;
             gameObject.hideFlags = HideFlags.HideAndDontSave;
             DontDestroyOnLoad(gameObject);
-            GetGameFont();
-            BuildCanvasUI();
+            try
+            {
+                GetGameFont();
+                BuildCanvasUI();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[Sailor's Companion] CanvasInstalledModsUI.Awake() FAILED: {ex}");
+            }
         }
 
         public Font GetGameFont()
         {
+            if (_gameFont != null) return _gameFont;
+
+            try
+            {
+                _gameFont = Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI Semibold", "Segoe UI", "Arial", "Tahoma" }, 24);
+            }
+            catch { }
+
             if (_gameFont != null) return _gameFont;
 
             var texts = Resources.FindObjectsOfTypeAll<Text>();
@@ -79,16 +96,7 @@ namespace SailorsCompanion.UI
                 }
             }
 
-            try
-            {
-                _gameFont = Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI", "Arial", "Tahoma" }, 15);
-            }
-            catch { }
-
-            if (_gameFont == null)
-            {
-                _gameFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            }
+            _gameFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
             return _gameFont;
         }
 
@@ -114,6 +122,7 @@ namespace SailorsCompanion.UI
 
             Instance._rootGO.SetActive(true);
             Instance.EnsureEventSystem();
+            if (Instance._raycaster != null && !Instance._raycaster.enabled) Instance._raycaster.enabled = true;
 
             try
             {
@@ -137,6 +146,18 @@ namespace SailorsCompanion.UI
                 }
             }
             catch { }
+
+            // The window is built once (in Awake, while _rootGO is still inactive so it starts
+            // hidden) and only re-shown here. Unity's layout system never computes layout for an
+            // inactive hierarchy and doesn't retroactively recalculate it just because the object
+            // becomes active again, so every nested VerticalLayoutGroup/HorizontalLayoutGroup rect
+            // would otherwise stay at its raw default forever. Forcing one rebuild here, every time
+            // the window opens, fixes that for good (same fix used by the sibling settings menus).
+            if (Instance._windowGO != null)
+            {
+                Canvas.ForceUpdateCanvases();
+                LayoutRebuilder.ForceRebuildLayoutImmediate(Instance._windowGO.GetComponent<RectTransform>());
+            }
         }
 
         public static void Close()
@@ -234,9 +255,13 @@ namespace SailorsCompanion.UI
                 Close();
             }
         }
+        #endregion [END] UNITY LIFECYCLE
 
+        #region [START] BUILD CANVAS UI
         private void BuildCanvasUI()
         {
+            if (_canvasGO != null && _rootGO != null) return;
+
             if (_canvasGO == null)
             {
                 _canvasGO = new GameObject("InstalledMods_Canvas");
@@ -252,6 +277,7 @@ namespace SailorsCompanion.UI
                 _scaler = _canvasGO.AddComponent<CanvasScaler>();
                 _scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 _scaler.referenceResolution = new Vector2(1920, 1080);
+                _scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
                 _scaler.matchWidthOrHeight = 0.5f;
 
                 _raycaster = _canvasGO.AddComponent<GraphicRaycaster>();
@@ -260,6 +286,7 @@ namespace SailorsCompanion.UI
             if (_rootGO == null)
             {
                 BuildManagerWindow();
+                SetLayerRecursively(_canvasGO, LayerMask.NameToLayer("UI") >= 0 ? LayerMask.NameToLayer("UI") : 5);
                 _rootGO.SetActive(false); // Cleanly hidden by default!
             }
         }
@@ -275,8 +302,9 @@ namespace SailorsCompanion.UI
             rootRt.offsetMin = Vector2.zero;
             rootRt.offsetMax = Vector2.zero;
 
-            // 2. Dimmer Background
-            var dimmerGO = new GameObject("Dimmer_Background");
+            // 2. Dimmer Background (visual backdrop only - non-blocking so clicks never accidentally
+            //    close the menu, same convention as the redesigned per-mod settings canvases).
+            var dimmerGO = new GameObject("Dimmer");
             dimmerGO.transform.SetParent(_rootGO.transform, false);
             var dimmerRt = dimmerGO.AddComponent<RectTransform>();
             dimmerRt.anchorMin = Vector2.zero;
@@ -284,382 +312,362 @@ namespace SailorsCompanion.UI
             dimmerRt.offsetMin = Vector2.zero;
             dimmerRt.offsetMax = Vector2.zero;
             var dimmerImg = dimmerGO.AddComponent<Image>();
-            dimmerImg.color = BgDimmer;
-            var dimmerBtn = dimmerGO.AddComponent<Button>();
-            dimmerBtn.onClick.AddListener(Close);
+            dimmerImg.color = new Color(0f, 0f, 0f, 0.6f);
+            dimmerImg.raycastTarget = false;
 
             // 3. Main Window Panel
             _windowGO = new GameObject("Window_InstalledMods");
             _windowGO.transform.SetParent(_rootGO.transform, false);
-
             var winRt = _windowGO.AddComponent<RectTransform>();
             winRt.anchorMin = new Vector2(0.5f, 0.5f);
             winRt.anchorMax = new Vector2(0.5f, 0.5f);
             winRt.pivot = new Vector2(0.5f, 0.5f);
-            winRt.sizeDelta = new Vector2(1280, 650); // Generous, wide 3-column proportions
+            winRt.sizeDelta = new Vector2(1180, 760);
             winRt.anchoredPosition = Vector2.zero;
-            winRt.localScale = new Vector3(1.05f, 1.05f, 1.0f); // High-res scaling
 
             var winImg = _windowGO.AddComponent<Image>();
-            winImg.color = WoodWindowBg;
+            winImg.sprite = GetRoundedSprite(18);
+            winImg.type = Image.Type.Sliced;
+            winImg.color = ColBorder;
+            AddInsetFill(_windowGO, 18, ColPanel);
 
-            var winOutline = _windowGO.AddComponent<Outline>();
-            winOutline.effectColor = WoodWindowBorder;
-            winOutline.effectDistance = new Vector2(5, -5);
-
-            // 4. Header Bar
-            var headerGO = new GameObject("HeaderBar");
+            // 4. Header (brand mark + title/subtitle)
+            var headerGO = new GameObject("Header");
             headerGO.transform.SetParent(_windowGO.transform, false);
-            var headRt = headerGO.AddComponent<RectTransform>();
-            headRt.anchorMin = new Vector2(0, 1);
-            headRt.anchorMax = new Vector2(1, 1);
-            headRt.pivot = new Vector2(0.5f, 1);
-            headRt.sizeDelta = new Vector2(0, 58);
-            headRt.anchoredPosition = Vector2.zero;
+            var headerRt = headerGO.AddComponent<RectTransform>();
+            headerRt.anchorMin = new Vector2(0, 1);
+            headerRt.anchorMax = new Vector2(1, 1);
+            headerRt.pivot = new Vector2(0.5f, 1);
+            headerRt.sizeDelta = new Vector2(0, 68);
+            headerRt.anchoredPosition = Vector2.zero;
 
-            var headImg = headerGO.AddComponent<Image>();
-            headImg.color = WoodTitleBar;
+            var headerLayout = headerGO.AddComponent<HorizontalLayoutGroup>();
+            headerLayout.childControlWidth = true;
+            headerLayout.childControlHeight = true;
+            headerLayout.padding = new RectOffset(24, 64, 12, 12);
+            headerLayout.spacing = 14;
+            headerLayout.childAlignment = TextAnchor.MiddleLeft;
+            headerLayout.childForceExpandWidth = false;
+            headerLayout.childForceExpandHeight = true;
 
-            // Golden Header Trim Accent
-            var headTrimGO = new GameObject("HeadTrim");
-            headTrimGO.transform.SetParent(headerGO.transform, false);
-            var htRt = headTrimGO.AddComponent<RectTransform>();
-            htRt.anchorMin = new Vector2(0, 0);
-            htRt.anchorMax = new Vector2(1, 0);
-            htRt.pivot = new Vector2(0.5f, 0);
-            htRt.sizeDelta = new Vector2(0, 3);
-            var htImg = headTrimGO.AddComponent<Image>();
-            htImg.color = WoodTrimAccent;
+            var markGO = new GameObject("Mark");
+            markGO.transform.SetParent(headerGO.transform, false);
+            var markLe = markGO.AddComponent<LayoutElement>();
+            markLe.preferredWidth = 46; markLe.preferredHeight = 46;
+            var markImg = markGO.AddComponent<Image>();
+            markImg.sprite = GetRoundedSprite(11);
+            markImg.type = Image.Type.Sliced;
+            markImg.color = ColAccent;
+            var markTxt = CreateText(markGO, "⚡", 20, FontStyle.Bold, ColOnAccentTxt, TextAnchor.MiddleCenter);
+            FillParent(markTxt.gameObject);
 
-            // Header Title (Size 22, Bold, High-Contrast Gold)
-            var titleTxt = CreateText(headerGO, "🛠️ <color=#FFD54F><b>RAFT MODS MANAGER</b></color>  <size=15><color=#E0D0B5>(3 Active Modifications Installed)</color></size>", 22, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
-            var titleRt = titleTxt.GetComponent<RectTransform>();
-            titleRt.anchorMin = new Vector2(0, 0);
-            titleRt.anchorMax = new Vector2(1, 1);
-            titleRt.offsetMin = new Vector2(24, 0);
-            titleRt.offsetMax = new Vector2(-70, 0);
+            var titleColGO = new GameObject("TitleCol");
+            titleColGO.transform.SetParent(headerGO.transform, false);
+            var titleColLe = titleColGO.AddComponent<LayoutElement>();
+            titleColLe.flexibleWidth = 1f;
+            var titleColLayout = titleColGO.AddComponent<VerticalLayoutGroup>();
+            titleColLayout.childControlWidth = true;
+            titleColLayout.childControlHeight = true;
+            titleColLayout.childForceExpandWidth = true;
+            titleColLayout.spacing = 2;
 
-            // Close Button [✕]
-            var closeBtnGO = new GameObject("Btn_Close");
-            closeBtnGO.transform.SetParent(headerGO.transform, false);
-            var closeRt = closeBtnGO.AddComponent<RectTransform>();
-            closeRt.anchorMin = new Vector2(1, 0.5f);
-            closeRt.anchorMax = new Vector2(1, 0.5f);
-            closeRt.pivot = new Vector2(1, 0.5f);
-            closeRt.sizeDelta = new Vector2(44, 38);
-            closeRt.anchoredPosition = new Vector2(-12, 0);
+            var titleTxt = CreateText(titleColGO, "Installed Mods", 21, FontStyle.Bold, ColText, TextAnchor.MiddleLeft);
+            titleTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
+            var subTxt = CreateText(titleColGO, "4 mods in the Konduri Modding family - configure any of them from here.", 13.5f, FontStyle.Normal, ColTextFaint, TextAnchor.MiddleLeft);
+            subTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 17;
 
-            var closeImg = closeBtnGO.AddComponent<Image>();
-            closeImg.color = ButtonCloseRed;
-            var closeBtn = closeBtnGO.AddComponent<Button>();
-            closeBtn.onClick.AddListener(Close);
-            var closeTxt = CreateText(closeBtnGO, "✕", 20, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            FillParent(closeTxt.gameObject);
+            AddDivider(_windowGO.transform, 0, headerRt);
+            BuildCloseButton();
 
-            // Subtitle Guidance Banner (Size 14)
-            var subBannerGO = new GameObject("SubBanner");
-            subBannerGO.transform.SetParent(_windowGO.transform, false);
-            var subRt = subBannerGO.AddComponent<RectTransform>();
-            subRt.anchorMin = new Vector2(0, 1);
-            subRt.anchorMax = new Vector2(1, 1);
-            subRt.pivot = new Vector2(0.5f, 1);
-            subRt.sizeDelta = new Vector2(0, 36);
-            subRt.anchoredPosition = new Vector2(0, -60);
+            // 5. Scrolling body: a 2x2 card grid, one card per mod in the family.
+            var scrollGO = new GameObject("ScrollArea");
+            scrollGO.transform.SetParent(_windowGO.transform, false);
+            var scrollRt = scrollGO.AddComponent<RectTransform>();
+            scrollRt.anchorMin = Vector2.zero;
+            scrollRt.anchorMax = Vector2.one;
+            scrollRt.offsetMin = new Vector2(24, 24);
+            scrollRt.offsetMax = new Vector2(-24, -(headerRt.sizeDelta.y + 1));
 
-            var subTxt = CreateText(subBannerGO, "✨ Click <b>'Open Settings'</b> to configure either mod, or review the in-game shortcut hotkeys below:", 14, FontStyle.Normal, TextParchment, TextAnchor.MiddleCenter);
-            FillParent(subTxt.gameObject);
+            var viewportGO = new GameObject("Viewport");
+            viewportGO.transform.SetParent(scrollGO.transform, false);
+            var viewportRt = viewportGO.AddComponent<RectTransform>();
+            viewportRt.anchorMin = Vector2.zero;
+            viewportRt.anchorMax = Vector2.one;
+            viewportRt.offsetMin = Vector2.zero;
+            viewportRt.offsetMax = Vector2.zero;
+            viewportGO.AddComponent<RectMask2D>();
 
-            // Cards Container
-            var cardsContainerGO = new GameObject("CardsContainer");
-            cardsContainerGO.transform.SetParent(_windowGO.transform, false);
-            var cardsRt = cardsContainerGO.AddComponent<RectTransform>();
-            cardsRt.anchorMin = new Vector2(0, 0);
-            cardsRt.anchorMax = new Vector2(1, 1);
-            cardsRt.offsetMin = new Vector2(24, 62);
-            cardsRt.offsetMax = new Vector2(-24, -100);
+            var bodyGO = new GameObject("Body");
+            bodyGO.transform.SetParent(viewportGO.transform, false);
+            var bodyRt = bodyGO.AddComponent<RectTransform>();
+            bodyRt.anchorMin = new Vector2(0, 1);
+            bodyRt.anchorMax = new Vector2(1, 1);
+            bodyRt.pivot = new Vector2(0.5f, 1);
+            bodyRt.anchoredPosition = Vector2.zero;
+            bodyRt.sizeDelta = Vector2.zero;
 
-            // Card 1: Sailor's Companion (Left)
-            BuildModCard(cardsContainerGO,
-                title: "⚓ Sailor's Companion",
-                titleColor: SailorsCyan,
-                version: $"v{PluginInfo.PLUGIN_VERSION}",
-                author: "KONDURI (RAVITEJAanand)",
-                featureList: "• <b>Compass HUD & Hostile Shark Radar</b> [F6]\n• <b>Auto-Align Sails to Wind & Remote Anchor</b> [F4]\n• <b>Free Flight / Noclip, God Mode & Stamina</b> [F]\n• <b>300+ Item Spawner & Material-Free Crafting</b> [F5]",
-                hotkeysSummary: "<color=#00F5FF><b>[F5]</b></color> Mod Menu   •   <color=#00F5FF><b>[F6]</b></color> Compass HUD   •   <color=#00F5FF><b>[F8/F9]</b></color> Recall/Summon Raft\n<color=#00F5FF><b>[F4]</b></color> Toggle Sails*   •   <color=#00F5FF><b>[F3]</b></color> Engines*   •   <color=#00F5FF><b>[F7]</b></color> Magnet*   •   <color=#00F5FF><b>[F10]</b></color> Scan*  <size=11>(*Advanced Hotkeys, off by default)</size>",
-                openSettingsAction: () =>
+            var bodyLayout = bodyGO.AddComponent<VerticalLayoutGroup>();
+            bodyLayout.childControlWidth = true;
+            bodyLayout.childControlHeight = true;
+            bodyLayout.spacing = 16;
+            bodyLayout.childForceExpandWidth = true;
+            bodyLayout.childForceExpandHeight = false;
+
+            var bodyFitter = bodyGO.AddComponent<ContentSizeFitter>();
+            bodyFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var scrollRect = scrollGO.AddComponent<ScrollRect>();
+            scrollRect.content = bodyRt;
+            scrollRect.viewport = viewportRt;
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            scrollRect.scrollSensitivity = 28f;
+
+            // Caption line (flows with the body instead of a separate fixed strip - keeps the
+            // window to a single scroll region, matching the reference dialog's simpler chrome).
+            var captionTxt = CreateText(bodyGO, "Click Configure to open a mod's own settings menu, or view its source on GitHub.", 14, FontStyle.Normal, ColTextMuted, TextAnchor.MiddleLeft);
+            captionTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 20;
+
+            // Several features (auto-pickup, crop growth, hook speed, nets) exist in more than one
+            // mod in this family. This is the one screen where all of them are visible together, so
+            // it's the most useful place to warn about doubling up.
+            var overlapTxt = CreateText(bodyGO, "<color=#E8B94A>Running more than one?</color>  A few features appear in several of these mods. Turn each one on in a single mod only, so it never applies twice.", 14, FontStyle.Normal, ColTextMuted, TextAnchor.MiddleLeft);
+            overlapTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 22;
+
+            var row1GO = new GameObject("Row1");
+            row1GO.transform.SetParent(bodyGO.transform, false);
+            row1GO.AddComponent<LayoutElement>().preferredHeight = 236;
+            var row1Layout = row1GO.AddComponent<HorizontalLayoutGroup>();
+            row1Layout.childControlWidth = true;
+            row1Layout.childControlHeight = true;
+            row1Layout.spacing = 16;
+            row1Layout.childForceExpandWidth = true;
+            row1Layout.childForceExpandHeight = true;
+
+            var row2GO = new GameObject("Row2");
+            row2GO.transform.SetParent(bodyGO.transform, false);
+            row2GO.AddComponent<LayoutElement>().preferredHeight = 236;
+            var row2Layout = row2GO.AddComponent<HorizontalLayoutGroup>();
+            row2Layout.childControlWidth = true;
+            row2Layout.childControlHeight = true;
+            row2Layout.spacing = 16;
+            row2Layout.childForceExpandWidth = true;
+            row2Layout.childForceExpandHeight = true;
+
+            // Card 1: Sailor's Companion (this mod itself)
+            BuildModCard(row1GO.transform,
+                monogram: "⚓",
+                title: "Sailor's Companion",
+                accent: SailorsCyan,
+                installed: true,
+                version: PluginInfo.PLUGIN_VERSION,
+                description: "Compass HUD, shark radar, auto-sail alignment, free flight, and a 300+ item spawner.",
+                openLabel: "Open Settings",
+                onOpen: () =>
                 {
                     Close();
                     CanvasModUI.Instance?.ToggleModWindow();
                 },
-                openGithubUrl: "https://github.com/RAVITEJAanand/SailorsCompanion-RaftMod",
-                xMin: 0.00f,
-                xMax: 0.322f
+                githubUrl: "https://github.com/RAVITEJAanand/SailorsCompanion-RaftMod"
             );
 
-            // Card 2: Inventory Master (Center)
-            BuildModCard(cardsContainerGO,
-                title: "🎒 Inventory Master",
-                titleColor: InventoryGold,
-                version: $"v{GetPeerVersion("InventoryMaster.PluginInfo", "1.0.5")}",
-                author: "KONDURI (RAVITEJAanand)",
-                featureList: "• <b>Permanent 15-Slot Backpack Expansion Unlock</b>\n• <b>Instant Categorical Inventory & Chest Sorter</b> [Z]\n• <b>20-Slot Hotbar Row Swap & Storage Dump</b> [V/X]\n• <b>5m Vacuum Auto-Pickup & Drop Guard [Shift+Q]</b>",
-                hotkeysSummary: "<color=#FFB300><b>[F2]</b></color> Settings Menu   •   <color=#FFB300><b>[Z]</b></color> Auto Sort   •   <color=#FFB300><b>[X]</b></color> Dump\n<color=#FFB300><b>[V]</b></color> Swap Hotbar Row   •   <color=#FFB300><b>[Alt+Click]</b></color> Lock   •   <color=#FFB300><b>[Del]</b></color> Trash",
-                openSettingsAction: () =>
+            // Card 2: Inventory Master
+            BuildModCard(row1GO.transform,
+                monogram: "\U0001F392",
+                title: "Inventory Master",
+                accent: InventoryGold,
+                installed: PeerExists("InventoryMaster.PluginInfo"),
+                version: GetPeerVersion("InventoryMaster.PluginInfo", "1.0.5"),
+                description: "15-slot backpack expansion, auto-sort, hotbar row swap, and 5m auto-pickup vacuum.",
+                openLabel: "Open Settings",
+                onOpen: () =>
                 {
                     Close();
                     OpenInventoryMasterSettings();
                 },
-                openGithubUrl: "https://github.com/RAVITEJAanand/InventoryMaster-RaftMod",
-                xMin: 0.339f,
-                xMax: 0.661f
+                githubUrl: "https://github.com/RAVITEJAanand/InventoryMaster-RaftMod"
             );
 
-            // Card 3: Farmer's Companion (Right)
-            BuildModCard(cardsContainerGO,
-                title: "🌾 Farmer's Companion",
-                titleColor: FarmersGreen,
-                version: $"v{GetPeerVersion("FarmersCompanion.PluginInfo", "1.0.10")}",
-                author: "KONDURI (RAVITEJAanand)",
-                featureList: "• <b>Auto Water Crops & Grass Plots</b>\n• <b>Auto Harvest Ripe Crops & Auto Replant</b>\n• <b>Fast Crop & Palm Tree Growth Boost</b>\n• <b>Auto-Shear Llamas & Milk Goats</b>",
-                hotkeysSummary: "<color=#66FF66><b>[F1]</b></color> Farming Menu   •   <color=#66FF66><b>Auto Water</b></color> Plots\n<color=#66FF66><b>Auto Harvest</b></color> Crops   •   <color=#66FF66><b>Auto Replant</b></color> Seeds",
-                openSettingsAction: () =>
+            // Card 3: Farmer's Companion
+            BuildModCard(row2GO.transform,
+                monogram: "\U0001F33E",
+                title: "Farmer's Companion",
+                accent: FarmersGreen,
+                installed: PeerExists("FarmersCompanion.PluginInfo"),
+                version: GetPeerVersion("FarmersCompanion.PluginInfo", "1.0.10"),
+                description: "Auto-watering, auto-harvest, auto-replant, and faster crop & tree growth.",
+                openLabel: "Open Settings",
+                onOpen: () =>
                 {
                     Close();
                     OpenFarmersCompanionSettings();
                 },
-                openGithubUrl: "https://github.com/RAVITEJAanand/FarmersCompanion-RaftMod",
-                xMin: 0.678f,
-                xMax: 1.00f
+                githubUrl: "https://github.com/RAVITEJAanand/FarmersCompanion-RaftMod"
             );
 
-            // 5. Footer Bar
-            var footerGO = new GameObject("FooterBar");
-            footerGO.transform.SetParent(_windowGO.transform, false);
-            var footRt = footerGO.AddComponent<RectTransform>();
-            footRt.anchorMin = new Vector2(0, 0);
-            footRt.anchorMax = new Vector2(1, 0);
-            footRt.pivot = new Vector2(0.5f, 0);
-            footRt.sizeDelta = new Vector2(0, 52);
-            footRt.anchoredPosition = Vector2.zero;
-
-            var footImg = footerGO.AddComponent<Image>();
-            footImg.color = WoodTitleBar;
-
-            // Top Trim on Footer
-            var footTrimGO = new GameObject("FootTrim");
-            footTrimGO.transform.SetParent(footerGO.transform, false);
-            var ftRt = footTrimGO.AddComponent<RectTransform>();
-            ftRt.anchorMin = new Vector2(0, 1);
-            ftRt.anchorMax = new Vector2(1, 1);
-            ftRt.pivot = new Vector2(0.5f, 1);
-            ftRt.sizeDelta = new Vector2(0, 2);
-            var ftImg = footTrimGO.AddComponent<Image>();
-            ftImg.color = WoodTrimAccent;
-
-            // Footer Text (Size 14)
-            var footTxt = CreateText(footerGO, "💡 <b>Quick Tip:</b> During active gameplay, press <b>[F5]</b> for Sailor's Companion, <b>[F2]</b> for Inventory Master, or <b>[F1]</b> for Farmer's Companion.", 14, FontStyle.Normal, TextGoldHeading, TextAnchor.MiddleLeft);
-            var footTxtRt = footTxt.GetComponent<RectTransform>();
-            footTxtRt.anchorMin = new Vector2(0, 0);
-            footTxtRt.anchorMax = new Vector2(1, 1);
-            footTxtRt.offsetMin = new Vector2(24, 0);
-            footTxtRt.offsetMax = new Vector2(-160, 0);
-
-            // Footer Close Button (Size 14, Bold)
-            var footCloseBtnGO = new GameObject("Btn_FootClose");
-            footCloseBtnGO.transform.SetParent(footerGO.transform, false);
-            var footCloseRt = footCloseBtnGO.AddComponent<RectTransform>();
-            footCloseRt.anchorMin = new Vector2(1, 0.5f);
-            footCloseRt.anchorMax = new Vector2(1, 0.5f);
-            footCloseRt.pivot = new Vector2(1, 0.5f);
-            footCloseRt.sizeDelta = new Vector2(130, 36);
-            footCloseRt.anchoredPosition = new Vector2(-18, 0);
-
-            var footCloseImg = footCloseBtnGO.AddComponent<Image>();
-            footCloseImg.color = ButtonCloseRed;
-            var footCloseBtn = footCloseBtnGO.AddComponent<Button>();
-            footCloseBtn.onClick.AddListener(Close);
-            var footCloseTxt = CreateText(footCloseBtnGO, "Close (ESC)", 13, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            FillParent(footCloseTxt.gameObject);
+            // Card 4: Collection QoL (4th mod in the family - pre-release, reflects defensively:
+            // if its assembly/class isn't present yet, or isn't named exactly as agreed, this
+            // simply shows "Not Detected" with the fallback version instead of throwing).
+            BuildModCard(row2GO.transform,
+                monogram: "\U0001F4E6",
+                title: "Collection QoL",
+                accent: CollectionPurple,
+                installed: PeerExists("CollectionQoL.UI.CanvasCollectionQoLUI"),
+                version: GetPeerVersion("CollectionQoL.PluginInfo", "1.0.0"),
+                description: "Automated loot collection, hooks, and detection QoL.",
+                openLabel: "Open Settings",
+                onOpen: () =>
+                {
+                    Close();
+                    OpenCollectionQoLSettings();
+                },
+                githubUrl: "https://github.com/RAVITEJAanand/CollectionQoL-RaftMod"
+            );
         }
 
-        private void BuildModCard(GameObject parent, string title, Color titleColor, string version, string author, string featureList, string hotkeysSummary, Action openSettingsAction, string openGithubUrl, float xMin, float xMax)
+        // The redesign never got a visible close/X control on the corner of every screen - ESC still
+        // closes the window (see Update above), but a panel this size reads as a standalone app and
+        // players expect a corner close button regardless of knowing the hotkey. Parented directly
+        // to the window root (last sibling) so it renders above the header/body.
+        private void BuildCloseButton()
+        {
+            var go = new GameObject("CloseBtn");
+            go.transform.SetParent(_windowGO.transform, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(1, 1);
+            rt.anchorMax = new Vector2(1, 1);
+            rt.pivot = new Vector2(1, 1);
+            rt.sizeDelta = new Vector2(32, 32);
+            rt.anchoredPosition = new Vector2(-16, -16);
+
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(16);
+            img.type = Image.Type.Sliced;
+            img.color = ColPanel2;
+
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+            var cb = btn.colors;
+            cb.normalColor = ColPanel2;
+            cb.highlightedColor = ColDanger;
+            cb.pressedColor = ColDanger;
+            btn.colors = cb;
+            btn.onClick.AddListener(Close);
+
+            var txt = CreateText(go, "✕", 15, FontStyle.Bold, ColTextMuted, TextAnchor.MiddleCenter);
+            txt.raycastTarget = false;
+            FillParent(txt.gameObject);
+        }
+
+        // ---------------- mod card ----------------
+        private void BuildModCard(Transform parent, string monogram, string title, Color accent, bool installed, string version, string description, string openLabel, Action onOpen, string githubUrl)
         {
             var cardGO = new GameObject("Card_" + title);
-            cardGO.transform.SetParent(parent.transform, false);
-            var cardRt = cardGO.AddComponent<RectTransform>();
-            cardRt.anchorMin = new Vector2(xMin, 0f);
-            cardRt.anchorMax = new Vector2(xMax, 1f);
-            cardRt.offsetMin = Vector2.zero;
-            cardRt.offsetMax = Vector2.zero;
+            cardGO.transform.SetParent(parent, false);
+            var img = cardGO.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(14);
+            img.type = Image.Type.Sliced;
+            img.color = ColBorderSoft;
+            AddInsetFill(cardGO, 14, ColRow);
 
-            var cardImg = cardGO.AddComponent<Image>();
-            cardImg.color = CardBg;
+            var layout = cardGO.AddComponent<VerticalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.padding = new RectOffset(20, 20, 18, 16);
+            layout.spacing = 12;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
 
-            var cardOutline = cardGO.AddComponent<Outline>();
-            cardOutline.effectColor = titleColor * 0.85f;
-            cardOutline.effectDistance = new Vector2(3, -3);
+            // Header row: monogram badge + title/subtitle
+            var headRowGO = new GameObject("Head");
+            headRowGO.transform.SetParent(cardGO.transform, false);
+            headRowGO.AddComponent<LayoutElement>().preferredHeight = 46;
+            var headLayout = headRowGO.AddComponent<HorizontalLayoutGroup>();
+            headLayout.childControlWidth = true;
+            headLayout.childControlHeight = true;
+            headLayout.spacing = 14;
+            headLayout.childAlignment = TextAnchor.MiddleLeft;
+            headLayout.childForceExpandWidth = false;
+            headLayout.childForceExpandHeight = true;
 
-            // 1. Card Header (Height: 46)
-            var cardHeadGO = new GameObject("CardHead");
-            cardHeadGO.transform.SetParent(cardGO.transform, false);
-            var headRt = cardHeadGO.AddComponent<RectTransform>();
-            headRt.anchorMin = new Vector2(0, 1);
-            headRt.anchorMax = new Vector2(1, 1);
-            headRt.pivot = new Vector2(0.5f, 1);
-            headRt.sizeDelta = new Vector2(0, 46);
-            headRt.anchoredPosition = new Vector2(0, -10);
+            var markGO = new GameObject("Mark");
+            markGO.transform.SetParent(headRowGO.transform, false);
+            var markLe = markGO.AddComponent<LayoutElement>();
+            markLe.preferredWidth = 44; markLe.preferredHeight = 44;
+            var markImg = markGO.AddComponent<Image>();
+            markImg.sprite = GetRoundedSprite(11);
+            markImg.type = Image.Type.Sliced;
+            markImg.color = accent;
+            var markTxt = CreateText(markGO, monogram, 19, FontStyle.Bold, ColOnAccentTxt, TextAnchor.MiddleCenter);
+            FillParent(markTxt.gameObject);
 
-            // Mod Title (Size 22, Bold)
-            var tTxt = CreateText(cardHeadGO, title, 22, FontStyle.Bold, titleColor, TextAnchor.MiddleLeft);
-            var tRt = tTxt.GetComponent<RectTransform>();
-            tRt.anchorMin = new Vector2(0, 0);
-            tRt.anchorMax = new Vector2(0.68f, 1);
-            tRt.offsetMin = new Vector2(16, 0);
-            tRt.offsetMax = Vector2.zero;
+            var titleColGO = new GameObject("TitleCol");
+            titleColGO.transform.SetParent(headRowGO.transform, false);
+            titleColGO.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            var titleColLayout = titleColGO.AddComponent<VerticalLayoutGroup>();
+            titleColLayout.childControlWidth = true;
+            titleColLayout.childControlHeight = true;
+            titleColLayout.childForceExpandWidth = true;
+            titleColLayout.spacing = 2;
 
-            // Status Badge (Size 12, Bold, Emerald Pill)
-            var badgeGO = new GameObject("Badge");
-            badgeGO.transform.SetParent(cardHeadGO.transform, false);
-            var badgeRt = badgeGO.AddComponent<RectTransform>();
-            badgeRt.anchorMin = new Vector2(1, 0.5f);
-            badgeRt.anchorMax = new Vector2(1, 0.5f);
-            badgeRt.pivot = new Vector2(1, 0.5f);
-            badgeRt.sizeDelta = new Vector2(130, 28);
-            badgeRt.anchoredPosition = new Vector2(-14, 0);
+            var titleTxt = CreateText(titleColGO, title, 18.5f, FontStyle.Bold, accent, TextAnchor.MiddleLeft);
+            titleTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 22;
+            var byTxt = CreateText(titleColGO, "KONDURI (RAVITEJAanand)", 12.5f, FontStyle.Normal, ColTextFaint, TextAnchor.MiddleLeft);
+            byTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 15;
 
-            var badgeImg = badgeGO.AddComponent<Image>();
-            badgeImg.color = BadgeActiveBg;
-            var badgeOutline = badgeGO.AddComponent<Outline>();
-            badgeOutline.effectColor = BadgeActiveText * 0.5f;
-            badgeOutline.effectDistance = new Vector2(1, -1);
+            // Description
+            var descTxt = CreateText(cardGO, description, 14, FontStyle.Normal, ColTextMuted, TextAnchor.UpperLeft);
+            var descLe = descTxt.gameObject.AddComponent<LayoutElement>();
+            descLe.preferredHeight = 52;
+            descLe.flexibleHeight = 1f;
 
-            var badgeTxt = CreateText(badgeGO, $"● ACTIVE ({version})", 12, FontStyle.Bold, BadgeActiveText, TextAnchor.MiddleCenter);
-            FillParent(badgeTxt.gameObject);
+            // Status / version row
+            var statRowGO = new GameObject("StatusRow");
+            statRowGO.transform.SetParent(cardGO.transform, false);
+            statRowGO.AddComponent<LayoutElement>().preferredHeight = 20;
+            var statLayout = statRowGO.AddComponent<HorizontalLayoutGroup>();
+            statLayout.childControlWidth = true;
+            statLayout.childControlHeight = true;
+            statLayout.spacing = 8;
+            statLayout.childAlignment = TextAnchor.MiddleLeft;
+            statLayout.childForceExpandWidth = false;
+            statLayout.childForceExpandHeight = true;
 
-            // 2. Author Subtitle (Size 13)
-            var authGO = new GameObject("AuthorText");
-            authGO.transform.SetParent(cardGO.transform, false);
-            var authRt = authGO.AddComponent<RectTransform>();
-            authRt.anchorMin = new Vector2(0, 1);
-            authRt.anchorMax = new Vector2(1, 1);
-            authRt.pivot = new Vector2(0.5f, 1);
-            authRt.sizeDelta = new Vector2(0, 22);
-            authRt.anchoredPosition = new Vector2(0, -56);
+            Color statusColor = installed ? ColSuccess : ColTextFaint;
 
-            var aTxt = CreateText(authGO, $"Developer: <b>{author}</b>", 13, FontStyle.Normal, TextMutedGold, TextAnchor.MiddleLeft);
-            var aRt = aTxt.GetComponent<RectTransform>();
-            aRt.anchorMin = Vector2.zero;
-            aRt.anchorMax = Vector2.one;
-            aRt.offsetMin = new Vector2(16, 0);
-            aRt.offsetMax = new Vector2(-16, 0);
+            var dotGO = new GameObject("Dot");
+            dotGO.transform.SetParent(statRowGO.transform, false);
+            var dotLe = dotGO.AddComponent<LayoutElement>();
+            dotLe.preferredWidth = 7; dotLe.preferredHeight = 7;
+            var dotImg = dotGO.AddComponent<Image>();
+            dotImg.sprite = GetRoundedSprite(4);
+            dotImg.type = Image.Type.Sliced;
+            dotImg.color = statusColor;
 
-            // 3. Highlighted Features List (Size 14-15, High-Contrast Ivory)
-            var featGO = new GameObject("FeaturesList");
-            featGO.transform.SetParent(cardGO.transform, false);
-            var featRt = featGO.AddComponent<RectTransform>();
-            featRt.anchorMin = new Vector2(0, 1);
-            featRt.anchorMax = new Vector2(1, 1);
-            featRt.pivot = new Vector2(0.5f, 1);
-            featRt.sizeDelta = new Vector2(0, 130);
-            featRt.anchoredPosition = new Vector2(0, -82);
+            var statusTxt = CreateText(statRowGO, installed ? "Installed" : "Not Detected", 13, FontStyle.Bold, statusColor, TextAnchor.MiddleLeft);
+            statusTxt.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
 
-            var fTxt = CreateText(featGO, featureList, 15, FontStyle.Normal, TextParchment, TextAnchor.UpperLeft);
-            fTxt.lineSpacing = 1.25f;
-            var fRt = fTxt.GetComponent<RectTransform>();
-            fRt.anchorMin = Vector2.zero;
-            fRt.anchorMax = Vector2.one;
-            fRt.offsetMin = new Vector2(16, 0);
-            fRt.offsetMax = new Vector2(-16, 0);
+            var verTxt = CreateText(statRowGO, "v" + version, 13, FontStyle.Normal, ColTextFaint, TextAnchor.MiddleRight);
+            verTxt.gameObject.AddComponent<LayoutElement>().preferredWidth = 90;
 
-            // 4. Hotkeys Plaque Box (Size 14, Dark Wood Plaque)
-            var hotkeyBoxGO = new GameObject("HotkeyBox");
-            hotkeyBoxGO.transform.SetParent(cardGO.transform, false);
-            var hkRt = hotkeyBoxGO.AddComponent<RectTransform>();
-            hkRt.anchorMin = new Vector2(0, 1);
-            hkRt.anchorMax = new Vector2(1, 1);
-            hkRt.pivot = new Vector2(0.5f, 1);
-            hkRt.sizeDelta = new Vector2(0, 115);
-            hkRt.anchoredPosition = new Vector2(0, -220);
+            AddDivider(cardGO.transform, 0);
 
-            var hkBg = hotkeyBoxGO.AddComponent<Image>();
-            hkBg.color = PlaqueBg;
-
-            var hkOutline = hotkeyBoxGO.AddComponent<Outline>();
-            hkOutline.effectColor = titleColor * 0.5f;
-            hkOutline.effectDistance = new Vector2(1.5f, -1.5f);
-
-            var hkLabelGO = new GameObject("HkLabel");
-            hkLabelGO.transform.SetParent(hotkeyBoxGO.transform, false);
-            var hklRt = hkLabelGO.AddComponent<RectTransform>();
-            hklRt.anchorMin = new Vector2(0, 1);
-            hklRt.anchorMax = new Vector2(1, 1);
-            hklRt.pivot = new Vector2(0.5f, 1);
-            hklRt.sizeDelta = new Vector2(0, 24);
-            hklRt.anchoredPosition = new Vector2(0, -6);
-            var hklTxt = CreateText(hkLabelGO, "🎮 <b>IN-GAME CONTROLS & SHORTCUTS:</b>", 13, FontStyle.Normal, TextGoldHeading, TextAnchor.MiddleLeft);
-            var hklTxtRt = hklTxt.GetComponent<RectTransform>();
-            hklTxtRt.anchorMin = Vector2.zero;
-            hklTxtRt.anchorMax = Vector2.one;
-            hklTxtRt.offsetMin = new Vector2(14, 0);
-            hklTxtRt.offsetMax = Vector2.zero;
-
-            var hkTxt = CreateText(hotkeyBoxGO, hotkeysSummary, 14, FontStyle.Normal, TextParchment, TextAnchor.UpperLeft);
-            hkTxt.lineSpacing = 1.30f;
-            var hkTxtRt = hkTxt.GetComponent<RectTransform>();
-            hkTxtRt.anchorMin = Vector2.zero;
-            hkTxtRt.anchorMax = Vector2.one;
-            hkTxtRt.offsetMin = new Vector2(14, 8);
-            hkTxtRt.offsetMax = new Vector2(-14, -32);
-
-            // 5. Action Buttons Row (Height: 52px, Prominent & High Contrast)
+            // Action buttons
             var btnRowGO = new GameObject("BtnRow");
             btnRowGO.transform.SetParent(cardGO.transform, false);
-            var brRt = btnRowGO.AddComponent<RectTransform>();
-            brRt.anchorMin = new Vector2(0, 0);
-            brRt.anchorMax = new Vector2(1, 0);
-            brRt.pivot = new Vector2(0.5f, 0);
-            brRt.sizeDelta = new Vector2(0, 52);
-            brRt.anchoredPosition = new Vector2(0, 16);
+            btnRowGO.AddComponent<LayoutElement>().preferredHeight = 42;
+            var btnLayout = btnRowGO.AddComponent<HorizontalLayoutGroup>();
+            btnLayout.childControlWidth = true;
+            btnLayout.childControlHeight = true;
+            btnLayout.spacing = 10;
+            btnLayout.childForceExpandWidth = true;
+            btnLayout.childForceExpandHeight = true;
 
-            // Button 1: Configure / Open Settings (Size 15, Bold)
-            var btnSettingsGO = new GameObject("Btn_Settings");
-            btnSettingsGO.transform.SetParent(btnRowGO.transform, false);
-            var bsRt = btnSettingsGO.AddComponent<RectTransform>();
-            bsRt.anchorMin = new Vector2(0, 0);
-            bsRt.anchorMax = new Vector2(0.64f, 1);
-            bsRt.offsetMin = new Vector2(14, 0);
-            bsRt.offsetMax = new Vector2(-8, 0);
+            var openBtnGO = CreateGhostButton(btnRowGO.transform, openLabel, () => onOpen?.Invoke());
+            openBtnGO.AddComponent<LayoutElement>().flexibleWidth = 1.3f;
 
-            var bsImg = btnSettingsGO.AddComponent<Image>();
-            bsImg.color = ButtonWoodPrimary;
-            var bsOutline = btnSettingsGO.AddComponent<Outline>();
-            bsOutline.effectColor = ButtonWoodBorder;
-            bsOutline.effectDistance = new Vector2(2, -2);
-
-            var bsBtn = btnSettingsGO.AddComponent<Button>();
-            bsBtn.onClick.AddListener(() => openSettingsAction?.Invoke());
-            var bsTxt = CreateText(btnSettingsGO, "⚙️ OPEN MOD SETTINGS", 15, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            FillParent(bsTxt.gameObject);
-
-            // Button 2: GitHub (Size 14, Bold)
-            var btnGitGO = new GameObject("Btn_GitHub");
-            btnGitGO.transform.SetParent(btnRowGO.transform, false);
-            var bgRt = btnGitGO.AddComponent<RectTransform>();
-            bgRt.anchorMin = new Vector2(0.66f, 0);
-            bgRt.anchorMax = new Vector2(1f, 1);
-            bgRt.offsetMin = new Vector2(6, 0);
-            bgRt.offsetMax = new Vector2(-14, 0);
-
-            var bgImg = btnGitGO.AddComponent<Image>();
-            bgImg.color = ButtonWoodDark;
-            var bgOutline = btnGitGO.AddComponent<Outline>();
-            bgOutline.effectColor = TextMutedGold * 0.6f;
-            bgOutline.effectDistance = new Vector2(1.5f, -1.5f);
-
-            var bgBtn = btnGitGO.AddComponent<Button>();
-            bgBtn.onClick.AddListener(() => Application.OpenURL(openGithubUrl));
-            var bgTxt = CreateText(btnGitGO, "🌐 GitHub", 14, FontStyle.Bold, TextMutedGold, TextAnchor.MiddleCenter);
-            FillParent(bgTxt.gameObject);
+            CreateLinkButton(btnRowGO.transform, "GitHub", () => { try { Application.OpenURL(githubUrl); } catch { } });
         }
 
         private static string GetPeerVersion(string fullTypeName, string fallback)
@@ -682,6 +690,21 @@ namespace SailorsCompanion.UI
             }
             catch { }
             return fallback;
+        }
+
+        // Used purely for the card's "Installed / Not Detected" status label - reuses the same
+        // defensive assembly-scan pattern as GetPeerVersion, never throws if the peer isn't loaded.
+        private static bool PeerExists(string fullTypeName)
+        {
+            try
+            {
+                foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    if (asm.GetType(fullTypeName) != null) return true;
+                }
+            }
+            catch { }
+            return false;
         }
 
         private void OpenInventoryMasterSettings()
@@ -734,19 +757,189 @@ namespace SailorsCompanion.UI
             }
         }
 
-        private Text CreateText(GameObject parent, string text, int fontSize, FontStyle style, Color color, TextAnchor alignment)
+        // Collection QoL is still pre-release and being built in parallel; by agreed convention it
+        // will expose CollectionQoL.UI.CanvasCollectionQoLUI.Toggle(). This mirrors the exact
+        // defensive try/catch + assembly-scan pattern used for the other two peer mods above, so if
+        // that type doesn't exist yet (or ends up named slightly differently) this simply no-ops
+        // instead of throwing - the card itself already shows "Not Detected" via PeerExists.
+        private void OpenCollectionQoLSettings()
+        {
+            try
+            {
+                var asmList = AppDomain.CurrentDomain.GetAssemblies();
+                foreach (var asm in asmList)
+                {
+                    var t = asm.GetType("CollectionQoL.UI.CanvasCollectionQoLUI");
+                    if (t != null)
+                    {
+                        var m = t.GetMethod("Toggle", BindingFlags.Public | BindingFlags.Static);
+                        if (m != null)
+                        {
+                            m.Invoke(null, null);
+                            return;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Mods Manager] Failed to open Collection QoL menu: " + ex.Message);
+            }
+        }
+
+        // ---------------- shared chrome / small components (Modern Clean design system) ----------------
+        private GameObject CreateGhostButton(Transform parent, string label, Action onClick)
+        {
+            var go = new GameObject("GhostBtn");
+            go.transform.SetParent(parent, false);
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(8);
+            img.type = Image.Type.Sliced;
+            img.color = ColBorder;
+            var fillImg = AddInsetFill(go, 8, ColPanel2);
+
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = fillImg;
+            var cb = btn.colors;
+            cb.normalColor = ColPanel2;
+            cb.highlightedColor = ColAccentWash;
+            cb.pressedColor = ColRow;
+            btn.colors = cb;
+            btn.onClick.AddListener(() => onClick());
+
+            var txt = CreateText(go, label, 15f, FontStyle.Bold, ColText, TextAnchor.MiddleCenter);
+            FillParent(txt.gameObject);
+            return go;
+        }
+
+        private void CreateLinkButton(Transform parent, string label, Action onClick)
+        {
+            var go = new GameObject("Link");
+            go.transform.SetParent(parent, false);
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(8);
+            img.type = Image.Type.Sliced;
+            img.color = ColBorderSoft;
+            var fillImg = AddInsetFill(go, 8, ColRow);
+
+            var layout = go.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childForceExpandHeight = true;
+
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = fillImg;
+            var cb = btn.colors;
+            cb.normalColor = ColRow;
+            cb.highlightedColor = ColAccentWash;
+            btn.colors = cb;
+            btn.onClick.AddListener(() => onClick());
+
+            var txt = CreateText(go, label, 14f, FontStyle.Bold, ColTextMuted, TextAnchor.MiddleCenter);
+            FillParent(txt.gameObject);
+        }
+
+        private void AddDivider(Transform parent, float marginBottom, RectTransform anchorBelow = null)
+        {
+            if (anchorBelow != null)
+            {
+                var dGO = new GameObject("Divider");
+                dGO.transform.SetParent(parent, false);
+                var dRt = dGO.AddComponent<RectTransform>();
+                dRt.anchorMin = new Vector2(0, 1);
+                dRt.anchorMax = new Vector2(1, 1);
+                dRt.pivot = new Vector2(0.5f, 1);
+                dRt.sizeDelta = new Vector2(0, 1);
+                dRt.anchoredPosition = new Vector2(0, -anchorBelow.sizeDelta.y);
+                var img = dGO.AddComponent<Image>();
+                img.color = ColBorderSoft;
+                return;
+            }
+
+            var go = new GameObject("Divider");
+            go.transform.SetParent(parent, false);
+            go.AddComponent<LayoutElement>().preferredHeight = 1;
+            var im = go.AddComponent<Image>();
+            im.color = ColBorderSoft;
+        }
+
+        // Outline (UnityEngine.UI.Outline) only renders an offset shadow-duplicate of a graphic - it
+        // does NOT draw a stroke around a filled shape's edges, so a "bordered card" that relied on
+        // it would render as a flat, undifferentiated box. This lays a slightly-inset fill Image on
+        // top of the (now border-colored) parent Image, producing a real visible border ring.
+        private Image AddInsetFill(GameObject go, int radius, Color fillColor, float inset = 1.5f)
+        {
+            var fillGO = new GameObject("Fill");
+            fillGO.transform.SetParent(go.transform, false);
+            fillGO.transform.SetAsFirstSibling();
+            var rt = fillGO.AddComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(inset, inset);
+            rt.offsetMax = new Vector2(-inset, -inset);
+            var img = fillGO.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(radius);
+            img.type = Image.Type.Sliced;
+            img.color = fillColor;
+            img.raycastTarget = false;
+            fillGO.AddComponent<LayoutElement>().ignoreLayout = true;
+            return img;
+        }
+
+        // ---------------- rounded-rect sprite generator (9-sliced, cached by radius) ----------------
+        private static readonly Dictionary<int, Sprite> _roundedSpriteCache = new Dictionary<int, Sprite>();
+
+        private static Sprite GetRoundedSprite(int radius)
+        {
+            radius = Mathf.Max(2, radius);
+            if (_roundedSpriteCache.TryGetValue(radius, out var cached) && cached != null) return cached;
+
+            int size = radius * 2 + 4;
+            var tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
+            tex.hideFlags = HideFlags.HideAndDontSave;
+            tex.wrapMode = TextureWrapMode.Clamp;
+            tex.filterMode = FilterMode.Bilinear;
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    bool inCornerX = x < radius || x >= size - radius;
+                    bool inCornerY = y < radius || y >= size - radius;
+                    float alpha = 1f;
+                    if (inCornerX && inCornerY)
+                    {
+                        float cx = x < radius ? radius : size - radius - 1;
+                        float cy = y < radius ? radius : size - radius - 1;
+                        float dist = Mathf.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
+                        alpha = Mathf.Clamp01(radius - dist + 0.5f);
+                    }
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                }
+            }
+            tex.Apply();
+
+            var sprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(radius, radius, radius, radius));
+            sprite.name = "SC_InstalledMods_Rounded_" + radius;
+            _roundedSpriteCache[radius] = sprite;
+            return sprite;
+        }
+
+        private Text CreateText(GameObject parent, string text, float fontSize, FontStyle style, Color color, TextAnchor alignment)
         {
             var go = new GameObject("Text");
             go.transform.SetParent(parent.transform, false);
             var t = go.AddComponent<Text>();
             t.text = text;
             t.font = GetGameFont();
-            t.fontSize = fontSize;
+            t.fontSize = Mathf.RoundToInt(fontSize);
             t.fontStyle = style;
             t.color = color;
             t.alignment = alignment;
             t.raycastTarget = false;
             t.supportRichText = true;
+            t.horizontalOverflow = HorizontalWrapMode.Wrap;
             return t;
         }
 
@@ -758,6 +951,18 @@ namespace SailorsCompanion.UI
             rt.offsetMin = Vector2.zero;
             rt.offsetMax = Vector2.zero;
         }
+
+        private static void SetLayerRecursively(GameObject obj, int newLayer)
+        {
+            if (obj == null) return;
+            obj.layer = newLayer;
+            for (int i = 0; i < obj.transform.childCount; i++)
+            {
+                var child = obj.transform.GetChild(i);
+                if (child != null) SetLayerRecursively(child.gameObject, newLayer);
+            }
+        }
+        #endregion [END] BUILD CANVAS UI
     }
     // ============================================================================
     // [END] CANVAS INSTALLED MODS MANAGER UI

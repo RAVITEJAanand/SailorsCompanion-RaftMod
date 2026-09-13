@@ -16,6 +16,9 @@ namespace SailorsCompanion.Patches
     {
         private static PropertyInfo _fcWindowProp;
         private static PropertyInfo _imWindowProp;
+        // Collection QoL is a menu too - without it here the camera keeps turning under its open
+        // window, and closing a Sailor's menu while it is up re-locks the cursor out from under it.
+        private static PropertyInfo _cqWindowProp;
         private static bool _typesResolved = false;
 
         public static bool ShouldForceCursorFree()
@@ -50,6 +53,15 @@ namespace SailorsCompanion.Patches
                 catch { }
             }
 
+            if (_cqWindowProp != null)
+            {
+                try
+                {
+                    if ((bool)_cqWindowProp.GetValue(null)) return true;
+                }
+                catch { }
+            }
+
             return false;
         }
 
@@ -76,14 +88,25 @@ namespace SailorsCompanion.Patches
                             _imWindowProp = imType.GetProperty("IsWindowOpen", BindingFlags.Public | BindingFlags.Static);
                         }
                     }
-                }
 
-                if (_fcWindowProp != null && _imWindowProp != null)
-                {
-                    _typesResolved = true;
+                    if (_cqWindowProp == null)
+                    {
+                        var cqType = asm.GetType("CollectionQoL.UI.CanvasCollectionQoLUI");
+                        if (cqType != null)
+                        {
+                            _cqWindowProp = cqType.GetProperty("IsWindowOpen", BindingFlags.Public | BindingFlags.Static);
+                        }
+                    }
                 }
             }
             catch { }
+            finally
+            {
+                // Resolve once regardless of how many peers were found: this runs from
+                // MouseLook.Update every frame, and only setting the flag once every peer resolved
+                // meant an uninstalled peer caused a full AppDomain assembly scan forever.
+                _typesResolved = true;
+            }
         }
     }
 

@@ -146,7 +146,7 @@ namespace SailorsCompanion
             // Bind Advanced Hotkeys (Default: OFF, for pro users)
             EnableHotkeys = Config.Bind("General.Hotkeys", "EnableHotkeys", false, "Enable direct gameplay hotkeys for quick actions (Advanced Users).");
             KeySailToggle = Config.Bind("General.Hotkeys", "KeySailToggle", KeyCode.F4, "Hotkey to toggle all sails open or closed.");
-            KeyEngineToggle = Config.Bind("General.Hotkeys", "KeyEngineToggle", KeyCode.F3, "Hotkey to toggle all engines on or off.");
+            KeyEngineToggle = Config.Bind("General.Hotkeys", "KeyEngineToggle", KeyCode.F11, "Hotkey to toggle all engines on or off. F11 rather than F3, which is Collection QoL's menu key.");
             KeyMagnetToggle = Config.Bind("General.Hotkeys", "KeyMagnetToggle", KeyCode.F7, "Hotkey to activate ocean magnetic debris pull.");
             KeyScannerPulse = Config.Bind("General.Hotkeys", "KeyScannerPulse", KeyCode.F10, "Hotkey to trigger a 10s island pulse scan.");
 

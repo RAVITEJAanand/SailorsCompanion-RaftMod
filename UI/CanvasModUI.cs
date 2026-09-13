@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,6 +10,22 @@ using SailorsCompanion.Patches;
 
 namespace SailorsCompanion.UI
 {
+    #region [START] CANVAS SAILOR'S COMPANION SETTINGS UI
+    // ============================================================================
+    // [START] CANVAS SAILOR'S COMPANION SETTINGS UI
+    // Purpose: "Modern Clean" in-game settings canvas for Sailor's Companion - the same dark,
+    //          flat, card-based design system already shared by Farmer's Companion, Inventory
+    //          Master and Collection QoL. Replaces the original wooden-plank theme.
+    //
+    //          Structure: a left rail of 8 screens instead of the old 5 top tabs, each screen
+    //          scrolling independently, so the window no longer has to fit everything in one
+    //          fixed-height page. Survival Mode locks the three sandbox screens behind a lock
+    //          card exactly as the wooden UI did.
+    //
+    //          Everything reads and writes the real ConfigEntry<T> objects on Plugin, so a
+    //          change made here is saved to the .cfg and picked up by the feature managers on
+    //          their next frame - there is no private copy of any setting in this file.
+    // ============================================================================
     public class CanvasModUI : MonoBehaviour
     {
         public static CanvasModUI Instance { get; private set; }
@@ -16,149 +34,137 @@ namespace SailorsCompanion.UI
         private Canvas _canvas;
         private CanvasScaler _scaler;
         private GraphicRaycaster _raycaster;
-
-        // UI Panels
+        private GameObject _rootGO;
         private GameObject _modWindowGO;
+        private GameObject _screensHost;
+        private Font _gameFont;
 
-        // Tab Panels
-        private GameObject[] _tabPages = new GameObject[5];
-        private Text[] _tabButtonTexts = new Text[5];
-        private Image[] _tabButtonImages = new Image[5];
-        private int _activeTab = 0;
+        // CursorPatchHelper, FlyController and the Mods Manager all read this.
+        public static bool IsWindowOpen => Instance != null && Instance._rootGO != null && Instance._rootGO.activeSelf;
 
-        // Dynamic Text References
-        private Text _navStatusText;
-        private Text _teleHeadingText;
-        private Text _teleRaftText;
-        private Text _teleSharkText;
-        private Text _teleCoordsText;
-        private Text _teleNotifText;
-        private List<GameObject> _navStyleBtns = new List<GameObject>();
+        #region [START] MODERN CLEAN PALETTE (shared across the mod family - do not change values)
+        private static readonly Color ColBg           = new Color32(0x0F, 0x15, 0x18, 0xFF);
+        private static readonly Color ColPanel        = new Color32(0x16, 0x1F, 0x24, 0xFF);
+        private static readonly Color ColPanel2       = new Color32(0x1C, 0x27, 0x2D, 0xFF);
+        private static readonly Color ColRow          = new Color32(0x1A, 0x24, 0x2A, 0xFF);
+        private static readonly Color ColBorder       = new Color32(0x26, 0x33, 0x3B, 0xFF);
+        private static readonly Color ColBorderSoft   = new Color32(0x1E, 0x29, 0x30, 0xFF);
+        private static readonly Color ColText         = new Color32(0xEA, 0xF3, 0xF1, 0xFF);
+        private static readonly Color ColTextMuted    = new Color32(0x8F, 0xA3, 0xA9, 0xFF);
+        private static readonly Color ColTextFaint    = new Color32(0x5E, 0x73, 0x79, 0xFF);
+        private static readonly Color ColAccent       = new Color32(0x2F, 0xC7, 0xB0, 0xFF);
+        private static readonly Color ColAccentStrong = new Color32(0x20, 0xA7, 0x94, 0xFF);
+        private static readonly Color ColAccentWash   = new Color(0x2F / 255f, 0xC7 / 255f, 0xB0 / 255f, 0.16f);
+        private static readonly Color ColGold         = new Color32(0xE8, 0xB9, 0x4A, 0xFF);
+        private static readonly Color ColGoldWash     = new Color(0xE8 / 255f, 0xB9 / 255f, 0x4A / 255f, 0.16f);
+        private static readonly Color ColSuccess      = new Color32(0x5F, 0xBE, 0x7A, 0xFF);
+        private static readonly Color ColSuccessWash  = new Color(0x5F / 255f, 0xBE / 255f, 0x7A / 255f, 0.16f);
+        private static readonly Color ColDanger       = new Color32(0xE0, 0x5A, 0x5A, 0xFF);
+        private static readonly Color ColDangerWash   = new Color(0xE0 / 255f, 0x5A / 255f, 0x5A / 255f, 0.16f);
+        private static readonly Color ColOnAccentTxt  = new Color32(0x06, 0x23, 0x1F, 0xFF);
+        #endregion [END] MODERN CLEAN PALETTE
+
+        private const int SCREEN_COUNT = 8;
+        // 0 Overview | 1 Survival & QoL | 2 Navigation | 3 Cheats | 4 Research | 5 Spawner | 6 Controls | 7 Updates
+        private static readonly string[] ScreenLabels =
+        {
+            "Overview", "Survival & QoL", "Navigation", "Cheats & Sandbox",
+            "Research", "Item Spawner", "Controls", "Updates"
+        };
+        private static readonly string[] ScreenMonograms = { "O", "S", "N", "C", "R", "I", "K", "U" };
+
+        private readonly GameObject[] _screens    = new GameObject[SCREEN_COUNT];
+        private readonly Button[]     _railButtons= new Button[SCREEN_COUNT];
+        private readonly Image[]      _railBg     = new Image[SCREEN_COUNT];
+        private readonly Text[]       _railTexts  = new Text[SCREEN_COUNT];
+        private readonly Image[]      _railIcons  = new Image[SCREEN_COUNT];
+        private readonly GameObject[] _railBars   = new GameObject[SCREEN_COUNT];
+        private int _activeScreen = 0;
+
+        // Screens whose content depends on Survival/Creative mode and so must be rebuilt when it flips.
+        private static readonly int[] ModeDependentScreens = { 1, 3, 4, 5 };
+
+        // ---------------- live widget references ----------------
+        private Text _footerVerText;
+        private Text _updateBadgeText;
+        private Image _updateBadgeImg;
+        private Text _railStatusText;
+
+        private Image _modeSurvivalImg, _modeCreativeImg;
+        private Text  _modeSurvivalTxt, _modeCreativeTxt;
+
+        private static readonly string[] ProfileKeys   = { "VanillaPlus", "BalancedOP", "EasyMode", "Custom" };
+        private static readonly string[] ProfileLabels = { "Vanilla+", "Balanced OP", "Easy Mode", "Custom" };
+        private readonly Image[] _profileBtnImgs  = new Image[4];
+        private readonly Text[]  _profileBtnTexts = new Text[4];
+
+        private Text _ovStatusSurvival, _ovStatusNav, _ovStatusSandbox;
+        private Text _ovModeText, _ovProfileText;
+
+        private Text _teleHeadingText, _teleRaftText, _teleSharkText, _teleCoordsText;
+        private Text _navSailModeBtnText, _navRecallBtnText, _navScannerBtnText, _qolMagnetBtnText;
+        private readonly Image[] _navStyleImgs = new Image[4];
+        private readonly Text[]  _navStyleTexts = new Text[4];
+
         private Text _researchStatusText;
+        private Text _qolTooltipText;
 
-        // Item Spawner
         private InputField _itemSearchInput;
         private Transform _itemScrollContent;
         private List<Item_Base> _allItems;
 
-        // Font
-        private Font _gameFont;
+        private float _lastTelemetryUpdate;
+        private static Raft _cachedNavRaft;
+        private static AI_StateMachine_Shark _cachedNavShark;
+        private static Camera _cachedNavCamera;
 
-        // Mode Switcher Controls
-        private Transform _contentAreaTransform;
-        private Image _btnModeSurvivalImg;
-        private Image _btnModeCreativeImg;
-        private Text _btnModeSurvivalTxt;
-        private Text _btnModeCreativeTxt;
-        private Text _navRecallBtnText;
-        private Text _navScannerBtnText;
-        private Text _navSailModeBtnText;
-        private Text _qolMagnetBtnText;
-
-        #region [START] RAFT NATIVE WOODEN PALETTE
-        // ============================================================================
-        // [START] RAFT NATIVE WOODEN PALETTE (Matching Raft's In-Game Settings Aesthetics)
-        // ============================================================================
-        private static readonly Color WoodWindowBg        = new Color(0.26f, 0.16f, 0.09f, 0.98f); // Deep Teak Plank #422917
-        private static readonly Color WoodWindowBorder    = new Color(0.18f, 0.10f, 0.05f, 1.00f); // Dark Outer Timber #2E1A0D
-        private static readonly Color WoodTitleBar        = new Color(0.22f, 0.13f, 0.07f, 1.00f); // Dark Wood Header #382112
-        private static readonly Color WoodTrimAccent      = new Color(0.78f, 0.65f, 0.44f, 1.00f); // Parchment Golden Wood Trim #C7A670
-
-        // Tab Colors (Parchment Wood)
-        private static readonly Color TabActiveBg         = new Color(0.86f, 0.72f, 0.48f, 1.00f); // Bright Warm Birch Parchment #DDB87A
-        private static readonly Color TabActiveText       = new Color(0.18f, 0.10f, 0.05f, 1.00f); // Deep Carved Wood Font #2E1A0D
-        private static readonly Color TabInactiveBg       = new Color(0.20f, 0.12f, 0.06f, 0.96f); // Dark Inactive Wood #331F0F
-        private static readonly Color TabInactiveText     = new Color(0.82f, 0.72f, 0.58f, 1.00f); // Parchment Beige #D1B894
-
-        // Row Planks (Alternating Wooden Plank Strips)
-        private static readonly Color WoodPlankEven       = new Color(0.30f, 0.18f, 0.11f, 0.95f); // Plank A #4D2E1C
-        private static readonly Color WoodPlankOdd        = new Color(0.34f, 0.21f, 0.12f, 0.95f); // Plank B #57361F
-        private static readonly Color WoodRowBorder       = new Color(0.20f, 0.11f, 0.06f, 0.90f); // Plank Gap Seam #331C0F
-
-        // Text Colors
-        private static readonly Color TextWhite           = new Color(1.00f, 1.00f, 1.00f, 1.00f); // Pure Crisp White
-        private static readonly Color TextParchmentLight  = new Color(0.95f, 0.90f, 0.80f, 1.00f); // Warm Ivory / Bone #F2E6CC
-        private static readonly Color TextParchmentWarm   = new Color(0.86f, 0.77f, 0.62f, 1.00f); // Warm Birch #DBC49E
-        private static readonly Color TextGoldHeading     = new Color(0.96f, 0.78f, 0.38f, 1.00f); // Gold Stencil #F5C761
-        private static readonly Color TextMuted           = new Color(0.68f, 0.58f, 0.45f, 1.00f); // Muted Wood #AD9473
-
-        // Checkboxes & Buttons
-        private static readonly Color CheckboxWoodBg      = new Color(0.18f, 0.10f, 0.05f, 0.98f); // Recessed Box #2E1A0D
-        private static readonly Color CheckmarkGold       = new Color(0.92f, 0.78f, 0.52f, 1.00f); // Raft Golden Wood Check #EBC785
-        private static readonly Color WoodButtonNormal    = new Color(0.38f, 0.23f, 0.14f, 0.96f); // Wood Plank Button #613B24
-        private static readonly Color WoodButtonHover     = new Color(0.48f, 0.30f, 0.18f, 1.00f); // Lighter Wood Hover #7A4D2E
-        private static readonly Color WoodButtonCrimson   = new Color(0.75f, 0.18f, 0.15f, 0.98f); // Warm Crimson Accent
-        private static readonly Color ActionTileBg        = new Color(0.24f, 0.14f, 0.07f, 0.96f); // Deep Carved Timber Action Tile
-        private static readonly Color ActionTileHover     = new Color(0.38f, 0.24f, 0.13f, 1.00f); // Highlighted Wood Plank
-        private static readonly Color ActionTileBorder    = new Color(0.72f, 0.56f, 0.32f, 0.70f); // Parchment Gold Border Trim
-        // ============================================================================
-        // [END] RAFT NATIVE WOODEN PALETTE
-        // ============================================================================
-        #endregion
-
-        // Preset Profile Controls & Tooltip
-        private static readonly string[] ProfileKeys = { "VanillaPlus", "BalancedOP", "EasyMode", "Custom" };
-        private static readonly string[] ProfileNames = { "🌿 Vanilla+", "⚖️ Balanced OP", "⚡ Easy Mode", "⚙️ Custom" };
-        private static readonly string[] ProfileTooltips = {
-            "🌿 <b>Vanilla+ Profile:</b> Authentic vanilla balance (1.0x weapon dmg, 40 stack, normal speeds, craft-from-storage & creature HP bars).",
-            "⚖️ <b>Balanced OP Profile:</b> 1.5x weapon dmg, 100 stack, 1.5x crop/hook, 1.2x speeds, all QoL automations enabled.",
-            "⚡ <b>Easy Mode Profile:</b> 2.5x weapon dmg, 200 stack, 2.0x crop/hook, 1.5x speeds for relaxed easy gameplay.",
-            "⚙️ <b>Custom Profile:</b> User-defined fine-tuned configuration."
-        };
-        private static readonly Color ProfileActiveColor = TabActiveBg;
-        private static readonly Color ProfileInactiveColor = WoodButtonNormal;
-        private Image[] _profileButtonImgs = new Image[4];
-        private Text[] _profileButtonTexts = new Text[4];
-        private Text _qolTooltipText;
-        private int _toggleItemCounter = 0;
-
-        // UI Scaling Constant (1.3x Proportional Scale)
-        public const float MenuUiScale = 1.0f;
-
-        // Update Banner
-        private GameObject _updateBannerGO;
-        private Text _updateBannerText;
-
-        #region [START] LIFECYCLE & AWAKE INITIALIZATION
-        // ============================================================================
-        // [START] LIFECYCLE & AWAKE INITIALIZATION
-        // ============================================================================
+        #region [START] UNITY LIFECYCLE
+        #region [START] AWAKE
         private void Awake()
         {
+            Instance = this;
             try
             {
-                Instance = this;
-                gameObject.hideFlags = HideFlags.HideAndDontSave;
-                DontDestroyOnLoad(gameObject);
                 GetGameFont();
                 BuildCanvasUI();
-                Debug.Log("[Sailor's Companion] CanvasModUI initialized successfully!");
+                StartCoroutine(PollUpdateStatus());
             }
             catch (Exception ex)
             {
-                Debug.LogError("[Sailor's Companion] Error in CanvasModUI.Awake: " + ex);
+                Debug.LogError("[Sailor's Companion] CanvasModUI.Awake() FAILED: " + ex);
             }
         }
+        #endregion [END] AWAKE
 
-        private static LayoutElement EnsureLayout(GameObject go, float prefWidth, float prefHeight, bool flexibleWidth = true)
+        #region [START] GET GAME FONT
+        public Font GetGameFont()
         {
-            if (go == null) return null;
-            var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
-            if (prefWidth > 0) le.preferredWidth = prefWidth;
-            if (prefHeight > 0) le.preferredHeight = prefHeight;
-            le.flexibleWidth = flexibleWidth ? 1f : 0f;
-            return le;
-        }
+            if (_gameFont != null) return _gameFont;
 
-        private static void FillParent(GameObject go)
-        {
-            var rt = go.GetComponent<RectTransform>() ?? go.AddComponent<RectTransform>();
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = Vector2.zero;
-        }
+            try
+            {
+                _gameFont = Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI Semibold", "Segoe UI", "Arial", "Tahoma" }, 24);
+            }
+            catch { }
 
+            if (_gameFont != null) return _gameFont;
+
+            var texts = Resources.FindObjectsOfTypeAll<Text>();
+            foreach (var t in texts)
+            {
+                if (t != null && t.font != null)
+                {
+                    _gameFont = t.font;
+                    return _gameFont;
+                }
+            }
+
+            _gameFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            return _gameFont;
+        }
+        #endregion [END] GET GAME FONT
+
+        #region [START] ENSURE EVENT SYSTEM
         private void EnsureEventSystem()
         {
             var es = UnityEngine.EventSystems.EventSystem.current;
@@ -188,44 +194,230 @@ namespace SailorsCompanion.UI
                 es.SetSelectedGameObject(null);
             }
         }
+        #endregion [END] ENSURE EVENT SYSTEM
 
-        public Font GetGameFont()
+        #region [START] UPDATE
+        private void Update()
         {
-            if (_gameFont != null) return _gameFont;
+            try
+            {
+                if (_canvasGO == null || _rootGO == null)
+                {
+                    BuildCanvasUI();
+                }
+
+                KeyCode keyMenu = Plugin.KeyMenu != null ? Plugin.KeyMenu.Value : KeyCode.F5;
+                if (InputHelper.WasKeyPressed(keyMenu) || InputHelper.WasKeyPressed(KeyCode.Insert))
+                {
+                    ToggleModWindow();
+                }
+                if (InputHelper.WasKeyPressed(KeyCode.Escape) && IsWindowOpen)
+                {
+                    ToggleModWindow();
+                }
+
+                KeyCode keyHud = Plugin.KeyHUD != null ? Plugin.KeyHUD.Value : KeyCode.F6;
+                if (InputHelper.WasKeyPressed(keyHud))
+                {
+                    if (InputHelper.IsKeyHeld(KeyCode.LeftShift) || InputHelper.IsKeyHeld(KeyCode.RightShift))
+                    {
+                        HUDOverlay.CycleStyle();
+                        UpdateNavStyleButtonVisuals();
+                    }
+                    else if (Plugin.EnableHUD != null)
+                    {
+                        Plugin.EnableHUD.Value = !Plugin.EnableHUD.Value;
+                    }
+                }
+
+                KeyCode keyFly = Plugin.KeyFly != null ? Plugin.KeyFly.Value : KeyCode.F;
+                if (InputHelper.WasKeyPressed(keyFly))
+                {
+                    if (Plugin.IsSurvivalMode)
+                    {
+                        TeleportManager.SetNotification("Fly / NoClip is locked in Survival Mode. Switch to Creative Mode in the [" + keyMenu + "] menu.");
+                    }
+                    else if (Plugin.EnableFlyMode != null)
+                    {
+                        Plugin.EnableFlyMode.Value = !Plugin.EnableFlyMode.Value;
+                        TeleportManager.SetNotification(Plugin.EnableFlyMode.Value ? "Fly / NoClip: ON" : "Fly / NoClip: OFF");
+                    }
+                }
+
+                // Direct gameplay keys, opt-in (Plugin.EnableHotkeys defaults to false).
+                if (Plugin.EnableHotkeys != null && Plugin.EnableHotkeys.Value)
+                {
+                    KeyCode keySails = Plugin.KeySailToggle != null ? Plugin.KeySailToggle.Value : KeyCode.F4;
+                    if (InputHelper.WasKeyPressed(keySails)) BoatController.ToggleAllSails();
+
+                    KeyCode keyEngines = Plugin.KeyEngineToggle != null ? Plugin.KeyEngineToggle.Value : KeyCode.F11;
+                    if (InputHelper.WasKeyPressed(keyEngines)) BoatController.ToggleAllEngines();
+
+                    KeyCode keyMagnet = Plugin.KeyMagnetToggle != null ? Plugin.KeyMagnetToggle.Value : KeyCode.F7;
+                    if (InputHelper.WasKeyPressed(keyMagnet)) MagneticCollector.ToggleMagnet();
+
+                    KeyCode keyScan = Plugin.KeyScannerPulse != null ? Plugin.KeyScannerPulse.Value : KeyCode.F10;
+                    if (InputHelper.WasKeyPressed(keyScan)) ItemDetector.TriggerPulseScan();
+                }
+
+                KeyCode keyTeleRaft = Plugin.KeyTeleportToRaft != null ? Plugin.KeyTeleportToRaft.Value : KeyCode.F8;
+                if (InputHelper.WasKeyPressed(keyTeleRaft)) TeleportManager.TeleportPlayerToRaft();
+
+                KeyCode keySummon = Plugin.KeyTeleportRaftToPlayer != null ? Plugin.KeyTeleportRaftToPlayer.Value : KeyCode.F9;
+                if (InputHelper.WasKeyPressed(keySummon)) TeleportManager.TeleportRaftToPlayer();
+
+                if (IsWindowOpen)
+                {
+                    // Raft re-asserts cursor state every frame; without re-applying it here the
+                    // pointer disappears mid-click while the menu is up.
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                    try
+                    {
+                        Helper.CursorVisible = true;
+                        Helper.SetCursorLockState(CursorLockMode.None);
+                    }
+                    catch { }
+
+                    // Live telemetry, throttled to 5 Hz - rebuilding these strings every frame
+                    // is pure allocation churn for numbers a player cannot read that fast.
+                    if (_activeScreen == 2 && Time.unscaledTime - _lastTelemetryUpdate > 0.2f)
+                    {
+                        _lastTelemetryUpdate = Time.unscaledTime;
+                        RefreshTelemetry();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Sailor's Companion] Error in CanvasModUI.Update: " + ex.Message);
+            }
+        }
+        #endregion [END] UPDATE
+
+        #region [START] TOGGLE MOD WINDOW
+        public void ToggleModWindow()
+        {
+            if (_rootGO == null) BuildCanvasUI();
+            if (_rootGO == null) return;
+
+            if (_rootGO.activeSelf) CloseWindow();
+            else OpenWindow();
+        }
+        #endregion [END] TOGGLE MOD WINDOW
+
+        #region [START] OPEN WINDOW
+        private void OpenWindow()
+        {
+            EnsureEventSystem();
+            if (_raycaster != null && !_raycaster.enabled) _raycaster.enabled = true;
+            _rootGO.SetActive(true);
+
+            // Raft drives input through Unity's New Input System: without switching to the "UI"
+            // action map the menu's buttons never reliably receive clicks.
+            try
+            {
+                var cic = CustomInputConfig.Instance;
+                if (cic != null)
+                {
+                    cic.EnableInput();
+                    cic.SwitchCurrentActionMap("UI");
+                }
+            }
+            catch { }
+
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            try { Helper.SetCursorVisibleAndLockState(true, CursorLockMode.None); }
+            catch { }
+
+            // Marks a menu as active so the game stops raycasting world interactions underneath -
+            // without it you place blocks and hit things through the open menu.
+            try
+            {
+                if (CanvasHelper.ActiveMenu == MenuType.None) CanvasHelper.ActiveMenu = MenuType.Cheat;
+            }
+            catch { }
+
+            RefreshUpdateBadge();
+            RefreshOverview();
+            RefreshTelemetry();
+            SelectScreen(_activeScreen);
+
+            // Unity never computes layout for a hierarchy built while inactive, and does not
+            // recalculate it later just because the object became active. The whole window is
+            // built once behind an inactive root, so force one rebuild on every open.
+            if (_modWindowGO != null)
+            {
+                Canvas.ForceUpdateCanvases();
+                LayoutRebuilder.ForceRebuildLayoutImmediate(_modWindowGO.GetComponent<RectTransform>());
+            }
+        }
+        #endregion [END] OPEN WINDOW
+
+        #region [START] CLOSE WINDOW
+        private void CloseWindow()
+        {
+            _rootGO.SetActive(false);
+
+            // A sibling mod's menu may still be open behind this one - re-locking the cursor then
+            // would leave that menu unusable. ShouldForceCursorFree() already knows about every peer.
+            bool peerOpen = false;
+            try { peerOpen = CursorPatchHelper.ShouldForceCursorFree(); }
+            catch { }
 
             try
             {
-                _gameFont = Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI Semibold", "Segoe UI", "Arial", "Tahoma" }, 24);
-            }
-            catch {}
-            if (_gameFont != null) return _gameFont;
-
-            var texts = Resources.FindObjectsOfTypeAll<Text>();
-            foreach (var t in texts)
-            {
-                if (t != null && t.font != null)
+                if (CanvasHelper.ActiveMenu == MenuType.Cheat && !peerOpen)
                 {
-                    _gameFont = t.font;
-                    return _gameFont;
+                    CanvasHelper.ActiveMenu = MenuType.None;
                 }
             }
+            catch { }
 
-            var fonts = Resources.FindObjectsOfTypeAll<Font>();
-            foreach (var f in fonts)
+            if (peerOpen)
             {
-                if (f != null)
-                {
-                    _gameFont = f;
-                    return _gameFont;
-                }
+                // Leave the cursor free for whichever menu is still up.
+                return;
             }
 
-            return null;
+            var p = PlayerHelper.GetLocalPlayer();
+            bool inGame = p != null;
+
+            // Only gameplay has a "Player" action map to return to - switching to it from the main
+            // menu leaves the home screen's own buttons unable to receive clicks.
+            try
+            {
+                var cic = CustomInputConfig.Instance;
+                if (cic != null) cic.SwitchCurrentActionMap(inGame ? "Player" : "UI");
+            }
+            catch { }
+
+            if (inGame)
+            {
+                try { Helper.SetCursorVisibleAndLockState(false, CursorLockMode.Locked); }
+                catch
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+                }
+            }
+            else
+            {
+                try { Helper.SetCursorVisibleAndLockState(true, CursorLockMode.None); }
+                catch { }
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
         }
+        #endregion [END] CLOSE WINDOW
+        #endregion [END] UNITY LIFECYCLE
 
-        public void BuildCanvasUI()
+        #region [START] CANVAS CONSTRUCTION
+        #region [START] BUILD CANVAS UI
+        private void BuildCanvasUI()
         {
-            GetGameFont();
+            if (_canvasGO != null && _rootGO != null) return;
 
             if (_canvasGO == null)
             {
@@ -237,161 +429,373 @@ namespace SailorsCompanion.UI
                 _canvas = _canvasGO.AddComponent<Canvas>();
                 _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 _canvas.overrideSorting = true;
-                _canvas.sortingOrder = 32000;
+                _canvas.sortingOrder = 33000; // top-most, matches the sibling mods' menu layer
 
                 _scaler = _canvasGO.AddComponent<CanvasScaler>();
                 _scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 _scaler.referenceResolution = new Vector2(1920, 1080);
                 _scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
                 _scaler.matchWidthOrHeight = 0.5f;
-                _scaler.dynamicPixelsPerUnit = MenuUiScale;
 
                 _raycaster = _canvasGO.AddComponent<GraphicRaycaster>();
             }
 
-            if (_modWindowGO == null)
+            if (_rootGO == null)
             {
-                BuildModWindow();
-                _modWindowGO.SetActive(false);
+                BuildWindow();
+                SetLayerRecursively(_canvasGO, LayerMask.NameToLayer("UI") >= 0 ? LayerMask.NameToLayer("UI") : 5);
+                _rootGO.SetActive(false);
             }
-
-            Debug.Log("[Sailor's Companion] BuildCanvasUI successfully built persistent canvas & mod window!");
         }
-        // ============================================================================
-        // [END] LIFECYCLE & AWAKE INITIALIZATION
-        // ============================================================================
-        #endregion
+        #endregion [END] BUILD CANVAS UI
 
-        #region [START] MOD WINDOW FRAME & TABS CONTROLLER
-        // ============================================================================
-        // [START] MOD WINDOW FRAME & TABS CONTROLLER
-        // ============================================================================
-        private void BuildModWindow()
+        #region [START] BUILD WINDOW
+        private void BuildWindow()
         {
-            _modWindowGO = new GameObject("Window_ModMenu");
-            _modWindowGO.transform.SetParent(_canvasGO.transform, false);
+            _rootGO = new GameObject("Root_SailorsCompanion");
+            _rootGO.transform.SetParent(_canvasGO.transform, false);
+            var rootRt = _rootGO.AddComponent<RectTransform>();
+            rootRt.anchorMin = Vector2.zero;
+            rootRt.anchorMax = Vector2.one;
+            rootRt.offsetMin = Vector2.zero;
+            rootRt.offsetMax = Vector2.zero;
 
+            var dimmerGO = new GameObject("Dimmer");
+            dimmerGO.transform.SetParent(_rootGO.transform, false);
+            var dimmerRt = dimmerGO.AddComponent<RectTransform>();
+            dimmerRt.anchorMin = Vector2.zero;
+            dimmerRt.anchorMax = Vector2.one;
+            dimmerRt.offsetMin = Vector2.zero;
+            dimmerRt.offsetMax = Vector2.zero;
+            var dimmerImg = dimmerGO.AddComponent<Image>();
+            dimmerImg.color = new Color(0f, 0f, 0f, 0.6f);
+            dimmerImg.raycastTarget = false;
+
+            _modWindowGO = new GameObject("SailorsCompanion_Window");
+            _modWindowGO.transform.SetParent(_rootGO.transform, false);
             var winRt = _modWindowGO.AddComponent<RectTransform>();
             winRt.anchorMin = new Vector2(0.5f, 0.5f);
             winRt.anchorMax = new Vector2(0.5f, 0.5f);
             winRt.pivot = new Vector2(0.5f, 0.5f);
+            winRt.sizeDelta = new Vector2(1320, 760);
             winRt.anchoredPosition = Vector2.zero;
-            winRt.sizeDelta = new Vector2(1280, 760);
-            winRt.localScale = new Vector3(MenuUiScale, MenuUiScale, 1.0f);
 
             var winImg = _modWindowGO.AddComponent<Image>();
-            winImg.color = WoodWindowBg;
+            winImg.sprite = GetRoundedSprite(18);
+            winImg.type = Image.Type.Sliced;
+            winImg.color = ColBorder;
+            AddInsetFill(_modWindowGO, 18, ColPanel);
 
-            // Outer Timber Border (recreating Raft rustic wooden frame)
-            var outerBorder = CreateBox(_modWindowGO.transform, "WoodFrameBorder", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, WoodWindowBorder);
-            var obRt = outerBorder.GetComponent<RectTransform>();
-            obRt.offsetMin = new Vector2(-4, -4);
-            obRt.offsetMax = new Vector2(4, 4);
-            outerBorder.transform.SetAsFirstSibling();
+            var railGO = BuildRail();
+            railGO.transform.SetParent(_modWindowGO.transform, false);
+            var railRt = railGO.GetComponent<RectTransform>();
+            railRt.anchorMin = new Vector2(0, 0);
+            railRt.anchorMax = new Vector2(0, 1);
+            railRt.pivot = new Vector2(0, 0.5f);
+            railRt.sizeDelta = new Vector2(248, 0);
+            railRt.anchoredPosition = Vector2.zero;
 
-            // Title Bar
-            var titleBar = CreateBox(_modWindowGO.transform, "TitleBar", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 52), WoodTitleBar);
-            
-            // Wooden Trim Line under title
-            CreateBox(titleBar.transform, "TitleAccent", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(0, 3), WoodTrimAccent);
+            var contentGO = new GameObject("Content");
+            contentGO.transform.SetParent(_modWindowGO.transform, false);
+            var contentRt = contentGO.AddComponent<RectTransform>();
+            contentRt.anchorMin = new Vector2(0, 0);
+            contentRt.anchorMax = new Vector2(1, 1);
+            contentRt.offsetMin = new Vector2(248, 0);
+            contentRt.offsetMax = Vector2.zero;
 
-            var titleText = CreateText(titleBar.transform, "TitleText", $"⚓ <color=#F5C761><b>SAILOR'S COMPANION</b></color> <size=13><color=#C7A670>v{PluginInfo.PLUGIN_VERSION}</color></size> — <size=13><color=#E6CEAC>Quality of Life & Survival Utilities</color></size>", 18, FontStyle.Bold, TextParchmentLight, TextAnchor.MiddleLeft);
-            titleText.rectTransform.offsetMin = new Vector2(18, 0);
-            titleText.rectTransform.offsetMax = new Vector2(-420, 0);
+            BuildFooter(contentGO);
 
-            // Mode Switcher in title bar: [ 🟢 Survival Mode ] [ ⚡ Creative ]
-            var btnSurvGO = CreateButton(titleBar.transform, "Btn_Mode_Survival", "🟢 Survival Mode", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-280, 0), new Vector2(128, 30), () => SetModMode("Survival"), new Color(0.14f, 0.50f, 0.25f, 0.95f), TextParchmentLight, 12);
-            _btnModeSurvivalImg = btnSurvGO.GetComponent<Image>();
-            _btnModeSurvivalTxt = btnSurvGO.GetComponentInChildren<Text>();
+            _screensHost = new GameObject("Screens");
+            _screensHost.transform.SetParent(contentGO.transform, false);
+            var screensRt = _screensHost.AddComponent<RectTransform>();
+            screensRt.anchorMin = Vector2.zero;
+            screensRt.anchorMax = Vector2.one;
+            screensRt.offsetMin = new Vector2(0, 52);
+            screensRt.offsetMax = Vector2.zero;
 
-            var btnCreatGO = CreateButton(titleBar.transform, "Btn_Mode_Creative", "⚡ Creative", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-155, 0), new Vector2(115, 30), () => SetModMode("Creative"), WoodButtonNormal, TabInactiveText, 12);
-            _btnModeCreativeImg = btnCreatGO.GetComponent<Image>();
-            _btnModeCreativeTxt = btnCreatGO.GetComponentInChildren<Text>();
+            BuildAllScreens();
+            SelectScreen(0);
+            BuildCloseButton();
+        }
+        #endregion [END] BUILD WINDOW
 
-            // Discord button in title bar
-            CreateButton(titleBar.transform, "Btn_Discord", "💬 Discord", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-55, 0), new Vector2(90, 30), () => Application.OpenURL("https://discord.gg/B4EMrR5Vrf"), WoodButtonNormal, TextParchmentLight, 12);
+        #region [START] BUILD ALL SCREENS
+        private void BuildAllScreens()
+        {
+            _screens[0] = BuildScreenOverview(_screensHost);
+            _screens[1] = BuildScreenSurvival(_screensHost);
+            _screens[2] = BuildScreenNavigation(_screensHost);
+            _screens[3] = BuildScreenCheats(_screensHost);
+            _screens[4] = BuildScreenResearch(_screensHost);
+            _screens[5] = BuildScreenSpawner(_screensHost);
+            _screens[6] = BuildScreenControls(_screensHost);
+            _screens[7] = BuildScreenUpdates(_screensHost);
+        }
+        #endregion [END] BUILD ALL SCREENS
 
-            // Close button in title bar: authentic Raft wooden [X] button
-            CreateButton(titleBar.transform, "Btn_Close", "✕", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-12, 0), new Vector2(30, 30), () => ToggleModWindow(), CheckboxWoodBg, TextParchmentLight, 16);
+        #region [START] BUILD CLOSE BUTTON
+        private void BuildCloseButton()
+        {
+            var go = new GameObject("CloseBtn");
+            go.transform.SetParent(_modWindowGO.transform, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(1, 1);
+            rt.anchorMax = new Vector2(1, 1);
+            rt.pivot = new Vector2(1, 1);
+            rt.sizeDelta = new Vector2(32, 32);
+            rt.anchoredPosition = new Vector2(-16, -16);
 
-            // Tabs Row
-            var tabRow = CreateBox(_modWindowGO.transform, "TabRow", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -58), new Vector2(-32, 42), Color.clear);
-            var tabLayout = tabRow.AddComponent<HorizontalLayoutGroup>();
-            tabLayout.spacing = 8;
-            tabLayout.childForceExpandWidth = true;
-            tabLayout.childForceExpandHeight = true;
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(16);
+            img.type = Image.Type.Sliced;
+            img.color = ColPanel2;
 
-            string cheatsTabName = Plugin.IsSurvivalMode ? "🔒 CHEATS" : "⚡ CHEATS";
-            string spawnerTabName = Plugin.IsSurvivalMode ? "🔒 ITEM SPAWNER" : "📦 ITEM SPAWNER";
-            string[] tabNames = { "🎒 SURVIVAL QOL", cheatsTabName, "🧭 NAVIGATION", "🔬 R&D / BLUEPRINTS", spawnerTabName };
-            for (int i = 0; i < tabNames.Length; i++)
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+            var cb = btn.colors;
+            cb.normalColor = ColPanel2;
+            cb.highlightedColor = ColDanger;
+            cb.pressedColor = ColDanger;
+            btn.colors = cb;
+            btn.onClick.AddListener(CloseWindow);
+
+            var txt = CreateText(go, "✕", 15, FontStyle.Bold, ColTextMuted, TextAnchor.MiddleCenter);
+            txt.raycastTarget = false;
+            FillParent(txt.gameObject);
+        }
+        #endregion [END] BUILD CLOSE BUTTON
+
+        // ---------------- RAIL (left navigation) ----------------
+        #region [START] BUILD RAIL
+        private GameObject BuildRail()
+        {
+            var railGO = new GameObject("Rail");
+            var railImg = railGO.AddComponent<Image>();
+            railImg.color = ColPanel2;
+
+            var railLayout = railGO.AddComponent<VerticalLayoutGroup>();
+            railLayout.padding = new RectOffset(14, 14, 20, 16);
+            railLayout.spacing = 2;
+            railLayout.childForceExpandWidth = true;
+            railLayout.childForceExpandHeight = false;
+            railLayout.childControlWidth = true;
+            railLayout.childControlHeight = true;
+
+            var brandGO = new GameObject("Brand");
+            brandGO.transform.SetParent(railGO.transform, false);
+            var brandLe = brandGO.AddComponent<LayoutElement>();
+            brandLe.preferredHeight = 66;
+            // A child whose OWN inner HorizontalLayoutGroup sets childForceExpandHeight = true
+            // reports flexibleHeight = 1 to its parent (the group forces every one of its children
+            // to at least 1 flexible unit on the cross axis, then advertises that total upward).
+            // Without pinning it to 0 here, the rail's VerticalLayoutGroup hands surplus height to
+            // this row and every nav item instead of only to the dedicated Spacer, inflating them
+            // far past their preferredHeight. LayoutElement outranks a LayoutGroup, so 0 wins.
+            brandLe.flexibleHeight = 0;
+            var brandLayout = brandGO.AddComponent<HorizontalLayoutGroup>();
+            brandLayout.childControlWidth = true;
+            brandLayout.childControlHeight = true;
+            brandLayout.spacing = 10;
+            brandLayout.childAlignment = TextAnchor.MiddleLeft;
+            brandLayout.childForceExpandWidth = false;
+            brandLayout.childForceExpandHeight = true;
+
+            var markGO = new GameObject("Mark");
+            markGO.transform.SetParent(brandGO.transform, false);
+            var markLe = markGO.AddComponent<LayoutElement>();
+            markLe.preferredWidth = 38; markLe.preferredHeight = 38;
+            var markImg = markGO.AddComponent<Image>();
+            markImg.sprite = GetRoundedSprite(9);
+            markImg.type = Image.Type.Sliced;
+            markImg.color = ColAccent;
+            var markTxt = CreateText(markGO, "S", 18, FontStyle.Bold, ColOnAccentTxt, TextAnchor.MiddleCenter);
+            FillParent(markTxt.gameObject);
+
+            var brandTextGO = new GameObject("BrandText");
+            brandTextGO.transform.SetParent(brandGO.transform, false);
+            var btLe = brandTextGO.AddComponent<LayoutElement>();
+            btLe.flexibleWidth = 1f;
+            var btLayout = brandTextGO.AddComponent<VerticalLayoutGroup>();
+            btLayout.childControlWidth = true;
+            btLayout.childControlHeight = true;
+            btLayout.childForceExpandWidth = true;
+            btLayout.childForceExpandHeight = false;
+            btLayout.spacing = 1;
+
+            var nameTxt = CreateText(brandTextGO, "Sailor's Companion", 16, FontStyle.Bold, ColText, TextAnchor.MiddleLeft);
+            nameTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            nameTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 17;
+
+            var subGO = new GameObject("Sub");
+            subGO.transform.SetParent(brandTextGO.transform, false);
+            var subLe = subGO.AddComponent<LayoutElement>();
+            subLe.preferredHeight = 15;
+            var subTxt = CreateText(subGO, "Survival, Raft & Sandbox", 13, FontStyle.Normal, ColTextFaint, TextAnchor.MiddleLeft);
+            subTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            FillParent(subTxt.gameObject);
+
+            AddDivider(railGO.transform, 18);
+
+            for (int i = 0; i < SCREEN_COUNT; i++)
             {
-                int index = i;
-                var tabBtn = CreateButton(tabRow.transform, $"TabBtn_{i}", tabNames[i], Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SelectTab(index), TabInactiveBg, TabInactiveText, 14);
-                _tabButtonImages[i] = tabBtn.GetComponent<Image>();
-                _tabButtonTexts[i] = tabBtn.GetComponentInChildren<Text>();
+                int idx = i;
+                var itemGO = BuildRailItem(idx, ScreenLabels[i], ScreenMonograms[i], () => SelectScreen(idx));
+                itemGO.transform.SetParent(railGO.transform, false);
+                var itemLe = itemGO.AddComponent<LayoutElement>();
+                itemLe.preferredHeight = 42;
+                itemLe.flexibleHeight = 0; // see Brand above - keeps nav items at 42, not stretched
+                _railButtons[i] = itemGO.GetComponent<Button>();
             }
 
-            // Wooden Trim line separating tabs from content
-            var tabTrim = CreateBox(_modWindowGO.transform, "TabTrimLine", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -104), new Vector2(-32, 3), WoodTrimAccent);
+            var spacerGO = new GameObject("Spacer");
+            spacerGO.transform.SetParent(railGO.transform, false);
+            var spacerLe = spacerGO.AddComponent<LayoutElement>();
+            spacerLe.flexibleHeight = 1f;
 
-            // Tab Content Area (precisely bounded between Tabs and Footer)
-            var contentArea = CreateBox(_modWindowGO.transform, "ContentArea", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            var cRt = contentArea.GetComponent<RectTransform>();
-            cRt.offsetMin = new Vector2(20, 42);
-            cRt.offsetMax = new Vector2(-20, -114);
-            _contentAreaTransform = contentArea.transform;
+            AddDivider(railGO.transform, 10);
 
-            UpdateModeButtonsVisuals();
+            var statusGO = new GameObject("Status");
+            statusGO.transform.SetParent(railGO.transform, false);
+            var statusLe = statusGO.AddComponent<LayoutElement>();
+            statusLe.preferredHeight = 26;
+            statusLe.flexibleHeight = 0; // see Brand above
+            var statusLayout = statusGO.AddComponent<HorizontalLayoutGroup>();
+            statusLayout.childControlWidth = true;
+            statusLayout.childControlHeight = true;
+            statusLayout.spacing = 7;
+            statusLayout.padding = new RectOffset(6, 0, 0, 0);
+            statusLayout.childAlignment = TextAnchor.MiddleLeft;
+            statusLayout.childForceExpandWidth = false;
+            statusLayout.childForceExpandHeight = true;
 
-            // Build individual tab pages
-            _tabPages[0] = BuildSurvivalQoLTab(contentArea.transform);
-            _tabPages[1] = BuildCheatsTab(contentArea.transform);
-            _tabPages[2] = BuildNavTab(contentArea.transform);
-            _tabPages[3] = BuildResearchTab(contentArea.transform);
-            _tabPages[4] = BuildSpawnerTab(contentArea.transform);
+            var dotGO = new GameObject("Dot");
+            dotGO.transform.SetParent(statusGO.transform, false);
+            var dotLe = dotGO.AddComponent<LayoutElement>();
+            dotLe.preferredWidth = 6; dotLe.preferredHeight = 6;
+            var dotImg = dotGO.AddComponent<Image>();
+            dotImg.sprite = GetRoundedSprite(3);
+            dotImg.type = Image.Type.Sliced;
+            dotImg.color = ColAccent;
 
-            // Fixed Hotkeys Footer Bar
-            var footerBar = CreateBox(_modWindowGO.transform, "FooterBar", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(0, 36), WoodTitleBar);
-            CreateBox(footerBar.transform, "FooterAccent", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 2), WoodTrimAccent);
-            CreateText(footerBar.transform, "FooterText", "<color=#C7A670>Hotkeys:</color> <color=#F5C761>[F5]</color> Menu  |  <color=#F5C761>[F6]</color> HUD  |  <color=#F5C761>[F4]</color> Sails  |  <color=#F5C761>[F3]</color> Engines  |  <color=#F5C761>[F7]</color> Magnet  |  <color=#F5C761>[F10]</color> Scan  |  <color=#F5C761>[F8]</color> Recall  |  <color=#F5C761>[ESC]</color> Close", 12, FontStyle.Bold, TextParchmentLight, TextAnchor.MiddleCenter);
+            _railStatusText = CreateText(statusGO, ModeName() + " Mode", 15f, FontStyle.Normal, ColTextFaint, TextAnchor.MiddleLeft);
+            _railStatusText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            var stLe = _railStatusText.gameObject.AddComponent<LayoutElement>();
+            stLe.flexibleWidth = 1f;
 
-            // Update Banner (shown when a newer version is available online)
-            _updateBannerGO = CreateBox(_modWindowGO.transform, "UpdateBanner", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 36), new Vector2(-36, 40), WoodButtonCrimson);
-            var bannerLayout = _updateBannerGO.AddComponent<HorizontalLayoutGroup>();
-            bannerLayout.spacing = 10;
-            bannerLayout.padding = new RectOffset(16, 12, 4, 4);
-            bannerLayout.childForceExpandHeight = true;
-            bannerLayout.childForceExpandWidth = false;
-
-            _updateBannerText = CreateText(_updateBannerGO.transform, "UpdateTxt", "✨ <b>New Update Available!</b>", 14, FontStyle.Bold, TextParchmentLight, TextAnchor.MiddleLeft);
-            EnsureLayout(_updateBannerText.gameObject, -1, 32, true);
-
-            CreateButton(_updateBannerGO.transform, "Btn_UpdateDownload", "⬇️ Download Update", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(165, 30), () =>
-            {
-                Application.OpenURL(UpdateChecker.DownloadUrl);
-            }, CheckboxWoodBg, TextParchmentLight, 13);
-
-            CreateButton(_updateBannerGO.transform, "Btn_UpdateDismiss", "✕", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(30, 30), () =>
-            {
-                UpdateChecker.Dismissed = true;
-                _updateBannerGO?.SetActive(false);
-            }, CheckboxWoodBg, TextParchmentLight, 15);
-
-            _updateBannerGO.SetActive(false);
-
-            SelectTab(0);
+            return railGO;
         }
+        #endregion [END] BUILD RAIL
 
+        #region [START] BUILD RAIL ITEM
+        private GameObject BuildRailItem(int index, string label, string monogram, Action onClick)
+        {
+            var go = new GameObject("Rail_" + label);
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(9);
+            img.type = Image.Type.Sliced;
+            img.color = Color.clear;
+            if (index >= 0) _railBg[index] = img;
+
+            var layout = go.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.padding = new RectOffset(10, 8, 0, 0);
+            layout.spacing = 9;
+            layout.childAlignment = TextAnchor.MiddleLeft;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = true;
+
+            var barGO = new GameObject("Bar");
+            barGO.transform.SetParent(go.transform, false);
+            var barRt = barGO.AddComponent<RectTransform>();
+            barRt.anchorMin = new Vector2(0, 0.5f);
+            barRt.anchorMax = new Vector2(0, 0.5f);
+            barRt.pivot = new Vector2(0.5f, 0.5f);
+            barRt.sizeDelta = new Vector2(3, 16);
+            barRt.anchoredPosition = new Vector2(-11, 0);
+            var barImg = barGO.AddComponent<Image>();
+            barImg.sprite = GetRoundedSprite(2);
+            barImg.type = Image.Type.Sliced;
+            barImg.color = ColAccent;
+            // A manually anchored decorative child must opt out or the parent
+            // HorizontalLayoutGroup overwrites the anchors set above.
+            barGO.AddComponent<LayoutElement>().ignoreLayout = true;
+            barGO.SetActive(false);
+            if (index >= 0) _railBars[index] = barGO;
+
+            var monoGO = new GameObject("Mono");
+            monoGO.transform.SetParent(go.transform, false);
+            var monoLe = monoGO.AddComponent<LayoutElement>();
+            monoLe.preferredWidth = 20; monoLe.preferredHeight = 20;
+            var monoImg = monoGO.AddComponent<Image>();
+            monoImg.sprite = GetRoundedSprite(6);
+            monoImg.type = Image.Type.Sliced;
+            monoImg.color = ColBorderSoft;
+            if (index >= 0) _railIcons[index] = monoImg;
+            var monoTxt = CreateText(monoGO, monogram, 13, FontStyle.Bold, ColTextMuted, TextAnchor.MiddleCenter);
+            FillParent(monoTxt.gameObject);
+
+            var lblGO = new GameObject("Label");
+            lblGO.transform.SetParent(go.transform, false);
+            var lblLe = lblGO.AddComponent<LayoutElement>();
+            lblLe.flexibleWidth = 1f;
+            var lblTxt = CreateText(lblGO, label, 15f, FontStyle.Normal, ColTextMuted, TextAnchor.MiddleLeft);
+            lblTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            FillParent(lblTxt.gameObject);
+            if (index >= 0) _railTexts[index] = lblTxt;
+
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+            btn.transition = Selectable.Transition.None;
+            btn.onClick.AddListener(() => onClick());
+
+            return go;
+        }
+        #endregion [END] BUILD RAIL ITEM
+
+        #region [START] SELECT SCREEN
+        public void SelectScreen(int index)
+        {
+            _activeScreen = index;
+            for (int i = 0; i < SCREEN_COUNT; i++)
+            {
+                bool active = (i == index);
+                if (_screens[i] != null) _screens[i].SetActive(active);
+                if (_railBg[i] != null) _railBg[i].color = active ? ColAccentWash : Color.clear;
+                if (_railTexts[i] != null) _railTexts[i].color = active ? ColText : ColTextMuted;
+                if (_railIcons[i] != null) _railIcons[i].color = active ? ColAccent : ColBorderSoft;
+                if (_railBars[i] != null) _railBars[i].SetActive(active);
+            }
+
+            if (index == 0) RefreshOverview();
+            if (index == 2) RefreshTelemetry();
+            if (index == 7) RefreshUpdateBadge();
+
+            if (_screens[index] != null)
+            {
+                Canvas.ForceUpdateCanvases();
+                LayoutRebuilder.ForceRebuildLayoutImmediate(_screens[index].GetComponent<RectTransform>());
+            }
+        }
+        #endregion [END] SELECT SCREEN
+        #endregion [END] CANVAS CONSTRUCTION
+
+        #region [START] GAME MODE & PROFILES
+        #region [START] MODE NAME
+        private static string ModeName()
+        {
+            return Plugin.IsCreativeMode ? "Creative" : "Survival";
+        }
+        #endregion [END] MODE NAME
+
+        #region [START] SET MOD MODE
         private void SetModMode(string newMode)
         {
             if (Plugin.ModGameMode != null && Plugin.ModGameMode.Value == newMode) return;
             if (Plugin.ModGameMode != null) Plugin.ModGameMode.Value = newMode;
 
-            // Switching back to Survival must actually disable the Creative-only cheats,
-            // not just hide/lock their UI page. Otherwise a cheat enabled while in Creative
-            // (God Mode, 1-Hit Kill, Infinite Oxygen, Frozen Hunger/Thirst, Fly, Free Crafting)
-            // would silently keep running after the player relocks Survival Mode.
+            // Switching back to Survival must actually disable the Creative-only cheats, not just
+            // re-lock their screen. Otherwise a cheat enabled while in Creative keeps running.
             if (newMode == "Survival")
             {
                 if (Plugin.GodMode != null) Plugin.GodMode.Value = false;
@@ -402,1074 +806,1043 @@ namespace SailorsCompanion.UI
                 if (Plugin.FreeCrafting != null) Plugin.FreeCrafting.Value = false;
             }
 
-            UpdateModeButtonsVisuals();
-
-            // Update Tab Titles
-            if (_tabButtonTexts[1] != null)
-                _tabButtonTexts[1].text = Plugin.IsSurvivalMode ? "🔒 CHEATS" : "⚡ CHEATS";
-            if (_tabButtonTexts[4] != null)
-                _tabButtonTexts[4].text = Plugin.IsSurvivalMode ? "🔒 ITEM SPAWNER" : "📦 ITEM SPAWNER";
-
-            // Rebuild affected tab pages
-            if (_contentAreaTransform != null)
-            {
-                if (_tabPages[0] != null) Destroy(_tabPages[0]);
-                if (_tabPages[1] != null) Destroy(_tabPages[1]);
-                if (_tabPages[3] != null) Destroy(_tabPages[3]);
-                if (_tabPages[4] != null) Destroy(_tabPages[4]);
-
-                _tabPages[0] = BuildSurvivalQoLTab(_contentAreaTransform);
-                _tabPages[1] = BuildCheatsTab(_contentAreaTransform);
-                _tabPages[3] = BuildResearchTab(_contentAreaTransform);
-                _tabPages[4] = BuildSpawnerTab(_contentAreaTransform);
-
-                SelectTab(_activeTab);
-            }
+            RebuildModeDependentScreens();
+            UpdateModeButtonVisuals();
+            RefreshOverview();
 
             TeleportManager.SetNotification(Plugin.IsCreativeMode
-                ? "⚡ Creative Mode Active: Unrestricted cheats & spawner unlocked!"
-                : "🟢 Survival Mode Active: Balanced QoL active, cheats & spawner locked.");
+                ? "Creative Mode active: cheats, research and the item spawner are unlocked."
+                : "Survival Mode active: balanced QoL only, sandbox screens locked.");
         }
+        #endregion [END] SET MOD MODE
 
-        private void UpdateModeButtonsVisuals()
+        #region [START] REBUILD MODE DEPENDENT SCREENS
+        private void RebuildModeDependentScreens()
         {
-            bool isCreative = Plugin.IsCreativeMode;
-            Color survColor = !isCreative ? new Color(0.14f, 0.50f, 0.25f, 0.95f) : WoodButtonNormal;
-            Color creatColor = isCreative ? WoodButtonCrimson : WoodButtonNormal;
+            if (_screensHost == null) return;
 
-            if (_btnModeSurvivalImg != null)
+            foreach (int i in ModeDependentScreens)
             {
-                _btnModeSurvivalImg.color = survColor;
-                var btn = _btnModeSurvivalImg.GetComponent<Button>();
-                if (btn != null)
-                {
-                    var cb = btn.colors;
-                    cb.normalColor = survColor;
-                    cb.selectedColor = survColor;
-                    btn.colors = cb;
-                }
-            }
-            if (_btnModeCreativeImg != null)
-            {
-                _btnModeCreativeImg.color = creatColor;
-                var btn = _btnModeCreativeImg.GetComponent<Button>();
-                if (btn != null)
-                {
-                    var cb = btn.colors;
-                    cb.normalColor = creatColor;
-                    cb.selectedColor = creatColor;
-                    btn.colors = cb;
-                }
+                if (_screens[i] != null) Destroy(_screens[i]);
             }
 
-            if (_btnModeSurvivalTxt != null)
-                _btnModeSurvivalTxt.color = !isCreative ? TextParchmentLight : TextMuted;
-            if (_btnModeCreativeTxt != null)
-                _btnModeCreativeTxt.color = isCreative ? TextParchmentLight : TextMuted;
+            _screens[1] = BuildScreenSurvival(_screensHost);
+            _screens[3] = BuildScreenCheats(_screensHost);
+            _screens[4] = BuildScreenResearch(_screensHost);
+            _screens[5] = BuildScreenSpawner(_screensHost);
+
+            SelectScreen(_activeScreen);
         }
+        #endregion [END] REBUILD MODE DEPENDENT SCREENS
 
+        #region [START] UPDATE MODE BUTTON VISUALS
+        private void UpdateModeButtonVisuals()
+        {
+            bool creative = Plugin.IsCreativeMode;
+
+            if (_modeSurvivalImg != null) _modeSurvivalImg.color = creative ? ColPanel2 : ColSuccessWash;
+            if (_modeCreativeImg != null) _modeCreativeImg.color = creative ? ColGoldWash : ColPanel2;
+            if (_modeSurvivalTxt != null) _modeSurvivalTxt.color = creative ? ColTextMuted : ColSuccess;
+            if (_modeCreativeTxt != null) _modeCreativeTxt.color = creative ? ColGold : ColTextMuted;
+            if (_railStatusText != null) _railStatusText.text = ModeName() + " Mode";
+            if (_ovModeText != null)
+            {
+                _ovModeText.text = creative ? "Creative" : "Survival";
+                _ovModeText.color = creative ? ColGold : ColSuccess;
+            }
+        }
+        #endregion [END] UPDATE MODE BUTTON VISUALS
+
+        #region [START] APPLY PROFILE
         private void ApplyProfile(string profileName)
         {
             if (string.IsNullOrEmpty(profileName)) return;
-
-            if (Plugin.ActiveProfile != null)
-                Plugin.ActiveProfile.Value = profileName;
-
-            string tooltipText = "💡 <b>Hint:</b> Choose a preset profile above or toggle individual survival options.";
+            if (Plugin.ActiveProfile != null) Plugin.ActiveProfile.Value = profileName;
 
             if (profileName == "VanillaPlus")
             {
-                SetProfileSettings(
-                    stackSize: 40,
-                    weaponDamage: 1.0f,
-                    enableGrowthBoost: false,
-                    growthMultiplier: 1.0f,
-                    hookSpeed: 1.0f,
-                    swimSpeed: 1.0f,
-                    sprintSpeed: 1.0f,
-                    autoWater: false,
-                    autoNets: false,
-                    craftFromStorage: true,
-                    antiShark: false,
-                    infiniteDurability: false,
-                    animalHealthBars: true
-                );
-                tooltipText = "🌿 <b>Vanilla+ Profile:</b> Authentic vanilla balance (1.0x weapon dmg, 40 stack, normal speeds, craft-from-storage & creature HP bars).";
-                TeleportManager.SetNotification("🌿 Activated 'Vanilla+' Preset Profile");
+                SetProfileSettings(40, 1.0f, 1.0f, 1.0f, 1.0f, false, true, false, false, true);
+                TeleportManager.SetNotification("Vanilla+ profile applied: authentic balance, QoL only.");
             }
             else if (profileName == "BalancedOP" || profileName == "CozyFarming")
             {
-                SetProfileSettings(
-                    stackSize: 100,
-                    weaponDamage: 1.5f,
-                    enableGrowthBoost: true,
-                    growthMultiplier: 1.5f,
-                    hookSpeed: 1.5f,
-                    swimSpeed: 1.2f,
-                    sprintSpeed: 1.2f,
-                    autoWater: true,
-                    autoNets: true,
-                    craftFromStorage: true,
-                    antiShark: true,
-                    infiniteDurability: true,
-                    animalHealthBars: true
-                );
-                tooltipText = "⚖️ <b>Balanced OP Profile:</b> 1.5x weapon dmg, 100 stack, 1.5x crop/hook, 1.2x speeds, all QoL automations enabled.";
-                TeleportManager.SetNotification("⚖️ Activated 'Balanced OP' Preset Profile");
+                SetProfileSettings(100, 1.5f, 1.5f, 1.2f, 1.2f, true, true, true, true, true);
+                TeleportManager.SetNotification("Balanced OP profile applied: stronger multipliers, all automations on.");
             }
             else if (profileName == "EasyMode" || profileName == "MasterBuilder")
             {
-                SetProfileSettings(
-                    stackSize: 200,
-                    weaponDamage: 2.5f,
-                    enableGrowthBoost: true,
-                    growthMultiplier: 2.0f,
-                    hookSpeed: 2.0f,
-                    swimSpeed: 1.5f,
-                    sprintSpeed: 1.5f,
-                    autoWater: true,
-                    autoNets: true,
-                    craftFromStorage: true,
-                    antiShark: true,
-                    infiniteDurability: true,
-                    animalHealthBars: true
-                );
-                tooltipText = "⚡ <b>Easy Mode Profile:</b> 2.5x weapon dmg, 200 stack, 2.0x crop/hook, 1.5x speeds for relaxed easy gameplay.";
-                TeleportManager.SetNotification("⚡ Activated 'Easy Mode' Preset Profile");
+                SetProfileSettings(200, 2.5f, 2.0f, 1.5f, 1.5f, true, true, true, true, true);
+                TeleportManager.SetNotification("Easy Mode profile applied: maximum multipliers for relaxed play.");
+            }
+            // "Custom" intentionally changes nothing - it is the state you land in after
+            // touching any individual setting, not a preset of its own.
+
+            try { Plugin.Instance?.Config?.Save(); }
+            catch (Exception ex) { Debug.LogWarning("[Sailor's Companion] Error saving profile: " + ex.Message); }
+
+            // Rebuild the Survival screen so every control shows the new values.
+            if (_screensHost != null)
+            {
+                if (_screens[1] != null) Destroy(_screens[1]);
+                _screens[1] = BuildScreenSurvival(_screensHost);
+                SelectScreen(_activeScreen);
             }
 
-            try
-            {
-                Plugin.Instance?.Config?.Save();
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning("[Sailor's Companion] Error saving profile configuration: " + ex.Message);
-            }
-
-            // Rebuild Tab 0 so all UI controls visually reflect the new profile values
-            if (_contentAreaTransform != null)
-            {
-                if (_tabPages[0] != null)
-                {
-                    Destroy(_tabPages[0]);
-                }
-                _tabPages[0] = BuildSurvivalQoLTab(_contentAreaTransform, tooltipText);
-                SelectTab(_activeTab);
-            }
-
-            UpdateProfileButtonsVisuals();
+            UpdateProfileButtonVisuals();
+            RefreshOverview();
         }
+        #endregion [END] APPLY PROFILE
 
-        private static void SetProfileSettings(
-            int stackSize,
-            float weaponDamage,
-            bool enableGrowthBoost,
-            float growthMultiplier,
-            float hookSpeed,
-            float swimSpeed,
-            float sprintSpeed,
-            bool autoWater,
-            bool autoNets,
-            bool craftFromStorage,
-            bool antiShark,
-            bool infiniteDurability,
-            bool animalHealthBars)
+        #region [START] SET PROFILE SETTINGS
+        private static void SetProfileSettings(int stackSize, float weaponDamage, float hookSpeed,
+                                               float swimSpeed, float sprintSpeed, bool autoNets,
+                                               bool craftFromStorage, bool antiShark,
+                                               bool infiniteDurability, bool animalHealthBars)
         {
             if (Plugin.CustomStackSize != null) Plugin.CustomStackSize.Value = stackSize;
             if (Plugin.WeaponDamageMultiplier != null) Plugin.WeaponDamageMultiplier.Value = weaponDamage;
-            if (Plugin.EnableCropGrowthBoost != null) Plugin.EnableCropGrowthBoost.Value = enableGrowthBoost;
-            if (Plugin.CropGrowthMultiplier != null) Plugin.CropGrowthMultiplier.Value = growthMultiplier;
             if (Plugin.HookPullSpeedMultiplier != null) Plugin.HookPullSpeedMultiplier.Value = hookSpeed;
             if (Plugin.SwimSpeedMultiplier != null) Plugin.SwimSpeedMultiplier.Value = swimSpeed;
             if (Plugin.SprintSpeedMultiplier != null) Plugin.SprintSpeedMultiplier.Value = sprintSpeed;
-            if (Plugin.AutoWaterCrops != null) Plugin.AutoWaterCrops.Value = autoWater;
             if (Plugin.AutoEmptyCollectionNets != null) Plugin.AutoEmptyCollectionNets.Value = autoNets;
             if (Plugin.CraftFromStorage != null) Plugin.CraftFromStorage.Value = craftFromStorage;
             if (Plugin.AntiSharkRaftDamage != null) Plugin.AntiSharkRaftDamage.Value = antiShark;
             if (Plugin.InfiniteDurability != null) Plugin.InfiniteDurability.Value = infiniteDurability;
             if (Plugin.ShowAnimalHealthBars != null) Plugin.ShowAnimalHealthBars.Value = animalHealthBars;
         }
+        #endregion [END] SET PROFILE SETTINGS
 
-        private void UpdateProfileButtonsVisuals()
+        #region [START] UPDATE PROFILE BUTTON VISUALS
+        private void UpdateProfileButtonVisuals()
         {
             string active = Plugin.ActiveProfile != null ? Plugin.ActiveProfile.Value : "Custom";
 
-            for (int i = 0; i < _profileButtonImgs.Length; i++)
+            for (int i = 0; i < _profileBtnImgs.Length; i++)
             {
-                if (_profileButtonImgs[i] == null) continue;
-                bool isSel = (ProfileKeys[i] == active
-                    || (ProfileKeys[i] == "BalancedOP" && active == "CozyFarming")
-                    || (ProfileKeys[i] == "EasyMode" && active == "MasterBuilder"));
+                if (_profileBtnImgs[i] == null) continue;
+                bool sel = ProfileKeys[i] == active
+                        || (ProfileKeys[i] == "BalancedOP" && active == "CozyFarming")
+                        || (ProfileKeys[i] == "EasyMode" && active == "MasterBuilder");
 
-                Color targetBg = isSel ? ProfileActiveColor : ProfileInactiveColor;
-                _profileButtonImgs[i].color = targetBg;
-                var btn = _profileButtonImgs[i].GetComponent<Button>();
-                if (btn != null)
+                _profileBtnImgs[i].color = sel ? ColAccentWash : ColPanel2;
+                if (_profileBtnTexts[i] != null)
                 {
-                    var cb = btn.colors;
-                    cb.normalColor = targetBg;
-                    cb.highlightedColor = isSel ? targetBg : WoodButtonHover;
-                    cb.pressedColor = WoodWindowBorder;
-                    cb.selectedColor = targetBg;
-                    btn.colors = cb;
-                }
-
-                if (_profileButtonTexts[i] != null)
-                {
-                    _profileButtonTexts[i].color = isSel ? TabActiveText : TextParchmentLight;
-                    _profileButtonTexts[i].fontStyle = isSel ? FontStyle.Bold : FontStyle.Normal;
+                    _profileBtnTexts[i].color = sel ? ColAccent : ColTextMuted;
+                    _profileBtnTexts[i].fontStyle = sel ? FontStyle.Bold : FontStyle.Normal;
                 }
             }
-        }
 
+            if (_ovProfileText != null) _ovProfileText.text = ProfileDisplayName(active);
+        }
+        #endregion [END] UPDATE PROFILE BUTTON VISUALS
+
+        #region [START] PROFILE DISPLAY NAME
+        private static string ProfileDisplayName(string key)
+        {
+            for (int i = 0; i < ProfileKeys.Length; i++)
+            {
+                if (ProfileKeys[i] == key) return ProfileLabels[i];
+            }
+            if (key == "CozyFarming") return "Balanced OP";
+            if (key == "MasterBuilder") return "Easy Mode";
+            return "Custom";
+        }
+        #endregion [END] PROFILE DISPLAY NAME
+
+        #region [START] MARK PROFILE CUSTOM
+        // Any individual setting the player changes by hand takes them off the preset.
         private void MarkProfileCustom()
         {
             if (Plugin.ActiveProfile != null && Plugin.ActiveProfile.Value != "Custom")
             {
                 Plugin.ActiveProfile.Value = "Custom";
-                UpdateProfileButtonsVisuals();
+                UpdateProfileButtonVisuals();
             }
+            RefreshOverview();
         }
+        #endregion [END] MARK PROFILE CUSTOM
 
+        #region [START] SET QOL TOOLTIP
         public void SetQoLTooltip(string text)
         {
-            if (_qolTooltipText != null)
+            if (_qolTooltipText != null) _qolTooltipText.text = text;
+        }
+        #endregion [END] SET QOL TOOLTIP
+        #endregion [END] GAME MODE & PROFILES
+
+        #region [START] SCREEN: OVERVIEW
+        #region [START] BUILD SCREEN OVERVIEW
+        private GameObject BuildScreenOverview(GameObject parent)
+        {
+            var screen = CreateScreenShell(parent, "Overview", "Game mode, preset profile, and everything Sailor's Companion is doing right now.", null, out var body);
+
+            AddGroupLabel(body, "Game Mode");
+            var modeCard = CreateCard(body);
+            BuildModeRow(modeCard);
+
+            AddGroupLabel(body, "Preset Profile");
+            var profCard = CreateCard(body);
+            BuildProfileRow(profCard);
+
+            AddGroupLabel(body, "At a Glance");
+            var statRowGO = new GameObject("StatGrid");
+            statRowGO.transform.SetParent(body.transform, false);
+            statRowGO.AddComponent<LayoutElement>().preferredHeight = 86;
+            var statLayout = statRowGO.AddComponent<HorizontalLayoutGroup>();
+            statLayout.childControlWidth = true;
+            statLayout.childControlHeight = true;
+            statLayout.spacing = 12;
+            statLayout.childForceExpandWidth = true;
+            statLayout.childForceExpandHeight = true;
+
+            _ovModeText = BuildStatTile(statRowGO.transform, "Mode");
+            _ovProfileText = BuildStatTile(statRowGO.transform, "Profile");
+
+            AddGroupLabel(body, "Categories");
+            var catRowGO = new GameObject("CatGrid");
+            catRowGO.transform.SetParent(body.transform, false);
+            catRowGO.AddComponent<LayoutElement>().preferredHeight = 132;
+            var catLayout = catRowGO.AddComponent<HorizontalLayoutGroup>();
+            catLayout.childControlWidth = true;
+            catLayout.childControlHeight = true;
+            catLayout.spacing = 12;
+            catLayout.childForceExpandWidth = true;
+            catLayout.childForceExpandHeight = true;
+
+            BuildCategoryCard(catRowGO.transform, "Survival & QoL",
+                "Craft from storage, nets, island and reef harvesting, raft defense, multipliers.",
+                out _ovStatusSurvival, () => SelectScreen(1));
+            BuildCategoryCard(catRowGO.transform, "Navigation",
+                "Compass HUD, shark sonar, raft telemetry, sails, engines and teleports.",
+                out _ovStatusNav, () => SelectScreen(2));
+            BuildCategoryCard(catRowGO.transform, "Sandbox",
+                "God mode, fly, free crafting, research unlocks and the 300+ item spawner.",
+                out _ovStatusSandbox, () => SelectScreen(3));
+
+            AddCallout(body, "Using our other mods?",
+                "Farmer's Companion, Inventory Master and Collection QoL share some features with this mod. Check the settings in each one so a feature is only turned on in a single place.");
+
+            return screen;
+        }
+        #endregion [END] BUILD SCREEN OVERVIEW
+
+        #region [START] BUILD MODE ROW
+        private void BuildModeRow(GameObject card)
+        {
+            var rowGO = CreateRowShell(card, "M", "Game Mode",
+                "Survival keeps the mod to balanced quality-of-life. Creative unlocks cheats, research unlocks and the item spawner.",
+                false, out _);
+
+            var segGO = new GameObject("Segmented");
+            segGO.transform.SetParent(rowGO.transform, false);
+            segGO.AddComponent<LayoutElement>().preferredWidth = 230;
+            var segLayout = segGO.AddComponent<HorizontalLayoutGroup>();
+            segLayout.childControlWidth = true;
+            segLayout.childControlHeight = true;
+            segLayout.spacing = 8;
+            segLayout.childAlignment = TextAnchor.MiddleRight;
+            segLayout.childForceExpandWidth = true;
+            segLayout.childForceExpandHeight = false;
+
+            _modeSurvivalImg = BuildSegmentButton(segGO.transform, "Survival", out _modeSurvivalTxt, () => SetModMode("Survival"));
+            _modeCreativeImg = BuildSegmentButton(segGO.transform, "Creative", out _modeCreativeTxt, () => SetModMode("Creative"));
+
+            UpdateModeButtonVisuals();
+        }
+        #endregion [END] BUILD MODE ROW
+
+        #region [START] BUILD SEGMENT BUTTON
+        private Image BuildSegmentButton(Transform parent, string label, out Text labelText, Action onClick)
+        {
+            var go = new GameObject("Seg_" + label);
+            go.transform.SetParent(parent, false);
+            var le = go.AddComponent<LayoutElement>();
+            le.preferredHeight = 34;
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(8);
+            img.type = Image.Type.Sliced;
+            img.color = ColPanel2;
+
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+            btn.transition = Selectable.Transition.None;
+            btn.onClick.AddListener(() => onClick());
+
+            labelText = CreateText(go, label, 15f, FontStyle.Bold, ColTextMuted, TextAnchor.MiddleCenter);
+            labelText.raycastTarget = false;
+            FillParent(labelText.gameObject);
+            return img;
+        }
+        #endregion [END] BUILD SEGMENT BUTTON
+
+        #region [START] BUILD PROFILE ROW
+        private void BuildProfileRow(GameObject card)
+        {
+            var rowGO = CreateRowShell(card, "P", "Preset Profile",
+                "One click sets stack size, weapon damage, hook and movement speeds, and the QoL automations. Changing any single setting afterwards switches you to Custom.",
+                true, out _);
+
+            var segGO = new GameObject("Profiles");
+            segGO.transform.SetParent(rowGO.transform, false);
+            segGO.AddComponent<LayoutElement>().preferredWidth = 400;
+            var segLayout = segGO.AddComponent<HorizontalLayoutGroup>();
+            segLayout.childControlWidth = true;
+            segLayout.childControlHeight = true;
+            segLayout.spacing = 6;
+            segLayout.childAlignment = TextAnchor.MiddleRight;
+            segLayout.childForceExpandWidth = true;
+            segLayout.childForceExpandHeight = false;
+
+            for (int i = 0; i < ProfileKeys.Length; i++)
             {
-                _qolTooltipText.text = text;
-            }
-        }
-
-        private GameObject CreateCategoryHeader(Transform parent, string title, float height = 28f)
-        {
-            var headerGO = CreateBox(parent, "Header_" + title, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, height), WoodTitleBar);
-            EnsureLayout(headerGO, -1, height);
-            
-            // Subtle golden wood trim bottom edge
-            CreateBox(headerGO.transform, "Trim", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 2), WoodTrimAccent);
-
-            var txt = CreateText(headerGO.transform, "Txt", title, 14, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
-            txt.rectTransform.offsetMin = new Vector2(12, 0);
-            return headerGO;
-        }
-
-        private GameObject CreateLockCard(Transform parent, string title, string description, Action onUnlock)
-        {
-            var page = CreateBox(parent, "Page_Locked", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            var pageLayout = page.AddComponent<VerticalLayoutGroup>();
-            pageLayout.padding = new RectOffset(40, 40, 30, 30);
-            pageLayout.childAlignment = TextAnchor.MiddleCenter;
-            pageLayout.childForceExpandWidth = false;
-            pageLayout.childForceExpandHeight = false;
-
-            var card = CreateBox(page.transform, "LockPlaque", Vector2.zero, Vector2.zero, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(920, 430), WoodPlankEven);
-            EnsureLayout(card, 920, 430, false);
-
-            // Double border: Dark Timber Frame + Gold Trim
-            var cardBorder = CreateBox(card.transform, "CardBorder", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, WoodWindowBorder);
-            var cbRt = cardBorder.GetComponent<RectTransform>();
-            cbRt.offsetMin = new Vector2(-4, -4);
-            cbRt.offsetMax = new Vector2(4, 4);
-            var cbLe = cardBorder.AddComponent<LayoutElement>();
-            cbLe.ignoreLayout = true;
-            cardBorder.transform.SetAsFirstSibling();
-
-            var goldTrim = CreateBox(card.transform, "GoldTrim", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            var gtOutline = goldTrim.AddComponent<Outline>();
-            gtOutline.effectColor = WoodTrimAccent;
-            gtOutline.effectDistance = new Vector2(2, -2);
-            var gtLe = goldTrim.AddComponent<LayoutElement>();
-            gtLe.ignoreLayout = true;
-
-            var cardLayout = card.AddComponent<VerticalLayoutGroup>();
-            cardLayout.padding = new RectOffset(36, 36, 26, 26);
-            cardLayout.spacing = 14;
-            cardLayout.childForceExpandWidth = true;
-            cardLayout.childForceExpandHeight = false;
-
-            // Plaque Header Bar
-            var plaqueHead = CreateBox(card.transform, "PlaqueHead", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), WoodTitleBar);
-            EnsureLayout(plaqueHead, -1, 42);
-            CreateBox(plaqueHead.transform, "TopTrim", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, 2), WoodTrimAccent);
-            CreateBox(plaqueHead.transform, "BotTrim", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 2), WoodTrimAccent);
-            CreateText(plaqueHead.transform, "HeadTxt", "🔒  <b>SURVIVAL MODE RESTRICTION</b>  🔒", 16, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleCenter);
-
-            var titleTxt = CreateText(card.transform, "LockTitle", $"<size=22><color=#FFFFFF><b>{title}</b></color></size>\n<size=14><color=#EBB861>Temporarily Disabled to Preserve Survival Immersion</color></size>", 18, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleCenter);
-            EnsureLayout(titleTxt.gameObject, -1, 56);
-
-            var descBox = CreateBox(card.transform, "DescBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 110), new Color(0.14f, 0.08f, 0.04f, 0.95f));
-            EnsureLayout(descBox, -1, 110);
-            var dbOutline = descBox.AddComponent<Outline>();
-            dbOutline.effectColor = WoodRowBorder;
-            dbOutline.effectDistance = new Vector2(1, -1);
-            var descTxt = CreateText(descBox.transform, "LockDesc", description, 15, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleCenter);
-            descTxt.lineSpacing = 1.35f;
-            FillParent(descTxt.gameObject);
-
-            // Dual Action Buttons Row
-            var btnRow = CreateBox(card.transform, "BtnRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 48), Color.clear);
-            EnsureLayout(btnRow, -1, 48);
-            var btnLayout = btnRow.AddComponent<HorizontalLayoutGroup>();
-            btnLayout.spacing = 16;
-            btnLayout.childForceExpandWidth = true;
-            btnLayout.childForceExpandHeight = true;
-
-            var unlockBtn = CreateButton(btnRow.transform, "Btn_UnlockCreative", "⚡ Switch to Creative Mode to Unlock", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, onUnlock, WoodButtonCrimson, TextWhite, 15);
-            var uOutline = unlockBtn.AddComponent<Outline>();
-            uOutline.effectColor = WoodTrimAccent;
-            uOutline.effectDistance = new Vector2(1.5f, -1.5f);
-
-            var backBtn = CreateButton(btnRow.transform, "Btn_BackToQoL", "🎒 Return to Survival QoL Settings", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () => SelectTab(0), WoodButtonNormal, TextParchmentLight, 15);
-            var bOutline = backBtn.AddComponent<Outline>();
-            bOutline.effectColor = WoodTrimAccent * 0.7f;
-            bOutline.effectDistance = new Vector2(1.5f, -1.5f);
-
-            return page;
-        }
-        // ============================================================================
-        // [END] MOD WINDOW FRAME & TABS CONTROLLER
-        // ============================================================================
-        #endregion
-
-
-        #region [START] TAB 0: SURVIVAL QOL
-        // ============================================================================
-        // [START] TAB 0: SURVIVAL QUALITY OF LIFE (Preset Profiles, Categorized Groups & Clamped Balances)
-        // ============================================================================
-        private GameObject BuildSurvivalQoLTab(Transform parent, string initialTooltip = null)
-        {
-            var page = CreateBox(parent, "Page_SurvivalQoL", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            var layout = page.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 6;
-            layout.padding = new RectOffset(6, 6, 4, 4);
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
-
-            // 0. Preset Profiles Selector Row (Height: 36)
-            var profileRow = CreateBox(page.transform, "ProfileSelectorRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), Color.clear);
-            EnsureLayout(profileRow, -1, 36);
-            var profLayout = profileRow.AddComponent<HorizontalLayoutGroup>();
-            profLayout.spacing = 8;
-            profLayout.childForceExpandWidth = true;
-            profLayout.childForceExpandHeight = true;
-
-            for (int i = 0; i < 4; i++)
-            {
-                int pIdx = i;
-                var btn = CreateButton(profileRow.transform, $"Btn_Profile_{i}", ProfileNames[i], Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
+                int idx = i;
+                string key = ProfileKeys[i];
+                Text txt;
+                // "Custom" is a state, not a preset: clicking it must not re-apply anything,
+                // it only marks that the values no longer match a named profile.
+                _profileBtnImgs[i] = BuildSegmentButton(segGO.transform, ProfileLabels[i], out txt, () =>
                 {
-                    if (ProfileKeys[pIdx] == "Custom")
+                    if (key == "Custom")
                     {
                         if (Plugin.ActiveProfile != null) Plugin.ActiveProfile.Value = "Custom";
-                        UpdateProfileButtonsVisuals();
-                        SetQoLTooltip(ProfileTooltips[pIdx]);
+                        UpdateProfileButtonVisuals();
                     }
                     else
                     {
-                        ApplyProfile(ProfileKeys[pIdx]);
+                        ApplyProfile(key);
                     }
-                }, ProfileInactiveColor, TextParchmentLight, 15);
-                _profileButtonImgs[i] = btn.GetComponent<Image>();
-                _profileButtonTexts[i] = btn.GetComponentInChildren<Text>();
-            }
-            UpdateProfileButtonsVisuals();
-
-            // 1. Quick Action Bar: 4 Primary Utility Action Tiles with Hotkey Badges (Height: 40)
-            var actionRow = CreateBox(page.transform, "QuickActionBar", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), Color.clear);
-            EnsureLayout(actionRow, -1, 40);
-            var actionLayout = actionRow.AddComponent<HorizontalLayoutGroup>();
-            actionLayout.spacing = 8;
-            actionLayout.childForceExpandWidth = true;
-
-            CreateActionTile(actionRow.transform, "Btn_QuickStack", "📦 Quick Stack", "[STACK]", () =>
-            {
-                ChestSorter.QuickStackToNearbyChests();
-                SetQoLTooltip("📦 <b>Quick Stack:</b> Deposited backpack items into matching nearby chests.");
-            }, 40f, 76f);
-
-            CreateActionTile(actionRow.transform, "Btn_EmptyNets", "🕸️ Empty Nets", "[SWEEP]", () =>
-            {
-                NetsHelper.EmptyAllNets(silent: false);
-                SetQoLTooltip("🕸️ <b>Empty Nets:</b> Scooped all trapped flotsam from collection nets into your inventory.");
-            }, 40f, 76f);
-
-            CreateActionTile(actionRow.transform, "Btn_WaterPlots", "🌱 Water Crops", "[AUTO]", () =>
-            {
-                FarmingHelper.WaterAllPlots(silent: false);
-                SetQoLTooltip("🌱 <b>Water Plots:</b> Hydrated all crop plots, grass plots, and tree planters.");
-            }, 40f, 76f);
-
-            CreateActionTile(actionRow.transform, "Btn_Magnet", "🧲 Ocean Magnet", "[F7] KEY", () =>
-            {
-                MagneticCollector.ToggleMagnet();
-                SetQoLTooltip("🧲 <b>Ocean Magnet:</b> Smoothly pulls floating flotsam and debris towards your raft.");
-            }, out _qolMagnetBtnText, 40f, 78f);
-
-            // 2. Main Two-Column Content Area (Height: ~450)
-            var twoColGO = CreateBox(page.transform, "TwoColumnsArea", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 450), Color.clear);
-            EnsureLayout(twoColGO, -1, 450);
-            var twoColLayout = twoColGO.AddComponent<HorizontalLayoutGroup>();
-            twoColLayout.spacing = 14;
-            twoColLayout.childForceExpandWidth = true;
-            twoColLayout.childForceExpandHeight = true;
-
-            // === LEFT COLUMN ===
-            var leftCol = CreateBox(twoColGO.transform, "LeftColumn", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Color.clear);
-            var leftLayout = leftCol.AddComponent<VerticalLayoutGroup>();
-            leftLayout.spacing = 10;
-            leftLayout.childForceExpandWidth = true;
-            leftLayout.childForceExpandHeight = false;
-
-            // CATEGORY 1: INVENTORY & STORAGE AUTOMATION
-            CreateCategoryHeader(leftCol.transform, "📦 INVENTORY & STORAGE AUTOMATION", 28f);
-
-            CreateToggleItem(leftCol.transform, "🛠️ Craft from Storage (Auto-pulls within 22m)", Plugin.CraftFromStorage?.Value ?? true, v =>
-            {
-                if (Plugin.CraftFromStorage != null) Plugin.CraftFromStorage.Value = v;
-                MarkProfileCustom();
-                TeleportManager.SetNotification(v ? "🛠️ Craft from Storage: ENABLED" : "🛠️ Craft from Storage: DISABLED");
-            }, 38f, 14, "🛠️ <b>Craft from Storage:</b> Automatically pulls needed ingredients from nearby storage containers when crafting.");
-
-            CreateToggleItem(leftCol.transform, "🕸️ Auto-Empty Nets (Auto-gathers trapped flotsam)", Plugin.AutoEmptyCollectionNets?.Value ?? false, v =>
-            {
-                if (Plugin.AutoEmptyCollectionNets != null) Plugin.AutoEmptyCollectionNets.Value = v;
-                MarkProfileCustom();
-                TeleportManager.SetNotification(v ? "🕸️ Auto-Empty Nets: ENABLED" : "🕸️ Auto-Empty Nets: DISABLED");
-            }, 38f, 14, "🕸️ <b>Auto-Empty Nets:</b> Periodically sweeps collection nets so they never get clogged.");
-
-            // CATEGORY 2: ISLAND & REEF HARVESTING
-            CreateCategoryHeader(leftCol.transform, "🏝️ ISLAND & REEF HARVESTING", 28f);
-
-            CreateToggleItem(leftCol.transform, "🏝️ Island Hand Pickup (Collect flowers/fruits barehanded)", Plugin.IslandHandPickup?.Value ?? true, v =>
-            {
-                if (Plugin.IslandHandPickup != null) Plugin.IslandHandPickup.Value = v;
-                MarkProfileCustom();
-                TeleportManager.SetNotification(v ? "🏝️ Island Hand Pickup: ENABLED" : "🏝️ Island Hand Pickup: DISABLED");
-            }, 38f, 14, "🏝️ <b>Island Hand Pickup:</b> Pick up flowers, fruits, and surface items on islands without needing a hook.");
-
-            CreateToggleItem(leftCol.transform, "⚡ Fast Reef Mining (3.5x Hook Speed + Shark Ward)", Plugin.ReefFastHarvest?.Value ?? true, v =>
-            {
-                if (Plugin.ReefFastHarvest != null) Plugin.ReefFastHarvest.Value = v;
-                MarkProfileCustom();
-                TeleportManager.SetNotification(v ? "⚡ Fast Reef Mining: ENABLED (3.5x Speed + Shark Ward)" : "⚡ Fast Reef Mining: DISABLED");
-            }, 38f, 14, "⚡ <b>Fast Reef Mining:</b> Mines underwater Sand, Clay, Scrap, and Ores 3.5x faster (~0.7s) with your Hook, and temporarily wards off Bruce the shark while mining.");
-
-            // === RIGHT COLUMN ===
-            var rightCol = CreateBox(twoColGO.transform, "RightColumn", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Color.clear);
-            var rightLayout = rightCol.AddComponent<VerticalLayoutGroup>();
-            rightLayout.spacing = 10;
-            rightLayout.childForceExpandWidth = true;
-            rightLayout.childForceExpandHeight = false;
-
-            // CATEGORY 4: RAFT & CREATURE DEFENSE
-            CreateCategoryHeader(rightCol.transform, "🦈 RAFT & CREATURE DEFENSE", 28f);
-
-            CreateToggleItem(rightCol.transform, "🐾 Animal & Enemy Health Bars (Floating HP & distance)", Plugin.ShowAnimalHealthBars?.Value ?? true, v =>
-            {
-                if (Plugin.ShowAnimalHealthBars != null) Plugin.ShowAnimalHealthBars.Value = v;
-                MarkProfileCustom();
-                TeleportManager.SetNotification(v ? "🐾 Animal Health Bars: ENABLED" : "🐾 Animal Health Bars: DISABLED");
-            }, 38f, 14, "🐾 <b>Creature Health Bars:</b> Displays overhead health bars and distance meters on animals and predators.");
-
-            CreateToggleItem(rightCol.transform, "🦈 Anti-Shark Raft Protection (Bruce won't attack raft)", Plugin.AntiSharkRaftDamage?.Value ?? false, v =>
-            {
-                if (Plugin.AntiSharkRaftDamage != null) Plugin.AntiSharkRaftDamage.Value = v;
-                MarkProfileCustom();
-                TeleportManager.SetNotification(v ? "🦈 Anti-Shark: ENABLED" : "🦈 Anti-Shark: DISABLED");
-            }, 38f, 14, "🦈 <b>Anti-Shark Protection:</b> Bruce the shark will ignore raft foundations and focus only on players in water.");
-
-            CreateToggleItem(rightCol.transform, "🔨 Infinite Tool Durability (Tools, weapons & armor never break)", Plugin.InfiniteDurability?.Value ?? false, v =>
-            {
-                if (Plugin.InfiniteDurability != null) Plugin.InfiniteDurability.Value = v;
-                MarkProfileCustom();
-                TeleportManager.SetNotification(v ? "🔨 Infinite Durability: ENABLED" : "🔨 Infinite Durability: DISABLED");
-            }, 38f, 14, "🔨 <b>Infinite Durability:</b> Prevents hooks, weapons, tools, and armor from breaking from use.");
-
-            // CATEGORY 5: BALANCED MULTIPLIERS & SPEEDS
-            CreateCategoryHeader(rightCol.transform, "🏃 BALANCED MULTIPLIERS & SPEEDS", 28f);
-
-            float maxGrowth = Plugin.IsCreativeMode ? 10.0f : 2.0f;
-            float maxStack = Plugin.IsCreativeMode ? 999f : 200f;
-            float maxWeapon = Plugin.IsCreativeMode ? 10.0f : 3.0f;
-            float maxReel = Plugin.IsCreativeMode ? 5.0f : 2.0f;
-            float maxSwim = Plugin.IsCreativeMode ? 4.0f : 1.5f;
-            float maxSprint = Plugin.IsCreativeMode ? 3.0f : 1.5f;
-
-            float curWeapon = Plugin.WeaponDamageMultiplier?.Value ?? 1.0f;
-            float curGrowth = Plugin.CropGrowthMultiplier?.Value ?? 1.0f;
-            float curStack = Plugin.CustomStackSize?.Value ?? 40;
-            float curReel = Plugin.HookPullSpeedMultiplier?.Value ?? 1.0f;
-            float curSwim = Plugin.SwimSpeedMultiplier?.Value ?? 1.0f;
-            float curSprint = Plugin.SprintSpeedMultiplier?.Value ?? 1.0f;
-
-            CreateDualStepperRow(rightCol.transform,
-                "⚔️ Weapon Dmg", 1.0f, maxWeapon, 0.5f, curWeapon, "x", v =>
-                {
-                    if (Plugin.WeaponDamageMultiplier != null) Plugin.WeaponDamageMultiplier.Value = v;
-                    MarkProfileCustom();
-                }, "⚔️ <b>Weapon Damage:</b> Multiplies damage dealt by spears, arrows, and machete against creatures (1.0x–2.0x recommended).",
-                "🌾 Crop Growth", 1.0f, maxGrowth, 0.5f, curGrowth, "x", v =>
-                {
-                    if (Plugin.CropGrowthMultiplier != null) Plugin.CropGrowthMultiplier.Value = v;
-                    MarkProfileCustom();
-                }, "🌾 <b>Crop Growth:</b> Multiplies crop and tree growth speed (1.0x–2.0x recommended).",
-                38f);
-
-            CreateDualStepperRow(rightCol.transform,
-                "📦 Stack Limit", 20f, maxStack, 20f, curStack, "", v =>
-                {
-                    if (Plugin.CustomStackSize != null) Plugin.CustomStackSize.Value = Mathf.RoundToInt(v);
-                    MarkProfileCustom();
-                }, "📦 <b>Stack Limit:</b> Maximum item capacity per inventory slot (20-200 recommended).",
-                "🎣 Hook Reel", 1.0f, maxReel, 0.5f, curReel, "x", v =>
-                {
-                    if (Plugin.HookPullSpeedMultiplier != null) Plugin.HookPullSpeedMultiplier.Value = v;
-                    MarkProfileCustom();
-                }, "🎣 <b>Reel Speed:</b> Accelerates pulling hooks from the water (1.0x–2.0x recommended).",
-                38f);
-
-            CreateDualStepperRow(rightCol.transform,
-                "🏊 Swim Speed", 1.0f, maxSwim, 0.1f, curSwim, "x", v =>
-                {
-                    if (Plugin.SwimSpeedMultiplier != null) Plugin.SwimSpeedMultiplier.Value = v;
-                    MarkProfileCustom();
-                }, "🏊 <b>Swim Speed:</b> Enhances water mobility without glitching collisions (1.0x–1.5x recommended).",
-                "🏃 Sprint Speed", 1.0f, maxSprint, 0.1f, curSprint, "x", v =>
-                {
-                    if (Plugin.SprintSpeedMultiplier != null) Plugin.SprintSpeedMultiplier.Value = v;
-                    MarkProfileCustom();
-                }, "🏃 <b>Sprint Speed:</b> Subtle movement speed increase across raft and land (1.0x–1.5x recommended).",
-                38f);
-
-            // CATEGORY 6: ADVANCED PRO HOTKEYS
-            CreateCategoryHeader(rightCol.transform, "⌨️ ADVANCED PRO HOTKEYS", 28f);
-
-            CreateToggleItem(rightCol.transform, "⌨️ Enable Quick Hotkeys ([F4] Sails, [F3] Engines, [F7] Magnet, [F10] Scan)", Plugin.EnableHotkeys?.Value ?? false, v =>
-            {
-                if (Plugin.EnableHotkeys != null) Plugin.EnableHotkeys.Value = v;
-                TeleportManager.SetNotification(v ? "⌨️ Quick Hotkeys: ENABLED ([F4] Sails, [F3] Engines, [F7] Magnet, [F10] Scan)" : "⌨️ Quick Hotkeys: DISABLED (UI Buttons only)");
-            }, 38f, 13, "⌨️ <b>Quick Hotkeys:</b> Enables direct gameplay keys for speed actions without opening menus ([F4] Sails, [F3] Engines, [F7] Magnet, [F10] Scanner).");
-
-            // 3. Tooltip / Hint Box (Height: 32)
-            var hintBox = CreateBox(page.transform, "QoLHintBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 32), WoodTitleBar);
-            EnsureLayout(hintBox, -1, 32);
-            CreateBox(hintBox.transform, "HintAccent", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 2), WoodTrimAccent);
-            string defaultHint = string.IsNullOrEmpty(initialTooltip) ? "💡 <b>Hotkeys:</b> [F7] Magnet | [F8] Recall | [F9] Summon | [F10] Radar | [F4] Sails | [F3] Engines | [F] Fly" : initialTooltip;
-            _qolTooltipText = CreateText(hintBox.transform, "HintText", defaultHint, 14, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleLeft);
-            _qolTooltipText.rectTransform.offsetMin = new Vector2(12, 0);
-            _qolTooltipText.rectTransform.offsetMax = new Vector2(-12, 0);
-
-            return page;
-        }
-        // ============================================================================
-        // [END] TAB 0: SURVIVAL QOL
-        // ============================================================================
-        #endregion
-
-        #region [START] TAB 1: CHEATS & SANDBOX
-        // ============================================================================
-        // [START] TAB 1: CHEATS & SANDBOX (God Mode, Oxygen, Hunger/Thirst, Fly, Free Craft, Weather)
-        // ============================================================================
-        private GameObject BuildCheatsTab(Transform parent)
-        {
-            if (Plugin.IsSurvivalMode)
-            {
-                return CreateLockCard(parent, "Cheats & God Mode",
-                    "Survival Mode preserves authentic game balance, hunger/thirst tension, and progression immersion.\n\nGod Mode, Infinite Oxygen, Fly / Noclip, Free Instant Crafting, and Weather controls are reserved for Creative Sandbox.\n\nSwitch to Creative / Sandbox Mode below to unlock all god powers immediately.",
-                    () => SetModMode("Creative"));
+                });
+                _profileBtnTexts[i] = txt;
             }
 
-            var page = CreateBox(parent, "Page_Cheats", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            var pageLayout = page.AddComponent<VerticalLayoutGroup>();
-            pageLayout.spacing = 6;
-            pageLayout.padding = new RectOffset(6, 6, 4, 4);
-            pageLayout.childForceExpandWidth = true;
-            pageLayout.childForceExpandHeight = false;
-
-            // Two-Column Creative Sandbox Area (Height: 490)
-            var twoColGO = CreateBox(page.transform, "CheatsTwoColumns", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 490), Color.clear);
-            EnsureLayout(twoColGO, -1, 490);
-            var twoColLayout = twoColGO.AddComponent<HorizontalLayoutGroup>();
-            twoColLayout.spacing = 14;
-            twoColLayout.childForceExpandWidth = true;
-            twoColLayout.childForceExpandHeight = true;
-
-            // === LEFT COLUMN: PLAYER GOD CHEATS & VITALS ===
-            var leftCol = CreateBox(twoColGO.transform, "LeftCheatsCol", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Color.clear);
-            var lLayout = leftCol.AddComponent<VerticalLayoutGroup>();
-            lLayout.spacing = 6;
-            lLayout.childForceExpandWidth = true;
-
-            CreateCategoryHeader(leftCol.transform, "⚡ PLAYER GOD CHEATS & INVULNERABILITY", 28f);
-            CreateToggleItem(leftCol.transform, "🛡️ God Mode (Invulnerable to damage & sharks)", Plugin.GodMode.Value, v => Plugin.GodMode.Value = v, 36f, 14);
-            CreateToggleItem(leftCol.transform, "⚔️ 1-Hit Kill / Infinite Damage (Slay creatures in 1 hit)", Plugin.OneHitKill?.Value ?? false, v => { if (Plugin.OneHitKill != null) Plugin.OneHitKill.Value = v; }, 36f, 14);
-            CreateToggleItem(leftCol.transform, "🤿 Infinite Oxygen (Dive freely without running out of air)", Plugin.InfiniteOxygen.Value, v => Plugin.InfiniteOxygen.Value = v, 36f, 14);
-            CreateToggleItem(leftCol.transform, "🥩 Freeze Hunger & Thirst (Never starve or dehydrate)", Plugin.NoHungerThirst.Value, v => Plugin.NoHungerThirst.Value = v, 36f, 14);
-            CreateToggleItem(leftCol.transform, "🕊️ Fly / Noclip Mode (Hotkey: [F] | Space/Shift fly)", Plugin.EnableFlyMode.Value, v => Plugin.EnableFlyMode.Value = v, 36f, 14);
-            CreateToggleItem(leftCol.transform, "🛠️ Free Instant Crafting (Craft any recipe with 0 materials)", Plugin.FreeCrafting.Value, v => Plugin.FreeCrafting.Value = v, 36f, 14);
-
-            CreateCategoryHeader(leftCol.transform, "💖 INSTANT VITALS RECOVERY", 28f);
-            var vitalsBtn = CreateActionTile(leftCol.transform, "Btn_MaxVitals", "⚡ Replenish All Vitals (Health, O2, Food)", "[RESTORE]", () =>
-            {
-                var p = PlayerHelper.GetLocalPlayer();
-                if (p?.Stats != null)
-                {
-                    p.Stats.stat_health?.SetToMaxValue();
-                    p.Stats.stat_hunger?.Normal?.SetToMaxValue();
-                    p.Stats.stat_thirst?.Normal?.SetToMaxValue();
-                    p.Stats.stat_oxygen?.SetToMaxValue();
-                    TeleportManager.SetNotification("⚡ Vitals fully replenished to 100%!");
-                }
-            }, 40f, 85f);
-            EnsureLayout(vitalsBtn, -1, 40);
-
-            // === RIGHT COLUMN: RAFT, TIME & WEATHER CONTROLS ===
-            var rightCol = CreateBox(twoColGO.transform, "RightCheatsCol", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Color.clear);
-            var rLayout = rightCol.AddComponent<VerticalLayoutGroup>();
-            rLayout.spacing = 6;
-            rLayout.childForceExpandWidth = true;
-
-            CreateCategoryHeader(rightCol.transform, "⛵ RAFT TELEPORTATION & CONTROL", 28f);
-            var teleRow = CreateBox(rightCol.transform, "TeleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), Color.clear);
-            EnsureLayout(teleRow, -1, 38);
-            var teleLayout = teleRow.AddComponent<HorizontalLayoutGroup>();
-            teleLayout.spacing = 8;
-            teleLayout.childForceExpandWidth = true;
-            CreateActionTile(teleRow.transform, "Btn_Recall", "⚡ Recall to Raft", "[F8] KEY", () => TeleportManager.TeleportPlayerToRaft(), 38f, 78f);
-            CreateActionTile(teleRow.transform, "Btn_Summon", "⛵ Summon Raft", "[F9] KEY", () => TeleportManager.TeleportRaftToPlayer(), 38f, 78f);
-            CreateActionTile(teleRow.transform, "Btn_Anchor", "⚓ Toggle Anchor", "[ANCHOR]", () => TeleportManager.ToggleRaftAnchor(), 38f, 80f);
-
-            CreateCategoryHeader(rightCol.transform, "☀️ WORLD TIME CONTROLLER", 28f);
-            var timeRow = CreateBox(rightCol.transform, "TimeRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), Color.clear);
-            EnsureLayout(timeRow, -1, 38);
-            var timeLayout = timeRow.AddComponent<HorizontalLayoutGroup>();
-            timeLayout.spacing = 8;
-            timeLayout.childForceExpandWidth = true;
-            CreateActionTile(timeRow.transform, "Btn_Morning", "🌅 Morning", "[08:00]", () => SetTime(8f), 38f, 70f);
-            CreateActionTile(timeRow.transform, "Btn_Noon", "☀️ Noon", "[12:00]", () => SetTime(12f), 38f, 70f);
-            CreateActionTile(timeRow.transform, "Btn_Night", "🌙 Night", "[22:00]", () => SetTime(22f), 38f, 70f);
-
-            CreateCategoryHeader(rightCol.transform, "🌧️ DYNAMIC WEATHER CONTROLLER", 28f);
-            var weatherRow = CreateBox(rightCol.transform, "WeatherRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), Color.clear);
-            EnsureLayout(weatherRow, -1, 38);
-            var weatherLayout = weatherRow.AddComponent<HorizontalLayoutGroup>();
-            weatherLayout.spacing = 8;
-            weatherLayout.childForceExpandWidth = true;
-            CreateActionTile(weatherRow.transform, "Btn_Sunny", "☀️ Sunny", "[CLEAR]", () => SetWeather(UniqueWeatherType.Default), 38f, 65f);
-            CreateActionTile(weatherRow.transform, "Btn_Calm", "🌊 Calm", "[CALM]", () => SetWeather(UniqueWeatherType.Calm), 38f, 65f);
-            CreateActionTile(weatherRow.transform, "Btn_Rain", "🌧️ Rain", "[RAIN]", () => SetWeather(UniqueWeatherType.Rain), 38f, 65f);
-            CreateActionTile(weatherRow.transform, "Btn_Fog", "🌫️ Fog", "[FOG]", () => SetWeather(UniqueWeatherType.Fog), 38f, 65f);
-
-            // Flight Instructions Box
-            var flyBox = CreateBox(rightCol.transform, "FlyBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 100), WoodPlankEven);
-            EnsureLayout(flyBox, -1, 100);
-            var fbOutline = flyBox.AddComponent<Outline>();
-            fbOutline.effectColor = WoodRowBorder;
-            fbOutline.effectDistance = new Vector2(1, -1);
-            var fbLayout = flyBox.AddComponent<VerticalLayoutGroup>();
-            fbLayout.padding = new RectOffset(16, 16, 8, 8);
-            fbLayout.spacing = 4;
-            var fbTitle = CreateText(flyBox.transform, "T", "🕊️ <b>Free Flight & Noclip Controls [F]</b>", 14, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
-            EnsureLayout(fbTitle.gameObject, -1, 20);
-            var fbDesc = CreateText(flyBox.transform, "D", "• <b>[F]</b>: Toggle Flight mode  |  <b>[WASD]</b>: Fly in any direction.\n• <b>[Space]</b>: Ascend  |  <b>[Left Shift]</b>: Descend  |  <b>[Left Ctrl]</b>: Turbo Speed boost.", 13, FontStyle.Normal, TextParchmentLight, TextAnchor.UpperLeft);
-            fbDesc.lineSpacing = 1.25f;
-            EnsureLayout(fbDesc.gameObject, -1, 60);
-
-            return page;
+            UpdateProfileButtonVisuals();
         }
-        // ============================================================================
-        // [END] TAB 1: CHEATS & SANDBOX
-        // ============================================================================
-        #endregion
+        #endregion [END] BUILD PROFILE ROW
 
-        #region [START] TAB 2: NAVIGATION HUD & SHARK RADAR
-        // ============================================================================
-        // [START] TAB 2: NAVIGATION HUD & SHARK RADAR
-        // ============================================================================
-        private GameObject BuildNavTab(Transform parent)
+        #region [START] BUILD CATEGORY CARD
+        private GameObject BuildCategoryCard(Transform parent, string title, string desc, out Text statusText, Action onClick)
         {
-            var page = CreateBox(parent, "Page_Nav", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            var layout = page.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 10;
-            layout.padding = new RectOffset(16, 16, 10, 10);
+            var go = new GameObject("Cat_" + title);
+            go.transform.SetParent(parent, false);
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(11);
+            img.type = Image.Type.Sliced;
+            img.color = ColBorderSoft;
+            var fillImg = AddInsetFill(go, 11, ColRow);
+
+            var layout = go.AddComponent<VerticalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.padding = new RectOffset(14, 14, 12, 12);
+            layout.spacing = 6;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            CreateToggleItem(page.transform, "🧭 Show On-Screen HUD Overlay (Hotkey: [F6])", Plugin.EnableHUD.Value, v =>
-            {
-                Plugin.EnableHUD.Value = v;
-            }, 40f, 15);
+            var nameTxt = CreateText(go, title, 16, FontStyle.Bold, ColText, TextAnchor.MiddleLeft);
+            nameTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 18;
 
-            // HUD Style Selection Row
-            var styleRow = CreateBox(page.transform, "HUDStyleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), WoodTitleBar);
-            EnsureLayout(styleRow, -1, 40);
-            var styleLayout = styleRow.AddComponent<HorizontalLayoutGroup>();
-            styleLayout.spacing = 10;
-            styleLayout.padding = new RectOffset(14, 14, 3, 3);
+            var descTxt = CreateText(go, desc, 13.5f, FontStyle.Normal, ColTextMuted, TextAnchor.UpperLeft);
+            var descLe = descTxt.gameObject.AddComponent<LayoutElement>();
+            descLe.preferredHeight = 44;
+            descLe.flexibleHeight = 1f;
+
+            statusText = CreateText(go, "-- active", 16f, FontStyle.Bold, ColAccent, TextAnchor.MiddleLeft);
+            statusText.gameObject.AddComponent<LayoutElement>().preferredHeight = 16;
+
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = fillImg;
+            var cb = btn.colors;
+            cb.normalColor = ColRow;
+            cb.highlightedColor = new Color(ColRow.r + 0.03f, ColRow.g + 0.03f, ColRow.b + 0.03f, 1f);
+            cb.pressedColor = ColPanel;
+            btn.colors = cb;
+            btn.onClick.AddListener(() => onClick());
+
+            return go;
+        }
+        #endregion [END] BUILD CATEGORY CARD
+
+        #region [START] BUILD STAT TILE
+        private Text BuildStatTile(Transform parent, string label)
+        {
+            var go = new GameObject("Stat_" + label);
+            go.transform.SetParent(parent, false);
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(11);
+            img.type = Image.Type.Sliced;
+            img.color = ColBorderSoft;
+            AddInsetFill(go, 11, ColRow);
+
+            var layout = go.AddComponent<VerticalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.padding = new RectOffset(16, 12, 10, 10);
+            layout.childForceExpandWidth = true;
+
+            var numTxt = CreateText(go, "-", 24, FontStyle.Bold, ColText, TextAnchor.MiddleLeft);
+            numTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            numTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+
+            var lblTxt = CreateText(go, label, 14, FontStyle.Normal, ColTextMuted, TextAnchor.MiddleLeft);
+            lblTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 16;
+
+            return numTxt;
+        }
+        #endregion [END] BUILD STAT TILE
+
+        #region [START] REFRESH OVERVIEW
+        private void RefreshOverview()
+        {
+            try
+            {
+                int survival = Cfg(Plugin.CraftFromStorage) + Cfg(Plugin.AutoEmptyCollectionNets)
+                             + Cfg(Plugin.IslandHandPickup) + Cfg(Plugin.ReefHandHarvesting)
+                             + Cfg(Plugin.ReefFastHarvest) + Cfg(Plugin.ShowAnimalHealthBars)
+                             + Cfg(Plugin.AntiSharkRaftDamage) + Cfg(Plugin.InfiniteDurability);
+                SetCategoryStatus(_ovStatusSurvival, survival, 8);
+
+                int nav = Cfg(Plugin.EnableHUD) + Cfg(Plugin.ShowAnimalHealthBars) + Cfg(Plugin.EnableHotkeys);
+                SetCategoryStatus(_ovStatusNav, nav, 3);
+
+                if (_ovStatusSandbox != null)
+                {
+                    if (Plugin.IsSurvivalMode)
+                    {
+                        _ovStatusSandbox.text = "Locked in Survival";
+                        _ovStatusSandbox.color = ColTextFaint;
+                    }
+                    else
+                    {
+                        int sandbox = Cfg(Plugin.GodMode) + Cfg(Plugin.OneHitKill) + Cfg(Plugin.InfiniteOxygen)
+                                    + Cfg(Plugin.NoHungerThirst) + Cfg(Plugin.EnableFlyMode) + Cfg(Plugin.FreeCrafting);
+                        SetCategoryStatus(_ovStatusSandbox, sandbox, 6);
+                    }
+                }
+
+                UpdateModeButtonVisuals();
+                UpdateProfileButtonVisuals();
+            }
+            catch { }
+        }
+        #endregion [END] REFRESH OVERVIEW
+
+        #region [START] CFG
+        // A missing ConfigEntry counts as off rather than throwing - the managers use the same
+        // null-tolerant pattern, because binding order is not guaranteed during early startup.
+        private static int Cfg(BepInEx.Configuration.ConfigEntry<bool> e)
+        {
+            return (e != null && e.Value) ? 1 : 0;
+        }
+        #endregion [END] CFG
+
+        #region [START] SET CATEGORY STATUS
+        private void SetCategoryStatus(Text t, int on, int total)
+        {
+            if (t == null) return;
+            t.text = on + " of " + total + " active";
+            t.color = on == 0 ? ColTextFaint : (on == total ? ColSuccess : ColAccent);
+        }
+        #endregion [END] SET CATEGORY STATUS
+        #endregion [END] SCREEN: OVERVIEW
+
+        #region [START] SCREEN: SURVIVAL & QOL
+        #region [START] BUILD SCREEN SURVIVAL
+        private GameObject BuildScreenSurvival(GameObject parent)
+        {
+            var screen = CreateScreenShell(parent, "Survival & QoL",
+                "Quality-of-life that keeps vanilla progression intact. Everything here is safe to leave on in Survival Mode.",
+                MenuKeyLabel(), out var body);
+
+            AddGroupLabel(body, "Quick Actions");
+            var actCard = CreateCard(body);
+            AddButtonRow(actCard, "Q", "Quick Stack",
+                "Deposits everything in your backpack into matching chests nearby.", "Run", () =>
+                {
+                    ChestSorter.QuickStackToNearbyChests();
+                    SetQoLTooltip("Quick Stack: deposited backpack items into matching nearby chests.");
+                });
+            AddButtonRow(actCard, "N", "Empty All Nets",
+                "Scoops every collection net on the raft into your inventory in one go.", "Run", () =>
+                {
+                    NetsHelper.EmptyAllNets(silent: false);
+                    SetQoLTooltip("Empty Nets: collected all trapped flotsam into your inventory.");
+                });
+            AddButtonRow(actCard, "W", "Water All Plots",
+                "Hydrates every crop plot, grass plot and tree planter on the raft.", "Run", () =>
+                {
+                    FarmingHelper.WaterAllPlots(silent: false);
+                    SetQoLTooltip("Water Plots: hydrated all crop plots, grass plots and planters.");
+                });
+            AddButtonRow(actCard, "G", "Ocean Magnet",
+                "Pulls floating debris toward the raft for a while, then goes on cooldown.", "Toggle", () =>
+                {
+                    MagneticCollector.ToggleMagnet();
+                    SetQoLTooltip("Ocean Magnet: pulling floating flotsam toward your raft.");
+                });
+
+            var tipGO = new GameObject("Tip");
+            tipGO.transform.SetParent(body.transform, false);
+            tipGO.AddComponent<LayoutElement>().preferredHeight = 20;
+            _qolTooltipText = CreateText(tipGO, "Pick an action above, or adjust the settings below.", 14, FontStyle.Normal, ColTextFaint, TextAnchor.MiddleLeft);
+            _qolTooltipText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            FillParent(_qolTooltipText.gameObject);
+
+            AddGroupLabel(body, "Inventory & Storage");
+            var storeCard = CreateCard(body);
+            AddToggleRow(storeCard, "C", "Craft from Storage",
+                "Crafting pulls materials straight out of chests within 22 metres.",
+                () => Plugin.CraftFromStorage != null && Plugin.CraftFromStorage.Value,
+                v => { if (Plugin.CraftFromStorage != null) Plugin.CraftFromStorage.Value = v; MarkProfileCustom(); });
+            AddToggleRow(storeCard, "N", "Auto-Empty Collection Nets",
+                "Keeps emptying the raft's nets on their own. Collection QoL has this too - use one or the other.",
+                () => Plugin.AutoEmptyCollectionNets != null && Plugin.AutoEmptyCollectionNets.Value,
+                v => { if (Plugin.AutoEmptyCollectionNets != null) Plugin.AutoEmptyCollectionNets.Value = v; MarkProfileCustom(); }, true);
+            AddStepperRow(storeCard, "S", "Stack Limit",
+                "Maximum items per inventory slot.",
+                20f, Plugin.IsCreativeMode ? 200f : 100f, 20f, "",
+                () => Plugin.CustomStackSize != null ? Plugin.CustomStackSize.Value : 40,
+                v => { if (Plugin.CustomStackSize != null) Plugin.CustomStackSize.Value = Mathf.RoundToInt(v); MarkProfileCustom(); }, true);
+
+            AddGroupLabel(body, "Island & Reef Harvesting");
+            var harvCard = CreateCard(body);
+            AddToggleRow(harvCard, "I", "Island Hand Pickup",
+                "Collect surface items on islands by hand, no hook needed. Collection QoL has this too - use one or the other.",
+                () => Plugin.IslandHandPickup != null && Plugin.IslandHandPickup.Value,
+                v => { if (Plugin.IslandHandPickup != null) Plugin.IslandHandPickup.Value = v; MarkProfileCustom(); });
+            AddToggleRow(harvCard, "R", "Reef Hand Harvesting",
+                "Mine sand, clay, scrap and ore underwater by hand without a hook.",
+                () => Plugin.ReefHandHarvesting != null && Plugin.ReefHandHarvesting.Value,
+                v => { if (Plugin.ReefHandHarvesting != null) Plugin.ReefHandHarvesting.Value = v; MarkProfileCustom(); }, true);
+            AddToggleRow(harvCard, "F", "Fast Reef Mining",
+                "Speeds up underwater channeling so you can surface before the shark arrives.",
+                () => Plugin.ReefFastHarvest != null && Plugin.ReefFastHarvest.Value,
+                v => { if (Plugin.ReefFastHarvest != null) Plugin.ReefFastHarvest.Value = v; MarkProfileCustom(); }, true);
+
+            AddGroupLabel(body, "Raft & Creature Defense");
+            var defCard = CreateCard(body);
+            AddToggleRow(defCard, "H", "Animal & Enemy Health Bars",
+                "Floating health bars and distance tags above animals and enemies.",
+                () => Plugin.ShowAnimalHealthBars != null && Plugin.ShowAnimalHealthBars.Value,
+                v => { if (Plugin.ShowAnimalHealthBars != null) Plugin.ShowAnimalHealthBars.Value = v; MarkProfileCustom(); });
+            AddToggleRow(defCard, "B", "Anti-Shark Raft Protection",
+                "Bruce stops biting raft blocks. He will still come after you in the water.",
+                () => Plugin.AntiSharkRaftDamage != null && Plugin.AntiSharkRaftDamage.Value,
+                v => { if (Plugin.AntiSharkRaftDamage != null) Plugin.AntiSharkRaftDamage.Value = v; MarkProfileCustom(); }, true);
+            AddToggleRow(defCard, "D", "Infinite Tool Durability",
+                "Tools, weapons, hooks and armor never wear out.",
+                () => Plugin.InfiniteDurability != null && Plugin.InfiniteDurability.Value,
+                v => { if (Plugin.InfiniteDurability != null) Plugin.InfiniteDurability.Value = v; MarkProfileCustom(); }, true);
+
+            AddGroupLabel(body, "Multipliers & Speeds");
+            var multCard = CreateCard(body);
+            bool creative = Plugin.IsCreativeMode;
+            AddStepperRow(multCard, "W", "Weapon Damage",
+                "Damage dealt by spears, arrows and machete against creatures.",
+                1.0f, creative ? 5.0f : 2.0f, 0.5f, "x",
+                () => Plugin.WeaponDamageMultiplier != null ? Plugin.WeaponDamageMultiplier.Value : 1.0f,
+                v => { if (Plugin.WeaponDamageMultiplier != null) Plugin.WeaponDamageMultiplier.Value = v; MarkProfileCustom(); });
+            AddStepperRow(multCard, "K", "Hook Reel Speed",
+                "How fast hooks pull debris out of the water. Collection QoL boosts the hook too - the two multiply together.",
+                1.0f, creative ? 5.0f : 2.0f, 0.5f, "x",
+                () => Plugin.HookPullSpeedMultiplier != null ? Plugin.HookPullSpeedMultiplier.Value : 1.0f,
+                v => { if (Plugin.HookPullSpeedMultiplier != null) Plugin.HookPullSpeedMultiplier.Value = v; MarkProfileCustom(); }, true);
+            AddStepperRow(multCard, "V", "Swim Speed",
+                "Player swimming speed.",
+                1.0f, creative ? 4.0f : 1.5f, 0.1f, "x",
+                () => Plugin.SwimSpeedMultiplier != null ? Plugin.SwimSpeedMultiplier.Value : 1.0f,
+                v => { if (Plugin.SwimSpeedMultiplier != null) Plugin.SwimSpeedMultiplier.Value = v; MarkProfileCustom(); }, true);
+            AddStepperRow(multCard, "P", "Sprint Speed",
+                "Player sprinting speed on land and raft.",
+                1.0f, creative ? 3.0f : 1.5f, 0.1f, "x",
+                () => Plugin.SprintSpeedMultiplier != null ? Plugin.SprintSpeedMultiplier.Value : 1.0f,
+                v => { if (Plugin.SprintSpeedMultiplier != null) Plugin.SprintSpeedMultiplier.Value = v; MarkProfileCustom(); }, true);
+
+            return screen;
+        }
+        #endregion [END] BUILD SCREEN SURVIVAL
+        #endregion [END] SCREEN: SURVIVAL & QOL
+
+        #region [START] SCREEN: NAVIGATION
+        #region [START] BUILD SCREEN NAVIGATION
+        private GameObject BuildScreenNavigation(GameObject parent)
+        {
+            var screen = CreateScreenShell(parent, "Navigation",
+                "Compass HUD, live raft and shark telemetry, and one-press raft controls.",
+                MenuKeyLabel(), out var body);
+
+            AddGroupLabel(body, "Live Telemetry");
+            var teleRowGO = new GameObject("TeleGrid");
+            teleRowGO.transform.SetParent(body.transform, false);
+            teleRowGO.AddComponent<LayoutElement>().preferredHeight = 92;
+            var teleLayout = teleRowGO.AddComponent<HorizontalLayoutGroup>();
+            teleLayout.childControlWidth = true;
+            teleLayout.childControlHeight = true;
+            teleLayout.spacing = 12;
+            teleLayout.childForceExpandWidth = true;
+            teleLayout.childForceExpandHeight = true;
+
+            _teleHeadingText = BuildTelemetryTile(teleRowGO.transform, "Compass Heading");
+            _teleRaftText    = BuildTelemetryTile(teleRowGO.transform, "Raft");
+            _teleSharkText   = BuildTelemetryTile(teleRowGO.transform, "Shark Sonar");
+            _teleCoordsText  = BuildTelemetryTile(teleRowGO.transform, "World Position");
+
+            AddGroupLabel(body, "On-Screen HUD");
+            var hudCard = CreateCard(body);
+            AddToggleRow(hudCard, "H", "Show HUD Overlay",
+                "Compass, coordinates, raft tracker and shark radar drawn on screen. Press " + HudKeyLabel() + " to toggle, Shift+" + HudKeyLabel() + " to cycle style.",
+                () => Plugin.EnableHUD != null && Plugin.EnableHUD.Value,
+                v => { if (Plugin.EnableHUD != null) Plugin.EnableHUD.Value = v; });
+
+            var styleRowGO = new GameObject("StyleRow");
+            styleRowGO.transform.SetParent(body.transform, false);
+            styleRowGO.AddComponent<LayoutElement>().preferredHeight = 38;
+            var styleLayout = styleRowGO.AddComponent<HorizontalLayoutGroup>();
+            styleLayout.childControlWidth = true;
+            styleLayout.childControlHeight = true;
+            styleLayout.spacing = 8;
+            styleLayout.childForceExpandWidth = true;
             styleLayout.childForceExpandHeight = true;
 
-            var styleLabel = CreateText(styleRow.transform, "StyleLabel", "HUD Style:", 15, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
-            EnsureLayout(styleLabel.gameObject, 90, 34, false);
-
-            _navStyleBtns.Clear();
-            string[] styleNames = HUDOverlay.StyleNames;
-            for (int s = 0; s < styleNames.Length; s++)
+            for (int s = 0; s < HUDOverlay.StyleNames.Length && s < 4; s++)
             {
-                int styleIdx = s;
-                bool isSelected = (Plugin.HUDStyle != null && Plugin.HUDStyle.Value == s);
-                var sBtn = CreateButton(styleRow.transform, $"Btn_Style_{s}", styleNames[s], Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(120, 34), () =>
+                int idx = s;
+                Text t;
+                _navStyleImgs[s] = BuildSegmentButton(styleRowGO.transform, HUDOverlay.StyleNames[s], out t, () =>
                 {
-                    HUDOverlay.SetStyle(styleIdx);
+                    HUDOverlay.SetStyle(idx);
                     UpdateNavStyleButtonVisuals();
-                }, isSelected ? TabActiveBg : WoodButtonNormal, isSelected ? TabActiveText : TextParchmentLight, 14);
-                EnsureLayout(sBtn, 120, 34, false);
-                _navStyleBtns.Add(sBtn);
+                });
+                _navStyleTexts[s] = t;
             }
+            UpdateNavStyleButtonVisuals();
 
-            // Quick Teleport & Island Scan Row: Action Tiles with Hotkey Badges (Height: 40)
-            var navTeleRow = CreateBox(page.transform, "NavTeleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), Color.clear);
-            EnsureLayout(navTeleRow, -1, 40);
-            var navTeleLayout = navTeleRow.AddComponent<HorizontalLayoutGroup>();
-            navTeleLayout.spacing = 8;
-            navTeleLayout.childForceExpandWidth = true;
+            AddGroupLabel(body, "Raft Controls");
+            var raftCard = CreateCard(body);
+            _navRecallBtnText = AddActionRow(raftCard, "T", "Recall to Raft",
+                "Teleports you back onto the raft. Bound to " + KeyLabel(Plugin.KeyTeleportToRaft, KeyCode.F8) + ".",
+                "Recall", () => TeleportManager.TeleportPlayerToRaft());
+            AddButtonRow(raftCard, "S", "Summon Raft",
+                "Brings the raft to where you are standing. Bound to " + KeyLabel(Plugin.KeyTeleportRaftToPlayer, KeyCode.F9) + ".",
+                "Summon", () => TeleportManager.TeleportRaftToPlayer());
+            AddButtonRow(raftCard, "A", "Toggle Anchor",
+                "Drops or raises the raft anchor.",
+                "Toggle", () => TeleportManager.ToggleRaftAnchor());
+            _navScannerBtnText = AddActionRow(raftCard, "R", "Island Radar",
+                "A 10 second pulse scan that marks nearby islands and points of interest.",
+                "Scan", () => ItemDetector.TriggerPulseScan());
 
-            CreateActionTile(navTeleRow.transform, "Btn_NavTeleToRaft", "⚡ Recall to Raft", "[F8] KEY", () =>
-            {
-                TeleportManager.TeleportPlayerToRaft();
-            }, out _navRecallBtnText, 40f, 78f);
+            AddGroupLabel(body, "Sails & Engines");
+            var boatCard = CreateCard(body);
+            AddButtonRow(boatCard, "L", "Toggle All Sails",
+                "Opens or closes every sail on the raft at once.",
+                "Toggle", () => BoatController.ToggleAllSails());
+            AddButtonRow(boatCard, "E", "Toggle All Engines",
+                "Starts or stops every engine on the raft at once.",
+                "Toggle", () => BoatController.ToggleAllEngines());
+            _navSailModeBtnText = AddActionRow(boatCard, "M", "Smart Sail Mode",
+                "Manual leaves sails alone, Auto-Wind keeps them aligned with the wind, Follow Heading keeps them aligned with the raft.",
+                GetSailModeDisplayName(), () => CycleSailMode());
 
-            CreateActionTile(navTeleRow.transform, "Btn_NavSummonRaft", "⛵ Summon Raft", "[F9] KEY", () =>
-            {
-                TeleportManager.TeleportRaftToPlayer();
-            }, 40f, 78f);
-
-            CreateActionTile(navTeleRow.transform, "Btn_NavAnchor", "⚓ Toggle Anchor", "[ANCHOR]", () =>
-            {
-                TeleportManager.ToggleRaftAnchor();
-            }, 40f, 80f);
-
-            CreateActionTile(navTeleRow.transform, "Btn_NavScanIsland", "🔍 Island Radar", "[F10] KEY", () =>
-            {
-                ItemDetector.TriggerPulseScan();
-            }, out _navScannerBtnText, 40f, 82f);
-
-            // Raft Propulsion & Smart Boat Control Row: Action Tiles with Hotkey Badges (Height: 40)
-            var boatRow = CreateBox(page.transform, "BoatControlRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), Color.clear);
-            EnsureLayout(boatRow, -1, 40);
-            var boatLayout = boatRow.AddComponent<HorizontalLayoutGroup>();
-            boatLayout.spacing = 8;
-            boatLayout.childForceExpandWidth = true;
-
-            CreateActionTile(boatRow.transform, "Btn_ToggleSails", "⛵ Toggle All Sails", "[F4] KEY", () =>
-            {
-                BoatController.ToggleAllSails();
-            }, 40f, 78f);
-
-            CreateActionTile(boatRow.transform, "Btn_ToggleEngines", "⚙️ Toggle Engines", "[F3] KEY", () =>
-            {
-                BoatController.ToggleAllEngines();
-            }, 40f, 78f);
-
-            string initialModeName = GetSailModeDisplayName();
-            CreateActionTile(boatRow.transform, "Btn_SailMode", initialModeName, "[CYCLE]", () =>
-            {
-                CycleSailMode();
-            }, out _navSailModeBtnText, 40f, 78f);
-
-            // Live Navigation Telemetry Console (Height: 185)
-            var statusBox = CreateBox(page.transform, "StatusBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 185), WoodPlankEven);
-            EnsureLayout(statusBox, -1, 185);
-            var sbOutline = statusBox.AddComponent<Outline>();
-            sbOutline.effectColor = WoodRowBorder;
-            sbOutline.effectDistance = new Vector2(1, -1);
-            var boxLayout = statusBox.AddComponent<VerticalLayoutGroup>();
-            boxLayout.padding = new RectOffset(12, 12, 10, 10);
-            boxLayout.spacing = 8;
-            boxLayout.childForceExpandWidth = true;
-
-            var title = CreateText(statusBox.transform, "NavTitle", "<b>🧭 <color=#F5C761>Live Nautical Telemetry</color> & Sensor Console</b>", 16, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
-            EnsureLayout(title.gameObject, -1, 24);
-
-            // 4-Tile Instrument Row
-            var gaugeRow = CreateBox(statusBox.transform, "GaugeRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 95), Color.clear);
-            EnsureLayout(gaugeRow, -1, 95);
-            var gLayout = gaugeRow.AddComponent<HorizontalLayoutGroup>();
-            gLayout.spacing = 8;
-            gLayout.childForceExpandWidth = true;
-            gLayout.childForceExpandHeight = true;
-
-            _teleHeadingText = BuildTelemetryTile(gaugeRow.transform, "Tile_Heading", "🧭 COMPASS HEADING", "---° (Standby)", "Awaiting World Load");
-            _teleRaftText = BuildTelemetryTile(gaugeRow.transform, "Tile_Raft", "⛵ RAFT POSITION", "Standby", "Velocity: 0.0 kts");
-            _teleSharkText = BuildTelemetryTile(gaugeRow.transform, "Tile_Shark", "🦈 BRUCE SONAR", "Sonar Clear", "Threat: Normal");
-            _teleCoordsText = BuildTelemetryTile(gaugeRow.transform, "Tile_Coords", "📍 WORLD GPS", "X: 0.0  Y: 0.0  Z: 0.0", "Sea Level (Y=0.0)");
-
-            // Notification / Quick Ticker Bar
-            var notifRow = CreateBox(statusBox.transform, "NotifRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 32), CheckboxWoodBg);
-            EnsureLayout(notifRow, -1, 32);
-            var nrOutline = notifRow.AddComponent<Outline>();
-            nrOutline.effectColor = WoodTrimAccent * 0.7f;
-            nrOutline.effectDistance = new Vector2(1, -1);
-            _teleNotifText = CreateText(notifRow.transform, "TickerTxt", "💡 <color=#E0D0B5>Hotkeys:</color> <color=#F5C761>[F5]</color> Menu  |  <color=#F5C761>[F6]</color> HUD  |  <color=#F5C761>[Shift+F6]</color> Style  |  <color=#F5C761>[F4]</color> Sails  |  <color=#F5C761>[F3]</color> Engines  |  <color=#F5C761>[F8]</color> Recall  |  <color=#F5C761>[F9]</color> Summon", 13, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleCenter);
-
-            // Hidden fallback for any legacy code
-            var dummyGO = new GameObject("NavStatusDummy");
-            dummyGO.transform.SetParent(statusBox.transform, false);
-            dummyGO.SetActive(false);
-            _navStatusText = dummyGO.AddComponent<Text>();
-            _navStatusText.font = GetGameFont();
-
-            // Version & Update Check Row
-            var verRow = CreateBox(page.transform, "VerRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 40), WoodTitleBar);
-            EnsureLayout(verRow, -1, 40);
-            var verLayout = verRow.AddComponent<HorizontalLayoutGroup>();
-            verLayout.padding = new RectOffset(16, 16, 3, 3);
-            verLayout.spacing = 12;
-            verLayout.childForceExpandHeight = true;
-
-            CreateText(verRow.transform, "VerLabel", $"⚓ Sailor's Companion <b>v{PluginInfo.PLUGIN_VERSION}</b>", 14, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleLeft);
-
-            CreateButton(verRow.transform, "Btn_CheckUpdates", "🔄 Check for Updates", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(180, 34), () =>
-            {
-                UpdateChecker.Dismissed = false;
-                UpdateChecker.Instance?.TriggerCheck();
-                TeleportManager.SetNotification("Checking GitHub for mod updates...");
-            }, WoodButtonNormal, TextParchmentLight, 14);
-
-            return page;
+            return screen;
         }
+        #endregion [END] BUILD SCREEN NAVIGATION
 
-        private Text BuildTelemetryTile(Transform parent, string name, string header, string initialVal, string initialSub)
+        #region [START] BUILD TELEMETRY TILE
+        private Text BuildTelemetryTile(Transform parent, string label)
         {
-            var tile = CreateBox(parent, name, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Color(0.14f, 0.08f, 0.04f, 0.95f));
-            var outline = tile.AddComponent<Outline>();
-            outline.effectColor = WoodTrimAccent * 0.75f;
-            outline.effectDistance = new Vector2(1, -1);
+            var go = new GameObject("Tele_" + label);
+            go.transform.SetParent(parent, false);
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(11);
+            img.type = Image.Type.Sliced;
+            img.color = ColBorderSoft;
+            AddInsetFill(go, 11, ColRow);
 
-            var layout = tile.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(10, 10, 8, 8);
+            var layout = go.AddComponent<VerticalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.padding = new RectOffset(14, 12, 10, 10);
             layout.spacing = 3;
             layout.childForceExpandWidth = true;
 
-            var head = CreateText(tile.transform, "H", header, 12, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleCenter);
-            EnsureLayout(head.gameObject, -1, 16);
+            var lblTxt = CreateText(go, label.ToUpperInvariant(), 12, FontStyle.Bold, ColTextFaint, TextAnchor.MiddleLeft);
+            lblTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            lblTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 14;
 
-            var valTxt = CreateText(tile.transform, "V", $"<b><color=#FFFFFF>{initialVal}</color></b>\n<size=12><color=#DBC49E>{initialSub}</color></size>", 15, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleCenter);
-            valTxt.lineSpacing = 1.2f;
-            EnsureLayout(valTxt.gameObject, -1, 48);
+            var valTxt = CreateText(go, "Standby", 17, FontStyle.Bold, ColText, TextAnchor.UpperLeft);
+            valTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 44;
 
             return valTxt;
         }
-        // ============================================================================
-        // [END] TAB 2: NAVIGATION HUD & SHARK RADAR
-        // ============================================================================
-        #endregion
+        #endregion [END] BUILD TELEMETRY TILE
 
-        #region [START] TAB 3: RESEARCH & R&D BLUEPRINTS
-        // ============================================================================
-        // [START] TAB 3: RESEARCH & R&D BLUEPRINTS (Progressive Chapters & Creative Instant Learn)
-        // ============================================================================
-        private GameObject BuildResearchTab(Transform parent)
+        #region [START] UPDATE NAV STYLE BUTTON VISUALS
+        private void UpdateNavStyleButtonVisuals()
         {
-            var page = CreateBox(parent, "Page_Research", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            var layout = page.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 10;
-            layout.padding = new RectOffset(16, 16, 8, 8);
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
-
-            if (Plugin.IsSurvivalMode)
+            int active = Plugin.HUDStyle != null ? Plugin.HUDStyle.Value : 1;
+            for (int i = 0; i < _navStyleImgs.Length; i++)
             {
-                var infoBox = CreateBox(page.transform, "InfoBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 80), WoodPlankEven);
-                EnsureLayout(infoBox, -1, 80);
-                var ibOutline = infoBox.AddComponent<Outline>();
-                ibOutline.effectColor = WoodRowBorder;
-                ibOutline.effectDistance = new Vector2(1, -1);
-                var boxLayout = infoBox.AddComponent<VerticalLayoutGroup>();
-                boxLayout.padding = new RectOffset(18, 18, 10, 10);
-                boxLayout.spacing = 4;
-                boxLayout.childForceExpandWidth = true;
-
-                var title = CreateText(infoBox.transform, "Title", "🔬 <b><color=#F5C761>Progressive Story Research</color> & Chapter Blueprints</b>", 17, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
-                EnsureLayout(title.gameObject, -1, 24);
-
-                var desc = CreateText(infoBox.transform, "Desc", "In Survival Mode, recipes and story discoveries are unlocked chapter-by-chapter to protect the rewarding story journey of Raft.", 14, FontStyle.Normal, TextParchmentLight, TextAnchor.UpperLeft);
-                EnsureLayout(desc.gameObject, -1, 38);
-
-                // Progressive Tech Cards
-                var btnBase = CreateButton(page.transform, "Btn_BaseTech", "🔬 <b><color=#F5C761>1. Research Base Table Materials</color></b> <color=#F2E6CC>(Wood, Plastic, Metal, Scrap, Clay, Bricks, Goo)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 50), () =>
+                if (_navStyleImgs[i] == null) continue;
+                bool sel = i == active;
+                _navStyleImgs[i].color = sel ? ColAccentWash : ColPanel2;
+                if (_navStyleTexts[i] != null)
                 {
-                    ResearchBaseMaterials();
-                }, WoodButtonNormal, TextParchmentLight, 14);
-                var bOutline = btnBase.AddComponent<Outline>();
-                bOutline.effectColor = WoodTrimAccent * 0.7f;
-                bOutline.effectDistance = new Vector2(1, -1);
-                EnsureLayout(btnBase, -1, 50);
+                    _navStyleTexts[i].color = sel ? ColAccent : ColTextMuted;
+                    _navStyleTexts[i].fontStyle = sel ? FontStyle.Bold : FontStyle.Normal;
+                }
+            }
+        }
+        #endregion [END] UPDATE NAV STYLE BUTTON VISUALS
 
-                var btnCh1 = CreateButton(page.transform, "Btn_Chapter1", "📻 <b><color=#F5C761>2. Unlock Chapter 1 Blueprints</color></b> <color=#F2E6CC>(Radio Tower & Vasagatan — Receiver, Antenna, Engine)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 50), () =>
+        #region [START] GET SAIL MODE DISPLAY NAME
+        private static string GetSailModeDisplayName()
+        {
+            int mode = Plugin.BoatSailMode != null ? Plugin.BoatSailMode.Value : 0;
+            switch (mode)
+            {
+                case 1:  return "Auto-Wind";
+                case 2:  return "Follow Heading";
+                default: return "Manual";
+            }
+        }
+        #endregion [END] GET SAIL MODE DISPLAY NAME
+
+        #region [START] CYCLE SAIL MODE
+        private void CycleSailMode()
+        {
+            if (Plugin.BoatSailMode == null) return;
+            Plugin.BoatSailMode.Value = (Plugin.BoatSailMode.Value + 1) % 3;
+            if (_navSailModeBtnText != null) _navSailModeBtnText.text = GetSailModeDisplayName();
+            BoatController.ApplyActiveSailMode();
+            TeleportManager.SetNotification("Smart Sail Mode: " + GetSailModeDisplayName());
+        }
+        #endregion [END] CYCLE SAIL MODE
+
+        #region [START] REFRESH TELEMETRY
+        private void RefreshTelemetry()
+        {
+            // Recall and scanner share their button label with a cooldown readout, so they are
+            // refreshed here alongside the tiles rather than only when the screen is built.
+            if (_navRecallBtnText != null)
+            {
+                float cd = TeleportManager.GetRecallCooldownRemaining();
+                _navRecallBtnText.text = cd > 0f ? Mathf.CeilToInt(cd) + "s" : "Recall";
+            }
+
+            if (_navScannerBtnText != null)
+            {
+                if (ItemDetector.IsScanActive)
                 {
-                    UnlockChapterBlueprints(1, "Radio Tower & Vasagatan", new[] { "antenna", "receiver", "headlight", "machete", "steering", "engine" });
-                }, WoodButtonNormal, TextParchmentLight, 14);
-                var c1Outline = btnCh1.AddComponent<Outline>();
-                c1Outline.effectColor = WoodTrimAccent * 0.7f;
-                c1Outline.effectDistance = new Vector2(1, -1);
-                EnsureLayout(btnCh1, -1, 50);
-
-                var btnCh2 = CreateButton(page.transform, "Btn_Chapter2", "🐻 <b><color=#F5C761>3. Unlock Chapter 2 Blueprints</color></b> <color=#F2E6CC>(Balboa, Caravan Island, Tangaroa — Biofuel, Charger, Pipes)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 50), () =>
+                    _navScannerBtnText.text = Mathf.CeilToInt(ItemDetector.GetActiveTimeRemaining()) + "s";
+                }
+                else
                 {
-                    UnlockChapterBlueprints(2, "Balboa / Caravan / Tangaroa", new[] { "biofuel", "storage", "charger", "grill", "pipe", "firework" });
-                }, WoodButtonNormal, TextParchmentLight, 14);
-                var c2Outline = btnCh2.AddComponent<Outline>();
-                c2Outline.effectColor = WoodTrimAccent * 0.7f;
-                c2Outline.effectDistance = new Vector2(1, -1);
-                EnsureLayout(btnCh2, -1, 50);
+                    float cd = ItemDetector.GetCooldownRemaining();
+                    _navScannerBtnText.text = cd > 0f ? Mathf.CeilToInt(cd) + "s" : "Scan";
+                }
+            }
 
-                var btnCh3 = CreateButton(page.transform, "Btn_Chapter3", "🏙️ <b><color=#F5C761>4. Unlock Chapter 3 Blueprints</color></b> <color=#F2E6CC>(Varuna Point, Temperance, Utopia — Adv Battery, Windmill, Titanium)</color>", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 50), () =>
-                {
-                    UnlockChapterBlueprints(3, "Varuna / Temperance / Utopia", new[] { "batteryadvanced", "anchorstationaryadvanced", "backpackadvanced", "smelter", "windmill", "titanium", "biofuelextractoradvanced" });
-                }, WoodButtonNormal, TextParchmentLight, 14);
-                var c3Outline = btnCh3.AddComponent<Outline>();
-                c3Outline.effectColor = WoodTrimAccent * 0.7f;
-                c3Outline.effectDistance = new Vector2(1, -1);
-                EnsureLayout(btnCh3, -1, 50);
+            if (_navSailModeBtnText != null) _navSailModeBtnText.text = GetSailModeDisplayName();
 
-                var statusBox = CreateBox(page.transform, "StatusBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), WoodTitleBar);
-                EnsureLayout(statusBox, -1, 36);
-                CreateBox(statusBox.transform, "Trim", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 1.5f), WoodTrimAccent);
-                _researchStatusText = CreateText(statusBox.transform, "Status", "💡 <color=#E0D0B5>Status: Ready. Click any chapter above to learn blueprints into your research station.</color>", 14, FontStyle.Italic, TextParchmentLight, TextAnchor.MiddleCenter);
+            var p = PlayerHelper.GetLocalPlayer();
+            if (p == null)
+            {
+                SetTelemetry(_teleHeadingText, "Standby", "Enter a world to read the compass");
+                SetTelemetry(_teleRaftText, "Standby", "Waiting for the save file");
+                SetTelemetry(_teleSharkText, "Clear", "No predator detected");
+                SetTelemetry(_teleCoordsText, "Standby", "Waiting for world telemetry");
+                return;
+            }
+
+            if (_cachedNavCamera == null) _cachedNavCamera = Camera.main;
+            float yaw = _cachedNavCamera != null ? _cachedNavCamera.transform.eulerAngles.y : p.transform.eulerAngles.y;
+            string[] cardinals = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
+            int cIndex = Mathf.RoundToInt(yaw / 45f) % 8;
+            if (cIndex < 0) cIndex += 8;
+            SetTelemetry(_teleHeadingText,
+                yaw.ToString("000", CultureInfo.InvariantCulture) + "° " + cardinals[cIndex],
+                "Facing " + cardinals[cIndex]);
+
+            if (_cachedNavRaft == null || !_cachedNavRaft.gameObject.activeInHierarchy)
+            {
+                _cachedNavRaft = ComponentManager<Raft>.Value ?? FindObjectOfType<Raft>();
+            }
+            if (_cachedNavRaft != null)
+            {
+                float dist = Vector3.Distance(p.transform.position, _cachedNavRaft.transform.position);
+                float knots = _cachedNavRaft.Velocity.magnitude * 1.94f;
+                SetTelemetry(_teleRaftText,
+                    dist.ToString("F0", CultureInfo.InvariantCulture) + "m away",
+                    (_cachedNavRaft.IsAnchored ? "Anchored" : "Drifting") + " · " + knots.ToString("F1", CultureInfo.InvariantCulture) + " kn");
             }
             else
             {
-                var infoBox = CreateBox(page.transform, "InfoBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 80), WoodPlankEven);
-                EnsureLayout(infoBox, -1, 80);
-                var ibOutline = infoBox.AddComponent<Outline>();
-                ibOutline.effectColor = WoodRowBorder;
-                ibOutline.effectDistance = new Vector2(1, -1);
-                var boxLayout = infoBox.AddComponent<VerticalLayoutGroup>();
-                boxLayout.padding = new RectOffset(18, 18, 10, 10);
-                boxLayout.spacing = 4;
-                boxLayout.childForceExpandWidth = true;
-
-                var title = CreateText(infoBox.transform, "Title", "⚡ <b><color=#F5C761>Creative Sandbox</color> Blueprint Master Station</b>", 17, FontStyle.Bold, TextGoldHeading, TextAnchor.MiddleLeft);
-                EnsureLayout(title.gameObject, -1, 24);
-
-                var desc = CreateText(infoBox.transform, "Desc", "Creative Mode allows instant learning of every item, engine, weapon, tool, furniture, and story blueprint without visiting islands.", 14, FontStyle.Normal, TextParchmentLight, TextAnchor.UpperLeft);
-                EnsureLayout(desc.gameObject, -1, 38);
-
-                // Master Unlock Banner Button
-                var unlockBtn = CreateButton(page.transform, "Btn_UnlockAllRD", "⚡ UNLOCK ALL 300+ R&D RECIPES & STORY BLUEPRINTS NOW", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 56), () =>
-                {
-                    try
-                    {
-                        var rt = ComponentManager<Inventory_ResearchTable>.Value ?? FindObjectOfType<Inventory_ResearchTable>();
-                        if (rt != null)
-                        {
-                            rt.LearnAllRecipesInstantly();
-                        }
-                        Cheat.UnlockAllCrafting = true;
-                        if (_researchStatusText != null)
-                        {
-                            _researchStatusText.text = "<b><color=#34D399>✅ SUCCESS: All 300+ R&D recipes and blueprints learned permanently!</color></b>";
-                        }
-                        Debug.Log("[Sailor's Companion] Unlocked all R&D recipes and blueprints!");
-                    }
-                    catch (Exception ex)
-                    {
-                        if (_researchStatusText != null)
-                        {
-                            _researchStatusText.text = $"<color=#F87171>Notice: {ex.Message} (Load into world first)</color>";
-                        }
-                        Debug.LogError("[Sailor's Companion] R&D error: " + ex);
-                    }
-                }, WoodButtonCrimson, TextWhite, 16);
-                var uOutline = unlockBtn.AddComponent<Outline>();
-                uOutline.effectColor = WoodTrimAccent;
-                uOutline.effectDistance = new Vector2(2, -2);
-                EnsureLayout(unlockBtn, -1, 56);
-
-                CreateCategoryHeader(page.transform, "📖 TARGETED STORY CHAPTER UNLOCKS", 28f);
-
-                var btnCh1 = CreateButton(page.transform, "Btn_Chapter1", "📻 <b><color=#F5C761>Chapter 1 Blueprints</color></b> (Radio Tower & Vasagatan)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
-                {
-                    UnlockChapterBlueprints(1, "Radio Tower & Vasagatan", new[] { "antenna", "receiver", "headlight", "machete", "steering", "engine" });
-                }, WoodButtonNormal, TextParchmentLight, 14);
-                EnsureLayout(btnCh1, -1, 44);
-
-                var btnCh2 = CreateButton(page.transform, "Btn_Chapter2", "🐻 <b><color=#F5C761>Chapter 2 Blueprints</color></b> (Balboa, Caravan Island, Tangaroa)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
-                {
-                    UnlockChapterBlueprints(2, "Balboa / Caravan / Tangaroa", new[] { "biofuel", "storage", "charger", "grill", "pipe", "firework" });
-                }, WoodButtonNormal, TextParchmentLight, 14);
-                EnsureLayout(btnCh2, -1, 44);
-
-                var btnCh3 = CreateButton(page.transform, "Btn_Chapter3", "🏙️ <b><color=#F5C761>Chapter 3 Blueprints</color></b> (Varuna Point, Temperance, Utopia)", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), () =>
-                {
-                    UnlockChapterBlueprints(3, "Varuna / Temperance / Utopia", new[] { "batteryadvanced", "anchorstationaryadvanced", "backpackadvanced", "smelter", "windmill", "titanium", "biofuelextractoradvanced" });
-                }, WoodButtonNormal, TextParchmentLight, 14);
-                EnsureLayout(btnCh3, -1, 44);
-
-                var statusBox = CreateBox(page.transform, "StatusBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 36), WoodTitleBar);
-                EnsureLayout(statusBox, -1, 36);
-                CreateBox(statusBox.transform, "Trim", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 1.5f), WoodTrimAccent);
-                _researchStatusText = CreateText(statusBox.transform, "Status", "💡 <color=#E0D0B5>Status: Ready. Click Master Unlock to learn everything, or choose specific chapters above.</color>", 14, FontStyle.Italic, TextParchmentLight, TextAnchor.MiddleCenter);
+                SetTelemetry(_teleRaftText, "Not found", "Raft reference missing");
             }
 
-            return page;
-        }
+            if (_cachedNavShark == null || !_cachedNavShark.gameObject.activeInHierarchy)
+            {
+                _cachedNavShark = FindObjectOfType<AI_StateMachine_Shark>();
+            }
+            if (_cachedNavShark != null && _cachedNavShark.gameObject.activeInHierarchy)
+            {
+                float sDist = Vector3.Distance(p.transform.position, _cachedNavShark.transform.position);
+                string threat = sDist < 25f ? "Close - watch out" : (sDist < 50f ? "Prowling nearby" : "Far away");
+                SetTelemetry(_teleSharkText, sDist.ToString("F0", CultureInfo.InvariantCulture) + "m away", threat,
+                    sDist < 25f ? ColDanger : (sDist < 50f ? ColGold : ColSuccess));
+            }
+            else
+            {
+                SetTelemetry(_teleSharkText, "Clear", "Ocean waters are calm", ColSuccess);
+            }
 
+            var pos = p.transform.position;
+            SetTelemetry(_teleCoordsText,
+                "X " + pos.x.ToString("F0", CultureInfo.InvariantCulture) + "  Z " + pos.z.ToString("F0", CultureInfo.InvariantCulture),
+                "Altitude Y " + pos.y.ToString("F1", CultureInfo.InvariantCulture) + "m");
+        }
+        #endregion [END] REFRESH TELEMETRY
+
+        #region [START] SET TELEMETRY
+        private void SetTelemetry(Text t, string value, string sub, Color? valueColor = null)
+        {
+            if (t == null) return;
+            t.text = value + "\n<size=12><color=#8FA3A9>" + sub + "</color></size>";
+            t.color = valueColor ?? ColText;
+        }
+        #endregion [END] SET TELEMETRY
+        #endregion [END] SCREEN: NAVIGATION
+
+        #region [START] SCREEN: CHEATS & SANDBOX
+        #region [START] BUILD SCREEN CHEATS
+        private GameObject BuildScreenCheats(GameObject parent)
+        {
+            var screen = CreateScreenShell(parent, "Cheats & Sandbox",
+                "Invulnerability, flight, free crafting, and direct control over the time of day and the weather.",
+                MenuKeyLabel(), out var body);
+
+            if (Plugin.IsSurvivalMode)
+            {
+                AddLockCard(body, "Cheats are locked in Survival Mode",
+                    "Survival Mode keeps Sailor's Companion to quality-of-life only, so nothing here can undo the progression you earned. Switch to Creative Mode to unlock god mode, flight, free crafting and the world controls.");
+                return screen;
+            }
+
+            AddGroupLabel(body, "Player");
+            var playerCard = CreateCard(body);
+            AddToggleRow(playerCard, "G", "God Mode",
+                "Invulnerable to all damage, including the shark.",
+                () => Plugin.GodMode != null && Plugin.GodMode.Value,
+                v => { if (Plugin.GodMode != null) Plugin.GodMode.Value = v; RefreshOverview(); });
+            AddToggleRow(playerCard, "K", "One-Hit Kill",
+                "Any enemy or predator dies in a single hit.",
+                () => Plugin.OneHitKill != null && Plugin.OneHitKill.Value,
+                v => { if (Plugin.OneHitKill != null) Plugin.OneHitKill.Value = v; RefreshOverview(); }, true);
+            AddToggleRow(playerCard, "O", "Infinite Oxygen",
+                "Dive as long as you like without running out of air.",
+                () => Plugin.InfiniteOxygen != null && Plugin.InfiniteOxygen.Value,
+                v => { if (Plugin.InfiniteOxygen != null) Plugin.InfiniteOxygen.Value = v; RefreshOverview(); }, true);
+            AddToggleRow(playerCard, "H", "Freeze Hunger & Thirst",
+                "Both meters stay full.",
+                () => Plugin.NoHungerThirst != null && Plugin.NoHungerThirst.Value,
+                v => { if (Plugin.NoHungerThirst != null) Plugin.NoHungerThirst.Value = v; RefreshOverview(); }, true);
+            AddButtonRow(playerCard, "V", "Replenish All Vitals",
+                "Refills health, oxygen, hunger and thirst right now.", "Restore", () =>
+                {
+                    var p = PlayerHelper.GetLocalPlayer();
+                    if (p?.Stats != null)
+                    {
+                        p.Stats.stat_health?.SetToMaxValue();
+                        p.Stats.stat_hunger?.Normal?.SetToMaxValue();
+                        p.Stats.stat_thirst?.Normal?.SetToMaxValue();
+                        p.Stats.stat_oxygen?.SetToMaxValue();
+                        TeleportManager.SetNotification("Vitals fully replenished.");
+                    }
+                    else
+                    {
+                        TeleportManager.SetNotification("Enter a game world first.");
+                    }
+                });
+
+            AddGroupLabel(body, "Movement & Crafting");
+            var moveCard = CreateCard(body);
+            AddToggleRow(moveCard, "F", "Fly / Noclip",
+                "Free flight with Space and Shift. Bound to " + KeyLabel(Plugin.KeyFly, KeyCode.F) + ".",
+                () => Plugin.EnableFlyMode != null && Plugin.EnableFlyMode.Value,
+                v => { if (Plugin.EnableFlyMode != null) Plugin.EnableFlyMode.Value = v; RefreshOverview(); });
+            AddStepperRow(moveCard, "S", "Fly Speed",
+                "How fast flight moves you, in metres per second.",
+                4f, 40f, 2f, " m/s",
+                () => Plugin.FlySpeed != null ? Plugin.FlySpeed.Value : 14f,
+                v => { if (Plugin.FlySpeed != null) Plugin.FlySpeed.Value = v; }, true);
+            AddToggleRow(moveCard, "C", "Free Instant Crafting",
+                "Craft any recipe without spending materials.",
+                () => Plugin.FreeCrafting != null && Plugin.FreeCrafting.Value,
+                v => { if (Plugin.FreeCrafting != null) Plugin.FreeCrafting.Value = v; RefreshOverview(); }, true);
+
+            AddGroupLabel(body, "Time of Day");
+            var timeCard = CreateCard(body);
+            AddTripleButtonRow(timeCard, "T", "Set Time",
+                "Jumps the world clock straight to morning, noon or night.",
+                "Morning", () => SetTime(8f), "Noon", () => SetTime(12f), "Night", () => SetTime(22f));
+
+            AddGroupLabel(body, "Weather");
+            var weatherCard = CreateCard(body);
+            AddTripleButtonRow(weatherCard, "W", "Set Weather",
+                "Forces the weather system to a specific state.",
+                "Clear", () => SetWeather(UniqueWeatherType.Default),
+                "Calm", () => SetWeather(UniqueWeatherType.Calm),
+                "Rain", () => SetWeather(UniqueWeatherType.Rain));
+            AddButtonRow(weatherCard, "F", "Fog",
+                "Rolls in a thick fog bank.", "Apply", () => SetWeather(UniqueWeatherType.Fog));
+
+            return screen;
+        }
+        #endregion [END] BUILD SCREEN CHEATS
+
+        #region [START] SET TIME
+        private static void SetTime(float hour)
+        {
+            try
+            {
+                var sky = FindObjectOfType<UnityEngine.AzureSky.AzureSkyController>();
+                if (sky?.timeOfDay != null)
+                {
+                    sky.timeOfDay.GotoTime(hour);
+                    TeleportManager.SetNotification("Time set to " + Mathf.RoundToInt(hour) + ":00.");
+                    return;
+                }
+            }
+            catch { }
+            TeleportManager.SetNotification("Enter a game world to change the time.");
+        }
+        #endregion [END] SET TIME
+
+        #region [START] SET WEATHER
+        private static void SetWeather(UniqueWeatherType weather)
+        {
+            try
+            {
+                var wm = ComponentManager<WeatherManager>.Value ?? FindObjectOfType<WeatherManager>();
+                if (wm != null)
+                {
+                    wm.SetWeather(weather, true);
+                    TeleportManager.SetNotification("Weather set to " + weather + ".");
+                    return;
+                }
+            }
+            catch { }
+            TeleportManager.SetNotification("Enter a game world to change the weather.");
+        }
+        #endregion [END] SET WEATHER
+        #endregion [END] SCREEN: CHEATS & SANDBOX
+
+        #region [START] SCREEN: RESEARCH
+        #region [START] BUILD SCREEN RESEARCH
+        private GameObject BuildScreenResearch(GameObject parent)
+        {
+            var screen = CreateScreenShell(parent, "Research",
+                "Learn recipes at the research table without hunting down every material first.",
+                MenuKeyLabel(), out var body);
+
+            if (Plugin.IsSurvivalMode)
+            {
+                AddLockCard(body, "Research unlocks are locked in Survival Mode",
+                    "Discovering recipes at the research table is a core part of Raft's progression, so these shortcuts stay off in Survival Mode. Switch to Creative Mode to unlock them.");
+                return screen;
+            }
+
+            AddGroupLabel(body, "Status");
+            var statusGO = new GameObject("ResearchStatus");
+            statusGO.transform.SetParent(body.transform, false);
+            statusGO.AddComponent<LayoutElement>().preferredHeight = 22;
+            _researchStatusText = CreateText(statusGO, "Load into a game world, then pick an unlock below.", 14, FontStyle.Normal, ColTextFaint, TextAnchor.MiddleLeft);
+            _researchStatusText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            FillParent(_researchStatusText.gameObject);
+
+            AddGroupLabel(body, "Materials");
+            var matCard = CreateCard(body);
+            AddButtonRow(matCard, "B", "Research Base Materials",
+                "Researches planks, plastic, scrap, metal, stone, rope and the rest of the common crafting inputs.",
+                "Research", ResearchBaseMaterials);
+
+            AddGroupLabel(body, "Story Chapters");
+            var chapCard = CreateCard(body);
+            AddButtonRow(chapCard, "1", "Chapter 1 Blueprints",
+                "Radio Tower and Vasagatan: antenna, receiver, headlight, machete, steering wheel, engine.",
+                "Unlock", () => UnlockChapterBlueprints(1, "Radio Tower & Vasagatan",
+                    new[] { "antenna", "receiver", "headlight", "machete", "steering", "engine" }));
+            AddButtonRow(chapCard, "2", "Chapter 2 Blueprints",
+                "Balboa, Caravan Island and Tangaroa: biofuel, storage, charger, grill, pipes, fireworks.",
+                "Unlock", () => UnlockChapterBlueprints(2, "Balboa / Caravan / Tangaroa",
+                    new[] { "biofuel", "storage", "charger", "grill", "pipe", "firework" }));
+            AddButtonRow(chapCard, "3", "Chapter 3 Blueprints",
+                "Varuna Point, Temperance and Utopia: advanced battery, advanced anchor, advanced backpack, smelter.",
+                "Unlock", () => UnlockChapterBlueprints(3, "Varuna / Temperance / Utopia",
+                    new[] { "batteryadvanced", "anchorstationaryadvanced", "backpackadvanced", "smelter" }));
+
+            AddGroupLabel(body, "Everything");
+            var allCard = CreateCard(body);
+            AddButtonRow(allCard, "A", "Unlock All Recipes",
+                "Learns every research-table recipe and story blueprint at once. This cannot be undone on this save.",
+                "Unlock All", UnlockAllResearch);
+
+            return screen;
+        }
+        #endregion [END] BUILD SCREEN RESEARCH
+
+        #region [START] RESEARCH BASE MATERIALS
         private void ResearchBaseMaterials()
         {
             try
             {
                 var rt = ComponentManager<Inventory_ResearchTable>.Value ?? FindObjectOfType<Inventory_ResearchTable>();
                 var all = ItemManager.GetAllItems();
-                if (all == null || all.Count == 0)
+                if (all == null || all.Count == 0 || rt == null)
                 {
-                    if (_researchStatusText != null)
-                        _researchStatusText.text = "<color=#F87171>Load into a game world to research items!</color>";
+                    SetResearchStatus("Load into a game world to research items.", ColDanger);
                     return;
                 }
 
-                string[] baseKeywords = { "plank", "plastic", "scrap", "metal", "copper", "stone", "rope", "brick", "goo", "glass", "hinge", "bolt", "feather", "clay", "sand", "dirt", "leather", "wool" };
+                string[] baseKeywords = { "plank", "plastic", "scrap", "metal", "copper", "stone", "rope",
+                                          "brick", "goo", "glass", "hinge", "bolt", "feather", "clay",
+                                          "sand", "dirt", "leather", "wool" };
+                var player = PlayerHelper.GetLocalPlayer();
                 int count = 0;
                 foreach (var item in all)
                 {
                     if (item == null || string.IsNullOrEmpty(item.UniqueName)) continue;
                     string name = item.UniqueName.ToLower();
                     if (name.StartsWith("blueprint_")) continue;
-                    if (baseKeywords.Any(k => name.Contains(k)))
+                    if (!baseKeywords.Any(k => name.Contains(k))) continue;
+
+                    try { rt.Research(item, true); count++; } catch { }
+                    if (player != null)
                     {
-                        if (rt != null)
-                        {
-                            try { rt.Research(item, true); count++; } catch { }
-                            var p = PlayerHelper.GetLocalPlayer();
-                            if (p != null)
-                            {
-                                try { rt.LearnItem(item, p.steamID); } catch { }
-                            }
-                        }
+                        try { rt.LearnItem(item, player.steamID); } catch { }
                     }
                 }
 
-                if (_researchStatusText != null)
-                    _researchStatusText.text = $"<color=#34D399><b>✅ Researched {count} base materials at the Research Table!</b></color>";
-                TeleportManager.SetNotification($"🔬 Researched {count} base crafting materials!");
+                SetResearchStatus("Researched " + count + " base materials at the research table.", ColSuccess);
+                TeleportManager.SetNotification("Researched " + count + " base crafting materials.");
             }
             catch (Exception ex)
             {
-                if (_researchStatusText != null)
-                    _researchStatusText.text = $"<color=#F87171>Error: {ex.Message}</color>";
+                SetResearchStatus("Error: " + ex.Message, ColDanger);
             }
         }
+        #endregion [END] RESEARCH BASE MATERIALS
 
+        #region [START] UNLOCK CHAPTER BLUEPRINTS
         private void UnlockChapterBlueprints(int chapter, string chapterName, string[] keywords)
         {
             try
             {
                 var rt = ComponentManager<Inventory_ResearchTable>.Value ?? FindObjectOfType<Inventory_ResearchTable>();
                 var all = ItemManager.GetAllItems();
-                if (all == null || all.Count == 0)
+                if (all == null || all.Count == 0 || rt == null)
                 {
-                    if (_researchStatusText != null)
-                        _researchStatusText.text = "<color=#F87171>Load into a game world to unlock blueprints!</color>";
+                    SetResearchStatus("Load into a game world to unlock blueprints.", ColDanger);
                     return;
                 }
 
@@ -1478,142 +1851,156 @@ namespace SailorsCompanion.UI
                 {
                     if (item == null || string.IsNullOrEmpty(item.UniqueName)) continue;
                     string name = item.UniqueName.ToLower();
-                    if (keywords.Any(k => name.Contains(k)))
-                    {
-                        if (rt != null)
-                        {
-                            try { rt.ResearchBlueprint(item); count++; } catch { }
-                        }
-                    }
+                    if (!keywords.Any(k => name.Contains(k))) continue;
+                    try { rt.ResearchBlueprint(item); count++; } catch { }
                 }
 
-                if (_researchStatusText != null)
-                    _researchStatusText.text = $"<color=#34D399><b>✅ SUCCESS: Chapter {chapter} ({chapterName}) blueprints unlocked!</b></color>";
-                TeleportManager.SetNotification($"📻 Chapter {chapter} Blueprints Unlocked!");
+                SetResearchStatus("Chapter " + chapter + " (" + chapterName + ") unlocked - " + count + " blueprints.", ColSuccess);
+                TeleportManager.SetNotification("Chapter " + chapter + " blueprints unlocked.");
             }
             catch (Exception ex)
             {
-                if (_researchStatusText != null)
-                    _researchStatusText.text = $"<color=#F87171>Error: {ex.Message}</color>";
+                SetResearchStatus("Error: " + ex.Message, ColDanger);
             }
         }
-        // ============================================================================
-        // [END] TAB 3: RESEARCH & R&D BLUEPRINTS
-        // ============================================================================
-        #endregion
+        #endregion [END] UNLOCK CHAPTER BLUEPRINTS
 
-        #region [START] TAB 4: 300+ ITEM SPAWNER ENGINE
-        // ============================================================================
-        // [START] TAB 4: 300+ ITEM SPAWNER ENGINE (Real-Time Search & Instant Spawning)
-        // ============================================================================
-        private GameObject BuildSpawnerTab(Transform parent)
+        #region [START] UNLOCK ALL RESEARCH
+        private void UnlockAllResearch()
         {
+            try
+            {
+                var rt = ComponentManager<Inventory_ResearchTable>.Value ?? FindObjectOfType<Inventory_ResearchTable>();
+                if (rt == null)
+                {
+                    SetResearchStatus("Load into a game world to unlock recipes.", ColDanger);
+                    return;
+                }
+                rt.LearnAllRecipesInstantly();
+                Cheat.UnlockAllCrafting = true;
+                SetResearchStatus("Every research-table recipe and blueprint is now learned.", ColSuccess);
+                TeleportManager.SetNotification("All recipes and blueprints unlocked.");
+            }
+            catch (Exception ex)
+            {
+                SetResearchStatus("Notice: " + ex.Message + " (load into a world first)", ColDanger);
+            }
+        }
+        #endregion [END] UNLOCK ALL RESEARCH
+
+        #region [START] SET RESEARCH STATUS
+        private void SetResearchStatus(string text, Color color)
+        {
+            if (_researchStatusText == null) return;
+            _researchStatusText.text = text;
+            _researchStatusText.color = color;
+        }
+        #endregion [END] SET RESEARCH STATUS
+        #endregion [END] SCREEN: RESEARCH
+
+        #region [START] SCREEN: ITEM SPAWNER
+        #region [START] BUILD SCREEN SPAWNER
+        private GameObject BuildScreenSpawner(GameObject parent)
+        {
+            var screen = CreateScreenShell(parent, "Item Spawner",
+                "Search Raft's full item list and place any of it straight into your inventory.",
+                MenuKeyLabel(), out var body);
+
             if (Plugin.IsSurvivalMode)
             {
-                return CreateLockCard(parent, "Item Spawner",
-                    "Gathering resources, fishing for food, and diving for scrap form the core progression loop of Raft.\n\nItem Spawning is disabled in Survival Mode to preserve authentic accomplishment.\n\nSwitch to Creative / Sandbox Mode at the top or below to browse and spawn any of the 300+ items.",
-                    () => SetModMode("Creative"));
+                _itemSearchInput = null;
+                _itemScrollContent = null;
+                AddLockCard(body, "The item spawner is locked in Survival Mode",
+                    "Gathering, fishing and diving for scrap are the heart of Raft's progression, so spawning items stays off in Survival Mode. Switch to Creative Mode to browse and spawn any item.");
+                return screen;
             }
 
-            var page = CreateBox(parent, "Page_Spawner", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, Color.clear);
-            var layout = page.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 8;
-            layout.padding = new RectOffset(14, 14, 8, 8);
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
+            AddGroupLabel(body, "Search");
+            var searchCard = CreateCard(body);
+            BuildSearchRow(searchCard);
 
-            var banner = CreateBox(page.transform, "Banner", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), WoodTitleBar);
-            EnsureLayout(banner, -1, 38);
-            var bannerTxt = CreateText(banner.transform, "Txt", "📦 <b>Item Spawner:</b> Search any item in Raft and add stacks directly into your inventory.", 15, FontStyle.Normal, TextGoldHeading, TextAnchor.MiddleCenter);
+            AddGroupLabel(body, "Results");
+            var listCard = CreateCard(body);
+            var listHostGO = new GameObject("ListHost");
+            listHostGO.transform.SetParent(listCard.transform, false);
+            listHostGO.AddComponent<LayoutElement>().preferredHeight = 360;
 
-            // Category Quick-Filter Chips Row
-            var catRow = CreateBox(page.transform, "CatFilterRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 32), Color.clear);
-            EnsureLayout(catRow, -1, 32);
-            var catLayout = catRow.AddComponent<HorizontalLayoutGroup>();
-            catLayout.spacing = 6;
-            catLayout.childForceExpandWidth = true;
+            var listLayout = listHostGO.AddComponent<VerticalLayoutGroup>();
+            listLayout.childControlWidth = true;
+            listLayout.childControlHeight = true;
+            listLayout.padding = new RectOffset(10, 10, 10, 10);
+            listLayout.spacing = 4;
+            listLayout.childForceExpandWidth = true;
+            listLayout.childForceExpandHeight = false;
+            _itemScrollContent = listHostGO.transform;
 
-            string[] catLabels = { "🌐 All", "🪵 Resources", "🔨 Tools", "🍲 Food", "🏠 Decor & Base", "📻 Story" };
-            string[] catFilters = { "", "plank plastic scrap metal titanium copper stone", "hook axe spear bow arrow machete headlight", "fish meat beet potato mango melon water soup", "foundation wall door window table chair bed paint", "blueprint receiver antenna key cassette note" };
+            RefreshItemSpawnerList("");
 
-            for (int c = 0; c < catLabels.Length; c++)
-            {
-                int cIdx = c;
-                CreateButton(catRow.transform, $"Btn_Cat_{c}", catLabels[c], Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, () =>
-                {
-                    if (_itemSearchInput != null) _itemSearchInput.text = catFilters[cIdx];
-                    RefreshItemSpawnerList(catFilters[cIdx]);
-                }, WoodButtonNormal, TextParchmentLight, 13);
-            }
+            return screen;
+        }
+        #endregion [END] BUILD SCREEN SPAWNER
 
-            // Search row
-            var searchRow = CreateBox(page.transform, "SearchRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 38), Color.clear);
-            EnsureLayout(searchRow, -1, 38);
-            var searchLayout = searchRow.AddComponent<HorizontalLayoutGroup>();
-            searchLayout.spacing = 8;
+        #region [START] BUILD SEARCH ROW
+        private void BuildSearchRow(GameObject card)
+        {
+            var rowGO = CreateRowShell(card, "F", "Find an Item",
+                "Type part of a name - for example plank, scrap, titanium - then press Enter.",
+                false, out _);
 
-            var inputGO = CreateBox(searchRow.transform, "InputSearch", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(620, 36), CheckboxWoodBg);
-            EnsureLayout(inputGO, 620, 36, false);
-            var inputTxt = CreateText(inputGO.transform, "Text", "", 15, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleLeft);
-            inputTxt.rectTransform.offsetMin = new Vector2(12, 0);
-            var placeholderTxt = CreateText(inputGO.transform, "Placeholder", "🔍 Type to search items... (e.g. plank, titanium, shark)", 14, FontStyle.Italic, TextMuted, TextAnchor.MiddleLeft);
-            placeholderTxt.rectTransform.offsetMin = new Vector2(12, 0);
-            _itemSearchInput = inputGO.AddComponent<InputField>();
+            var fieldGO = new GameObject("SearchField");
+            fieldGO.transform.SetParent(rowGO.transform, false);
+            fieldGO.AddComponent<LayoutElement>().preferredWidth = 260;
+            var fieldImg = fieldGO.AddComponent<Image>();
+            fieldImg.sprite = GetRoundedSprite(8);
+            fieldImg.type = Image.Type.Sliced;
+            fieldImg.color = ColBorder;
+            AddInsetFill(fieldGO, 8, ColPanel2);
+
+            var textGO = new GameObject("Text");
+            textGO.transform.SetParent(fieldGO.transform, false);
+            var inputTxt = textGO.AddComponent<Text>();
+            inputTxt.font = GetGameFont();
+            inputTxt.fontSize = 15;
+            inputTxt.color = ColText;
+            inputTxt.alignment = TextAnchor.MiddleLeft;
+            inputTxt.supportRichText = false;
+            var textRt = textGO.GetComponent<RectTransform>();
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = new Vector2(12, 0);
+            textRt.offsetMax = new Vector2(-12, 0);
+
+            var phGO = new GameObject("Placeholder");
+            phGO.transform.SetParent(fieldGO.transform, false);
+            var phTxt = phGO.AddComponent<Text>();
+            phTxt.font = GetGameFont();
+            phTxt.fontSize = 15;
+            phTxt.color = ColTextFaint;
+            phTxt.alignment = TextAnchor.MiddleLeft;
+            phTxt.text = "Search items...";
+            var phRt = phGO.GetComponent<RectTransform>();
+            phRt.anchorMin = Vector2.zero;
+            phRt.anchorMax = Vector2.one;
+            phRt.offsetMin = new Vector2(12, 0);
+            phRt.offsetMax = new Vector2(-12, 0);
+
+            _itemSearchInput = fieldGO.AddComponent<InputField>();
             _itemSearchInput.textComponent = inputTxt;
-            _itemSearchInput.placeholder = placeholderTxt;
-            _itemSearchInput.onValueChanged.AddListener(s => RefreshItemSpawnerList(s));
+            _itemSearchInput.placeholder = phTxt;
+            _itemSearchInput.targetGraphic = fieldImg;
+            _itemSearchInput.lineType = InputField.LineType.SingleLine;
+            _itemSearchInput.onValueChanged.AddListener(RefreshItemSpawnerList);
 
-            var clearBtn = CreateButton(searchRow.transform, "Btn_Clear", "✕ Clear", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(100, 36), () =>
+            var clearGO = CreateGhostButton(rowGO.transform, "Clear", () =>
             {
                 if (_itemSearchInput != null) _itemSearchInput.text = "";
                 RefreshItemSpawnerList("");
-            }, WoodButtonNormal, TextParchmentLight, 14);
-            EnsureLayout(clearBtn, 100, 36, false);
-
-            var refreshBtn = CreateButton(searchRow.transform, "Btn_Refresh", "🔄 Refresh", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(120, 36), () => RefreshItemSpawnerList(_itemSearchInput?.text ?? ""), WoodButtonNormal, TextParchmentLight, 14);
-            EnsureLayout(refreshBtn, 120, 36, false);
-
-            // Scroll View with RectMask2D (Reliable 2D clipping without stencil mask alpha bug)
-            var scrollGO = CreateBox(page.transform, "ScrollView", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 400), WoodWindowBg);
-            EnsureLayout(scrollGO, -1, 400);
-            var scrollRect = scrollGO.AddComponent<ScrollRect>();
-            scrollRect.horizontal = false;
-            scrollRect.vertical = true;
-            scrollRect.scrollSensitivity = 25f;
-
-            var viewport = new GameObject("Viewport");
-            viewport.transform.SetParent(scrollGO.transform, false);
-            var vpRt = viewport.AddComponent<RectTransform>();
-            vpRt.anchorMin = Vector2.zero;
-            vpRt.anchorMax = Vector2.one;
-            vpRt.pivot = new Vector2(0.5f, 0.5f);
-            vpRt.sizeDelta = Vector2.zero;
-            viewport.AddComponent<RectMask2D>();
-            scrollRect.viewport = vpRt;
-
-            var contentGO = new GameObject("Content");
-            contentGO.transform.SetParent(viewport.transform, false);
-            var cRt = contentGO.AddComponent<RectTransform>();
-            cRt.anchorMin = new Vector2(0, 1);
-            cRt.anchorMax = new Vector2(1, 1);
-            cRt.pivot = new Vector2(0.5f, 1);
-            cRt.sizeDelta = new Vector2(0, 400);
-            var contentLayout = contentGO.AddComponent<VerticalLayoutGroup>();
-            contentLayout.spacing = 4;
-            contentLayout.padding = new RectOffset(4, 4, 4, 4);
-            contentLayout.childForceExpandWidth = true;
-            contentLayout.childForceExpandHeight = false;
-            var csf = contentGO.AddComponent<ContentSizeFitter>();
-            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            scrollRect.content = cRt;
-
-            _itemScrollContent = contentGO.transform;
-            RefreshItemSpawnerList("");
-
-            return page;
+            });
+            clearGO.AddComponent<LayoutElement>().preferredWidth = 86;
         }
+        #endregion [END] BUILD SEARCH ROW
 
-
+        #region [START] REFRESH ITEM SPAWNER LIST
         private void RefreshItemSpawnerList(string filter)
         {
             if (_itemScrollContent == null) return;
@@ -1632,6 +2019,7 @@ namespace SailorsCompanion.UI
                 }
                 else
                 {
+                    // ItemManager is empty until a world is loaded; the asset scan is the fallback.
                     var found = Resources.FindObjectsOfTypeAll<Item_Base>();
                     if (found != null && found.Length > 0)
                     {
@@ -1642,1059 +2030,1083 @@ namespace SailorsCompanion.UI
 
             if (_allItems == null || _allItems.Count == 0)
             {
-                var row = CreateBox(_itemScrollContent, "NoticeRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 70), WoodPlankEven);
-                EnsureLayout(row, -1, 70);
-                CreateText(row.transform, "NoticeTxt", "💡 <b>Items load when you load into a game world.</b>\nEnter a game world to browse and spawn all 300+ items directly into your inventory!", 15, FontStyle.Normal, TextParchmentWarm, TextAnchor.MiddleCenter);
-                Canvas.ForceUpdateCanvases();
+                AddSpawnerNotice("Items load with the world. Enter a game world to browse and spawn them.");
                 return;
             }
 
-            string[] tokens = string.IsNullOrEmpty(filter) ? new string[0] : filter.Trim().ToLower().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] tokens = string.IsNullOrEmpty(filter)
+                ? new string[0]
+                : filter.Trim().ToLower().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             var filtered = _allItems.Where(i =>
             {
                 if (tokens.Length == 0) return true;
                 string uName = i.UniqueName?.ToLower() ?? "";
                 string dName = i.settings_Inventory?.DisplayName?.ToLower() ?? "";
-                // Match if all or any tokens match
                 return tokens.Any(t => uName.Contains(t) || dName.Contains(t));
-            }).Take(80).ToList();
+            }).Take(60).ToList();
 
             if (filtered.Count == 0)
             {
-                var emptyRow = CreateBox(_itemScrollContent, "EmptyRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 80), WoodPlankEven);
-                EnsureLayout(emptyRow, -1, 80);
-                CreateText(emptyRow.transform, "EmptyTxt", $"🔍 <b>No items found matching \"{filter}\"</b>\nTry searching: <b>Hammer</b>, <b>Plank</b>, <b>Plastic</b>, <b>Scrap</b>, <b>Titanium</b>, or click <b>Clear</b>.", 15, FontStyle.Normal, TextParchmentWarm, TextAnchor.MiddleCenter);
-                Canvas.ForceUpdateCanvases();
+                AddSpawnerNotice("Nothing matches \"" + filter + "\". Try plank, scrap, titanium, or clear the search.");
                 return;
             }
 
-            int itemIdx = 0;
             foreach (var item in filtered)
             {
-                Color itemRowColor = (itemIdx++ % 2 == 0) ? WoodPlankEven : WoodPlankOdd;
-                var row = CreateBox(_itemScrollContent, $"Item_{item.UniqueIndex}", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), itemRowColor);
-                EnsureLayout(row, -1, 42);
-
-                // Plank seam
-                CreateBox(row.transform, "Seam", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 1), WoodRowBorder);
-
-                var rowLayout = row.AddComponent<HorizontalLayoutGroup>();
-                rowLayout.spacing = 8;
-                rowLayout.padding = new RectOffset(14, 14, 0, 0);
-                rowLayout.childForceExpandHeight = false;
-
-                string disp = item.settings_Inventory?.DisplayName;
-                if (string.IsNullOrEmpty(disp)) disp = item.UniqueName;
-
-                var nameTxt = CreateText(row.transform, "Name", $"<b>{disp}</b> <size=13><color=#AD9473>({item.UniqueName})</color></size>", 15, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleLeft);
-                EnsureLayout(nameTxt.gameObject, 640, 34, true);
-
-                string uniqueName = item.UniqueName;
-                int stack = item.settings_Inventory != null ? item.settings_Inventory.StackSize : 20;
-
-                var btn1 = CreateButton(row.transform, "Btn_1", "+1", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(56, 32), () => GiveItem(uniqueName, 1), WoodButtonNormal, TextParchmentLight, 14);
-                EnsureLayout(btn1, 56, 32, false);
-
-                var btn10 = CreateButton(row.transform, "Btn_10", "+10", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(56, 32), () => GiveItem(uniqueName, 10), WoodButtonNormal, TextParchmentLight, 14);
-                EnsureLayout(btn10, 56, 32, false);
-
-                string stackLabel = stack > 1 ? $"+{stack}" : "+Max";
-                var btnStack = CreateButton(row.transform, "Btn_Stack", stackLabel, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(76, 32), () => GiveItem(uniqueName, stack), TabActiveBg, TabActiveText, 14);
-                EnsureLayout(btnStack, 76, 32, false);
+                AddSpawnerRow(item);
             }
-
-            Canvas.ForceUpdateCanvases();
         }
+        #endregion [END] REFRESH ITEM SPAWNER LIST
 
+        #region [START] ADD SPAWNER NOTICE
+        private void AddSpawnerNotice(string message)
+        {
+            var go = new GameObject("Notice");
+            go.transform.SetParent(_itemScrollContent, false);
+            go.AddComponent<LayoutElement>().preferredHeight = 48;
+            var txt = CreateText(go, message, 14, FontStyle.Normal, ColTextFaint, TextAnchor.MiddleCenter);
+            FillParent(txt.gameObject);
+        }
+        #endregion [END] ADD SPAWNER NOTICE
+
+        #region [START] ADD SPAWNER ROW
+        private void AddSpawnerRow(Item_Base item)
+        {
+            string uniqueName = item.UniqueName;
+            string disp = item.settings_Inventory?.DisplayName;
+            if (string.IsNullOrEmpty(disp)) disp = uniqueName;
+            int stack = item.settings_Inventory != null ? item.settings_Inventory.StackSize : 20;
+
+            var rowGO = new GameObject("ItemRow");
+            rowGO.transform.SetParent(_itemScrollContent, false);
+            rowGO.AddComponent<LayoutElement>().preferredHeight = 38;
+            var img = rowGO.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(7);
+            img.type = Image.Type.Sliced;
+            img.color = ColPanel2;
+
+            var layout = rowGO.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.padding = new RectOffset(12, 8, 4, 4);
+            layout.spacing = 6;
+            layout.childAlignment = TextAnchor.MiddleLeft;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = true;
+
+            var nameGO = new GameObject("Name");
+            nameGO.transform.SetParent(rowGO.transform, false);
+            nameGO.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            var nameTxt = CreateText(nameGO, disp + "  <color=#5E7379>" + uniqueName + "</color>", 14, FontStyle.Normal, ColText, TextAnchor.MiddleLeft);
+            nameTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            FillParent(nameTxt.gameObject);
+
+            var b1 = CreateGhostButton(rowGO.transform, "+1", () => GiveItem(uniqueName, 1));
+            b1.AddComponent<LayoutElement>().preferredWidth = 52;
+
+            var b10 = CreateGhostButton(rowGO.transform, "+10", () => GiveItem(uniqueName, 10));
+            b10.AddComponent<LayoutElement>().preferredWidth = 58;
+
+            var bStack = CreateGhostButton(rowGO.transform, stack > 1 ? "+" + stack : "+Max", () => GiveItem(uniqueName, stack));
+            bStack.AddComponent<LayoutElement>().preferredWidth = 72;
+        }
+        #endregion [END] ADD SPAWNER ROW
+
+        #region [START] GIVE ITEM
         private void GiveItem(string uniqueName, int amount)
         {
             var p = PlayerHelper.GetLocalPlayer();
             if (p?.Inventory != null)
             {
                 p.Inventory.AddItem(uniqueName, amount);
-                TeleportManager.SetNotification($"📦 Received {amount}x {uniqueName}");
+                TeleportManager.SetNotification("Received " + amount + "x " + uniqueName + ".");
             }
             else
             {
-                TeleportManager.SetNotification("⚠️ Enter a game world to spawn items!");
+                TeleportManager.SetNotification("Enter a game world to spawn items.");
             }
         }
-        // ============================================================================
-        // [END] TAB 3: 300+ ITEM SPAWNER ENGINE
-        // ============================================================================
-        #endregion
+        #endregion [END] GIVE ITEM
+        #endregion [END] SCREEN: ITEM SPAWNER
 
-        private void SelectTab(int tabIndex)
+        #region [START] SCREEN: CONTROLS
+        #region [START] BUILD SCREEN CONTROLS
+        private GameObject BuildScreenControls(GameObject parent)
         {
-            _activeTab = tabIndex;
-            for (int i = 0; i < _tabPages.Length; i++)
-            {
-                if (_tabPages[i] != null)
+            var screen = CreateScreenShell(parent, "Controls",
+                "Every key Sailor's Companion listens for. Change any of them in the .cfg file.",
+                MenuKeyLabel(), out var body);
+
+            AddGroupLabel(body, "Always Active");
+            var mainCard = CreateCard(body);
+            AddHotkeyRow(mainCard, MenuKeyLabel(), "Open / close this settings menu (Insert also works).");
+            AddHotkeyRow(mainCard, "Esc", "Close this menu.");
+            AddHotkeyRow(mainCard, HudKeyLabel(), "Show / hide the navigation HUD overlay.");
+            AddHotkeyRow(mainCard, "Shift + " + HudKeyLabel(), "Cycle through the four HUD styles.");
+            AddHotkeyRow(mainCard, KeyLabel(Plugin.KeyFly, KeyCode.F), "Toggle fly / noclip (Creative Mode only).");
+            AddHotkeyRow(mainCard, KeyLabel(Plugin.KeyTeleportToRaft, KeyCode.F8), "Recall yourself to the raft.");
+            AddHotkeyRow(mainCard, KeyLabel(Plugin.KeyTeleportRaftToPlayer, KeyCode.F9), "Summon the raft to you.");
+
+            AddGroupLabel(body, "Quick Gameplay Keys");
+            var quickCard = CreateCard(body);
+            AddToggleRow(quickCard, "Q", "Enable Quick Hotkeys",
+                "Off by default so these keys never fight with another mod. Turn on to drive sails, engines, the magnet and the scanner straight from the keyboard.",
+                () => Plugin.EnableHotkeys != null && Plugin.EnableHotkeys.Value,
+                v =>
                 {
-                    _tabPages[i].SetActive(i == tabIndex);
-                }
-                if (_tabButtonImages[i] != null)
+                    if (Plugin.EnableHotkeys != null) Plugin.EnableHotkeys.Value = v;
+                    TeleportManager.SetNotification(v ? "Quick hotkeys enabled." : "Quick hotkeys disabled - use the menu buttons.");
+                    RefreshOverview();
+                });
+            AddHotkeyRow(quickCard, KeyLabel(Plugin.KeySailToggle, KeyCode.F4), "Toggle all sails open or closed.");
+            AddHotkeyRow(quickCard, KeyLabel(Plugin.KeyEngineToggle, KeyCode.F11), "Toggle all engines on or off.");
+            AddHotkeyRow(quickCard, KeyLabel(Plugin.KeyMagnetToggle, KeyCode.F7), "Activate the ocean magnetic debris pull.");
+            AddHotkeyRow(quickCard, KeyLabel(Plugin.KeyScannerPulse, KeyCode.F10), "Trigger a 10 second island pulse scan.");
+
+            AddCallout(body, "Sharing keys with our other mods",
+                "Farmer's Companion uses F1, Inventory Master uses F2 and Collection QoL uses F3 for their own menus, plus Alt + F5 to F8 for its actions. Those are kept clear of everything above.");
+
+            return screen;
+        }
+        #endregion [END] BUILD SCREEN CONTROLS
+
+        #region [START] KEY LABEL
+        private static string KeyLabel(BepInEx.Configuration.ConfigEntry<KeyCode> entry, KeyCode fallback)
+        {
+            return (entry != null ? entry.Value : fallback).ToString();
+        }
+        #endregion [END] KEY LABEL
+
+        #region [START] MENU KEY LABEL
+        private static string MenuKeyLabel()
+        {
+            return KeyLabel(Plugin.KeyMenu, KeyCode.F5);
+        }
+        #endregion [END] MENU KEY LABEL
+
+        #region [START] HUD KEY LABEL
+        private static string HudKeyLabel()
+        {
+            return KeyLabel(Plugin.KeyHUD, KeyCode.F6);
+        }
+        #endregion [END] HUD KEY LABEL
+        #endregion [END] SCREEN: CONTROLS
+
+        #region [START] SCREEN: UPDATES
+        #region [START] BUILD SCREEN UPDATES
+        private GameObject BuildScreenUpdates(GameObject parent)
+        {
+            var screen = CreateScreenShell(parent, "Updates",
+                "Check whether a newer build of Sailor's Companion is available.",
+                MenuKeyLabel(), out var body);
+
+            AddGroupLabel(body, "This Install");
+            var verCard = CreateCard(body);
+            var verRow = CreateRowShell(verCard, "V", "Installed Version",
+                "Sailor's Companion " + PluginInfo.PLUGIN_VERSION + ".", false, out _);
+
+            var badgeGO = new GameObject("Badge");
+            badgeGO.transform.SetParent(verRow.transform, false);
+            badgeGO.AddComponent<LayoutElement>().preferredWidth = 170;
+            _updateBadgeImg = badgeGO.AddComponent<Image>();
+            _updateBadgeImg.sprite = GetRoundedSprite(8);
+            _updateBadgeImg.type = Image.Type.Sliced;
+            _updateBadgeImg.color = ColPanel2;
+            _updateBadgeText = CreateText(badgeGO, "● Not checked yet", 14f, FontStyle.Bold, ColTextMuted, TextAnchor.MiddleCenter);
+            FillParent(_updateBadgeText.gameObject);
+
+            AddToggleRow(verCard, "A", "Check on Startup",
+                "Looks for a newer version once each time the game launches.",
+                () => Plugin.CheckForUpdates != null && Plugin.CheckForUpdates.Value,
+                v => { if (Plugin.CheckForUpdates != null) Plugin.CheckForUpdates.Value = v; }, true);
+            AddButtonRow(verCard, "C", "Check Now",
+                "Asks GitHub for the latest published version right away.", "Check", () =>
                 {
-                    bool isSelected = (i == tabIndex);
-                    Color targetBg = isSelected ? TabActiveBg : TabInactiveBg;
-                    Color targetText = isSelected ? TabActiveText : TabInactiveText;
+                    UpdateChecker.Dismissed = false;
+                    UpdateChecker.Instance?.TriggerCheck();
+                    TeleportManager.SetNotification("Checking GitHub for mod updates...");
+                    RefreshUpdateBadge();
+                });
+            AddButtonRow(verCard, "D", "Open Download Page",
+                "Opens the mod page in your browser.", "Open", () =>
+                {
+                    try { Application.OpenURL(UpdateChecker.DownloadUrl); } catch { }
+                });
 
-                    _tabButtonImages[i].color = targetBg;
-                    var btn = _tabButtonImages[i].GetComponent<Button>();
-                    if (btn != null)
-                    {
-                        btn.transition = Selectable.Transition.None;
-                        var cb = btn.colors;
-                        cb.normalColor = targetBg;
-                        cb.highlightedColor = isSelected ? targetBg : WoodButtonHover;
-                        cb.pressedColor = WoodWindowBorder;
-                        cb.selectedColor = targetBg;
-                        btn.colors = cb;
-                    }
+            AddGroupLabel(body, "Our Other Mods");
+            var famCard = CreateCard(body);
+            AddHotkeyRow(famCard, "F1", "Farmer's Companion - crops, watering, harvesting and livestock.");
+            AddHotkeyRow(famCard, "F2", "Inventory Master - backpack slots, sorting, quick transfer and drop protection.");
+            AddHotkeyRow(famCard, "F3", "Collection QoL - nets, hooks, magnet, loot detection and priority pickup.");
 
-                    if (_tabButtonTexts[i] != null)
-                    {
-                        _tabButtonTexts[i].color = targetText;
-                        _tabButtonTexts[i].fontStyle = isSelected ? FontStyle.Bold : FontStyle.Normal;
-                    }
-                }
-            }
+            AddCallout(body, "Before you report a bug",
+                "If you run more than one of our mods, open each one's settings and make sure a shared feature is only enabled in one of them. Two copies of the same feature is the most common cause of odd behaviour.");
 
-            if (tabIndex == 4 && _itemScrollContent != null)
+            return screen;
+        }
+        #endregion [END] BUILD SCREEN UPDATES
+
+        #region [START] REFRESH UPDATE BADGE
+        private void RefreshUpdateBadge()
+        {
+            string suffix, badgeLabel;
+            Color badgeBg, badgeFg;
+
+            if (UpdateChecker.IsChecking)
             {
-                RefreshItemSpawnerList(_itemSearchInput?.text ?? "");
+                suffix = "checking...";
+                badgeLabel = "● Checking...";
+                badgeBg = ColPanel2; badgeFg = ColTextMuted;
+            }
+            else if (!UpdateChecker.HasChecked)
+            {
+                suffix = "not checked yet";
+                badgeLabel = "● Not checked yet";
+                badgeBg = ColPanel2; badgeFg = ColTextMuted;
+            }
+            else if (UpdateChecker.IsUpdateAvailable)
+            {
+                suffix = "v" + UpdateChecker.LatestVersion + " available";
+                badgeLabel = "● Update available";
+                badgeBg = ColGoldWash; badgeFg = ColGold;
+            }
+            else
+            {
+                suffix = "up to date";
+                badgeLabel = "● Up to date";
+                badgeBg = ColSuccessWash; badgeFg = ColSuccess;
+            }
+
+            if (_footerVerText != null)
+                _footerVerText.text = "Sailor's Companion  <color=#8FA3A9>v" + PluginInfo.PLUGIN_VERSION + " · " + suffix + "</color>";
+            if (_updateBadgeText != null) { _updateBadgeText.text = badgeLabel; _updateBadgeText.color = badgeFg; }
+            if (_updateBadgeImg != null) _updateBadgeImg.color = badgeBg;
+        }
+        #endregion [END] REFRESH UPDATE BADGE
+
+        #region [START] POLL UPDATE STATUS
+        // UpdateChecker finishes on a web request, not on a frame we control, so the badge is
+        // polled once a second rather than being pushed to from the checker.
+        private IEnumerator PollUpdateStatus()
+        {
+            while (true)
+            {
+                RefreshUpdateBadge();
+                yield return new WaitForSeconds(1f);
             }
         }
+        #endregion [END] POLL UPDATE STATUS
 
-
-        #region [START] UI COMPONENT BUILDERS (Buttons, Toggles, Sliders)
-        // ============================================================================
-        // [START] UI COMPONENT BUILDERS (Buttons, Toggles, Sliders)
-        // ============================================================================
-        private GameObject CreateBox(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPos, Vector2 sizeDelta, Color color)
+        #region [START] REFRESH UPDATE BANNER
+        // Kept for callers outside this file; the banner is now the footer badge.
+        public void RefreshUpdateBanner()
         {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            var rt = go.AddComponent<RectTransform>();
-            rt.anchorMin = anchorMin;
-            rt.anchorMax = anchorMax;
-            rt.pivot = pivot;
-            rt.anchoredPosition = anchoredPos;
-            rt.sizeDelta = sizeDelta;
-
-            var img = go.AddComponent<Image>();
-            img.color = color;
-            return go;
+            RefreshUpdateBadge();
         }
+        #endregion [END] REFRESH UPDATE BANNER
 
-        private Text CreateText(Transform parent, string name, string content, int fontSize, FontStyle style, Color color, TextAnchor alignment)
+        #region [START] SET HUD VISIBLE
+        public void SetHUDVisible(bool visible)
         {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            var rt = go.AddComponent<RectTransform>();
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.sizeDelta = Vector2.zero;
-
-            var t = go.AddComponent<Text>();
-            t.font = GetGameFont();
-            t.text = content;
-            t.fontSize = fontSize;
-            t.fontStyle = style;
-            t.color = color;
-            t.alignment = alignment;
-            t.supportRichText = true;
-            return t;
+            if (Plugin.EnableHUD != null) Plugin.EnableHUD.Value = visible;
         }
+        #endregion [END] SET HUD VISIBLE
+        #endregion [END] SCREEN: UPDATES
 
-        private GameObject CreateButton(Transform parent, string name, string label, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPos, Vector2 sizeDelta, Action onClick, Color bgColor, Color textColor, int fontSize)
+        #region [START] SHARED SHELL & COMPONENTS
+        #region [START] CREATE SCREEN SHELL
+        private GameObject CreateScreenShell(GameObject parent, string title, string desc, string hotkey, out GameObject body)
         {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            var rt = go.AddComponent<RectTransform>();
-            rt.anchorMin = anchorMin;
-            rt.anchorMax = anchorMax;
-            rt.pivot = pivot;
-            rt.anchoredPosition = anchoredPos;
-            rt.sizeDelta = sizeDelta;
+            var screen = new GameObject("Screen_" + title);
+            screen.transform.SetParent(parent.transform, false);
+            var screenRt = screen.AddComponent<RectTransform>();
+            screenRt.anchorMin = Vector2.zero;
+            screenRt.anchorMax = Vector2.one;
+            screenRt.offsetMin = Vector2.zero;
+            screenRt.offsetMax = Vector2.zero;
 
-            var img = go.AddComponent<Image>();
-            img.color = bgColor;
+            var headGO = new GameObject("Head");
+            headGO.transform.SetParent(screen.transform, false);
+            var headRt = headGO.AddComponent<RectTransform>();
+            headRt.anchorMin = new Vector2(0, 1);
+            headRt.anchorMax = new Vector2(1, 1);
+            headRt.pivot = new Vector2(0.5f, 1);
+            headRt.sizeDelta = new Vector2(0, 112);
+            headRt.anchoredPosition = Vector2.zero;
 
-            var btn = go.AddComponent<Button>();
-            btn.targetGraphic = img;
-            var cb = btn.colors;
-            cb.normalColor = bgColor;
-            cb.highlightedColor = WoodButtonHover;
-            cb.pressedColor = WoodWindowBorder;
-            cb.selectedColor = bgColor;
-            btn.colors = cb;
+            var headLayout = headGO.AddComponent<HorizontalLayoutGroup>();
+            headLayout.childControlWidth = true;
+            headLayout.childControlHeight = true;
+            // The right padding keeps the title column clear of the floating close button.
+            headLayout.padding = new RectOffset(28, 60, 16, 12);
+            headLayout.childForceExpandWidth = false;
+            headLayout.childForceExpandHeight = true;
 
-            if (onClick != null) btn.onClick.AddListener(() => onClick());
+            var titleColGO = new GameObject("TitleCol");
+            titleColGO.transform.SetParent(headGO.transform, false);
+            var titleColLe = titleColGO.AddComponent<LayoutElement>();
+            titleColLe.flexibleWidth = 1f;
+            var titleColLayout = titleColGO.AddComponent<VerticalLayoutGroup>();
+            titleColLayout.childControlWidth = true;
+            titleColLayout.childControlHeight = true;
+            titleColLayout.spacing = 3;
+            titleColLayout.childForceExpandWidth = true;
 
-            var textGO = new GameObject("Text");
-            textGO.transform.SetParent(go.transform, false);
-            var textRt = textGO.AddComponent<RectTransform>();
-            textRt.anchorMin = Vector2.zero;
-            textRt.anchorMax = Vector2.one;
-            textRt.sizeDelta = Vector2.zero;
-
-            var t = textGO.AddComponent<Text>();
-            t.font = GetGameFont();
-            t.text = label;
-            t.fontSize = fontSize;
-            t.fontStyle = FontStyle.Bold;
-            t.color = textColor;
-            t.alignment = TextAnchor.MiddleCenter;
-            t.supportRichText = true;
-
-            return go;
-        }
-
-        private GameObject CreateActionTile(Transform parent, string name, string title, string hotkey, Action onClick, out Text titleTextOut, float preferredHeight = 38f, float chipWidth = 78f)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            EnsureLayout(go, -1, preferredHeight, true);
-
-            var img = go.AddComponent<Image>();
-            img.color = ActionTileBg;
-
-            var outline = go.AddComponent<Outline>();
-            outline.effectColor = ActionTileBorder;
-            outline.effectDistance = new Vector2(1.5f, -1.5f);
-
-            var btn = go.AddComponent<Button>();
-            btn.targetGraphic = img;
-            var cb = btn.colors;
-            cb.normalColor = ActionTileBg;
-            cb.highlightedColor = ActionTileHover;
-            cb.pressedColor = new Color(0.18f, 0.10f, 0.05f, 1.0f);
-            cb.selectedColor = ActionTileBg;
-            btn.colors = cb;
-
-            if (onClick != null) btn.onClick.AddListener(() => onClick());
-
-            var innerLayout = go.AddComponent<HorizontalLayoutGroup>();
-            innerLayout.padding = new RectOffset(12, 8, 3, 3);
-            innerLayout.spacing = 8;
-            innerLayout.childForceExpandWidth = false;
-            innerLayout.childForceExpandHeight = true;
-            innerLayout.childControlWidth = true;
-            innerLayout.childControlHeight = true;
-
-            var titleGO = new GameObject("Title");
-            titleGO.transform.SetParent(go.transform, false);
-            var titleTxt = titleGO.AddComponent<Text>();
-            titleTxt.font = GetGameFont();
-            titleTxt.text = title;
-            titleTxt.fontSize = 14;
-            titleTxt.fontStyle = FontStyle.Bold;
-            titleTxt.color = TextWhite;
-            titleTxt.alignment = TextAnchor.MiddleLeft;
-            titleTxt.supportRichText = true;
+            var titleTxt = CreateText(titleColGO, title, 24, FontStyle.Bold, ColText, TextAnchor.MiddleLeft);
             titleTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
-            titleTxt.verticalOverflow = VerticalWrapMode.Truncate;
-
-            var titleLe = titleGO.AddComponent<LayoutElement>();
-            titleLe.flexibleWidth = 1f;
-            titleTextOut = titleTxt;
+            titleTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+            var descTxt = CreateText(titleColGO, desc, 15, FontStyle.Normal, ColTextMuted, TextAnchor.UpperLeft);
+            var descLe = descTxt.gameObject.AddComponent<LayoutElement>();
+            descLe.preferredHeight = 44;
+            descLe.flexibleHeight = 1f;
 
             if (!string.IsNullOrEmpty(hotkey))
             {
-                var chipGO = new GameObject("HotkeyChip");
-                chipGO.transform.SetParent(go.transform, false);
-                var chipLe = chipGO.AddComponent<LayoutElement>();
-                chipLe.preferredWidth = chipWidth;
-                chipLe.preferredHeight = Mathf.Max(24f, preferredHeight - 10f);
-                chipLe.flexibleWidth = 0f;
+                var hkGO = new GameObject("Hotkey");
+                hkGO.transform.SetParent(headGO.transform, false);
+                var hkLe = hkGO.AddComponent<LayoutElement>();
+                hkLe.preferredWidth = 100;
+                var hkLayout = hkGO.AddComponent<HorizontalLayoutGroup>();
+                hkLayout.childControlWidth = true;
+                hkLayout.childControlHeight = true;
+                hkLayout.childAlignment = TextAnchor.MiddleRight;
+                hkLayout.spacing = 6;
+                hkLayout.childForceExpandWidth = false;
+                hkLayout.childForceExpandHeight = true;
 
-                var chipImg = chipGO.AddComponent<Image>();
-                chipImg.color = new Color(0.12f, 0.07f, 0.03f, 0.95f);
-                var chipOutline = chipGO.AddComponent<Outline>();
-                chipOutline.effectColor = new Color(1.0f, 0.82f, 0.35f, 0.85f);
-                chipOutline.effectDistance = new Vector2(1, -1);
-
-                var chipTxtGO = new GameObject("ChipText");
-                chipTxtGO.transform.SetParent(chipGO.transform, false);
-                var chipTxtRt = chipTxtGO.AddComponent<RectTransform>();
-                chipTxtRt.anchorMin = Vector2.zero;
-                chipTxtRt.anchorMax = Vector2.one;
-                chipTxtRt.offsetMin = Vector2.zero;
-                chipTxtRt.offsetMax = Vector2.zero;
-
-                var chipTxt = chipTxtGO.AddComponent<Text>();
-                chipTxt.font = GetGameFont();
-                chipTxt.text = hotkey;
-                chipTxt.fontSize = 12;
-                chipTxt.fontStyle = FontStyle.Bold;
-                chipTxt.color = TextGoldHeading;
-                chipTxt.alignment = TextAnchor.MiddleCenter;
+                var hkLbl = CreateText(hkGO, "Menu", 13, FontStyle.Normal, ColTextFaint, TextAnchor.MiddleRight);
+                hkLbl.gameObject.AddComponent<LayoutElement>().preferredWidth = 34;
+                CreateKeyChip(hkGO.transform, hotkey);
             }
+
+            AddDivider(screen.transform, 0, headRt);
+
+            var scrollGO = new GameObject("ScrollArea");
+            scrollGO.transform.SetParent(screen.transform, false);
+            var scrollRt = scrollGO.AddComponent<RectTransform>();
+            scrollRt.anchorMin = Vector2.zero;
+            scrollRt.anchorMax = Vector2.one;
+            scrollRt.offsetMin = new Vector2(28, 20);
+            scrollRt.offsetMax = new Vector2(-26, -112);
+
+            var viewportGO = new GameObject("Viewport");
+            viewportGO.transform.SetParent(scrollGO.transform, false);
+            var viewportRt = viewportGO.AddComponent<RectTransform>();
+            viewportRt.anchorMin = Vector2.zero;
+            viewportRt.anchorMax = Vector2.one;
+            viewportRt.offsetMin = Vector2.zero;
+            viewportRt.offsetMax = Vector2.zero;
+            viewportGO.AddComponent<RectMask2D>();
+
+            body = new GameObject("Body");
+            body.transform.SetParent(viewportGO.transform, false);
+            var bodyRt = body.AddComponent<RectTransform>();
+            bodyRt.anchorMin = new Vector2(0, 1);
+            bodyRt.anchorMax = new Vector2(1, 1);
+            bodyRt.pivot = new Vector2(0.5f, 1);
+            bodyRt.anchoredPosition = Vector2.zero;
+            // RectTransform defaults sizeDelta to (100,100). With stretch anchors that adds 100px
+            // of width the RectMask2D then clips off both sides of every row.
+            bodyRt.sizeDelta = Vector2.zero;
+
+            var bodyLayout = body.AddComponent<VerticalLayoutGroup>();
+            bodyLayout.childControlWidth = true;
+            bodyLayout.childControlHeight = true;
+            bodyLayout.spacing = 14;
+            bodyLayout.childForceExpandWidth = true;
+            bodyLayout.childForceExpandHeight = false;
+
+            var bodyFitter = body.AddComponent<ContentSizeFitter>();
+            bodyFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var scrollRect = scrollGO.AddComponent<ScrollRect>();
+            scrollRect.content = bodyRt;
+            scrollRect.viewport = viewportRt;
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            scrollRect.scrollSensitivity = 28f;
+
+            return screen;
+        }
+        #endregion [END] CREATE SCREEN SHELL
+
+        #region [START] ADD GROUP LABEL
+        private void AddGroupLabel(GameObject parent, string text)
+        {
+            var go = new GameObject("GroupLabel");
+            go.transform.SetParent(parent.transform, false);
+            go.AddComponent<LayoutElement>().preferredHeight = 16;
+            var t = CreateText(go, text.ToUpperInvariant(), 13, FontStyle.Bold, ColTextFaint, TextAnchor.MiddleLeft);
+            t.horizontalOverflow = HorizontalWrapMode.Overflow;
+            FillParent(t.gameObject);
+        }
+        #endregion [END] ADD GROUP LABEL
+
+        #region [START] ADD CALLOUT
+        private void AddCallout(GameObject parent, string title, string desc)
+        {
+            var go = new GameObject("Callout");
+            go.transform.SetParent(parent.transform, false);
+            go.AddComponent<LayoutElement>().preferredHeight = 88;
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(11);
+            img.type = Image.Type.Sliced;
+            img.color = new Color(ColGold.r, ColGold.g, ColGold.b, 0.12f);
+
+            var layout = go.AddComponent<VerticalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.padding = new RectOffset(16, 16, 8, 8);
+            layout.spacing = 2;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var titleTxt = CreateText(go, title, 15, FontStyle.Bold, ColGold, TextAnchor.MiddleLeft);
+            titleTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            titleTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 18;
+            // Sized for two lines - Unity truncates a wrapped line that doesn't fit its box.
+            var descTxt = CreateText(go, desc, 14, FontStyle.Normal, ColTextMuted, TextAnchor.UpperLeft);
+            descTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 46;
+        }
+        #endregion [END] ADD CALLOUT
+
+        #region [START] ADD LOCK CARD
+        // Shown in place of a screen's contents while Survival Mode is on.
+        private void AddLockCard(GameObject parent, string title, string desc)
+        {
+            var go = new GameObject("LockCard");
+            go.transform.SetParent(parent.transform, false);
+            go.AddComponent<LayoutElement>().preferredHeight = 190;
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(11);
+            img.type = Image.Type.Sliced;
+            img.color = ColBorderSoft;
+            AddInsetFill(go, 11, ColRow);
+
+            var layout = go.AddComponent<VerticalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.padding = new RectOffset(24, 24, 20, 20);
+            layout.spacing = 8;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var titleTxt = CreateText(go, title, 18, FontStyle.Bold, ColGold, TextAnchor.MiddleLeft);
+            titleTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
+
+            var descTxt = CreateText(go, desc, 15, FontStyle.Normal, ColTextMuted, TextAnchor.UpperLeft);
+            var descLe = descTxt.gameObject.AddComponent<LayoutElement>();
+            descLe.preferredHeight = 72;
+
+            var btnGO = CreateGhostButton(go.transform, "Switch to Creative Mode", () => SetModMode("Creative"));
+            var btnLe = btnGO.AddComponent<LayoutElement>();
+            btnLe.preferredHeight = 38;
+            btnLe.preferredWidth = 240;
+        }
+        #endregion [END] ADD LOCK CARD
+
+        #region [START] CREATE CARD
+        private GameObject CreateCard(GameObject parent)
+        {
+            var go = new GameObject("Card");
+            go.transform.SetParent(parent.transform, false);
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(11);
+            img.type = Image.Type.Sliced;
+            img.color = ColBorderSoft;
+            AddInsetFill(go, 11, ColRow);
+
+            var layout = go.AddComponent<VerticalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var fitter = go.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var le = go.AddComponent<LayoutElement>();
+            le.flexibleHeight = 0f;
 
             return go;
         }
+        #endregion [END] CREATE CARD
 
-        private GameObject CreateActionTile(Transform parent, string name, string title, string hotkey, Action onClick, float preferredHeight = 38f, float chipWidth = 78f)
+        #region [START] ADD ROW SEPARATOR
+        private void AddRowSeparator(GameObject row)
         {
-            return CreateActionTile(parent, name, title, hotkey, onClick, out _, preferredHeight, chipWidth);
+            var sepGO = new GameObject("Sep");
+            sepGO.transform.SetParent(row.transform, false);
+            sepGO.transform.SetAsFirstSibling();
+            var sepRt = sepGO.AddComponent<RectTransform>();
+            sepRt.anchorMin = new Vector2(0, 1);
+            sepRt.anchorMax = new Vector2(1, 1);
+            sepRt.pivot = new Vector2(0.5f, 1);
+            sepRt.sizeDelta = new Vector2(0, 1);
+            sepRt.anchoredPosition = Vector2.zero;
+            var img = sepGO.AddComponent<Image>();
+            img.color = ColBorderSoft;
+            sepGO.AddComponent<LayoutElement>().ignoreLayout = true;
         }
+        #endregion [END] ADD ROW SEPARATOR
 
-        #region [START] UI TOGGLE ITEM WITH RAFT RECESSED CHECKBOX
-        // ============================================================================
-        // [START] UI TOGGLE ITEM WITH RAFT RECESSED CHECKBOX (Authentic In-Game Settings Style)
-        // ============================================================================
-        private void CreateToggleItem(Transform parent, string label, bool initialValue, Action<bool> onToggle, float rowHeight = 36f, int fontSize = 13, string tooltip = null)
+        #region [START] CREATE ROW SHELL
+        private GameObject CreateRowShell(GameObject card, string monogram, string title, string desc, bool secondary, out RectTransform rt)
         {
-            Color plankColor = (_toggleItemCounter++ % 2 == 0) ? WoodPlankEven : WoodPlankOdd;
-            var row = CreateBox(parent, "ToggleRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), plankColor);
-            EnsureLayout(row, -1, rowHeight);
+            var rowGO = new GameObject("Row");
+            rowGO.transform.SetParent(card.transform, false);
+            rt = rowGO.AddComponent<RectTransform>();
+            rowGO.AddComponent<LayoutElement>().preferredHeight = 72;
 
-            // Subtle wood plank seam
-            CreateBox(row.transform, "PlankSeam", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 1), WoodRowBorder);
-
-            var layout = row.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 8;
-            layout.padding = new RectOffset(12, 10, 2, 2);
-            layout.childForceExpandHeight = false;
-            layout.childForceExpandWidth = false;
+            var layout = rowGO.AddComponent<HorizontalLayoutGroup>();
             layout.childControlWidth = true;
             layout.childControlHeight = true;
+            layout.padding = new RectOffset(18, 18, 12, 12);
+            layout.spacing = 16;
+            layout.childAlignment = TextAnchor.MiddleLeft;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = true;
 
-            // Feature Label
-            var t = CreateText(row.transform, "Label", label, fontSize, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleLeft);
-            var tLe = t.gameObject.AddComponent<LayoutElement>();
-            tLe.flexibleWidth = 1f;
-            tLe.preferredHeight = rowHeight - 4;
+            // The separator goes above every row but the first. Count only real rows - the
+            // inset Fill child would otherwise make the first row look like the second.
+            int existingRows = 0;
+            foreach (Transform t in card.transform) { if (t.name == "Row") existingRows++; }
+            if (existingRows > 1) AddRowSeparator(rowGO);
 
-            // Raft Recessed Wooden Toggle Pill (54x26, ON/OFF text)
-            var checkContainer = CreateBox(row.transform, "CheckContainer", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(54, 26), CheckboxWoodBg);
-            var cbLe = checkContainer.AddComponent<LayoutElement>();
-            cbLe.preferredWidth = 54;
-            cbLe.preferredHeight = 26;
-            cbLe.flexibleWidth = 0f;
+            var iconGO = new GameObject("Icon");
+            iconGO.transform.SetParent(rowGO.transform, false);
+            iconGO.AddComponent<LayoutElement>().preferredWidth = 40;
+            var iconImg = iconGO.AddComponent<Image>();
+            iconImg.sprite = GetRoundedSprite(11);
+            iconImg.type = Image.Type.Sliced;
+            iconImg.color = ColPanel2;
+            var iconTxt = CreateText(iconGO, monogram, 14, FontStyle.Bold, secondary ? ColGold : ColAccent, TextAnchor.MiddleCenter);
+            FillParent(iconTxt.gameObject);
 
-            // Checkbox timber border
-            var cbBorder = CreateBox(checkContainer.transform, "Border", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, WoodWindowBorder);
-            var cbRt = cbBorder.GetComponent<RectTransform>();
-            cbRt.offsetMin = new Vector2(-1, -1);
-            cbRt.offsetMax = new Vector2(1, 1);
-            cbBorder.transform.SetAsFirstSibling();
+            var textColGO = new GameObject("Text");
+            textColGO.transform.SetParent(rowGO.transform, false);
+            var textColLe = textColGO.AddComponent<LayoutElement>();
+            textColLe.flexibleWidth = 1f;
+            var textColLayout = textColGO.AddComponent<VerticalLayoutGroup>();
+            textColLayout.childControlWidth = true;
+            textColLayout.childControlHeight = true;
+            textColLayout.childForceExpandWidth = true;
+            textColLayout.spacing = 2;
+            textColLayout.childAlignment = TextAnchor.MiddleLeft;
 
-            var checkTxt = CreateText(checkContainer.transform, "Checkmark", initialValue ? "ON" : "OFF", 12, FontStyle.Bold, initialValue ? CheckmarkGold : Color.gray, TextAnchor.MiddleCenter);
+            var titleTxt = CreateText(textColGO, title, 18, FontStyle.Bold, ColText, TextAnchor.MiddleLeft);
+            titleTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            titleTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
+            var descTxt = CreateText(textColGO, desc, 14, FontStyle.Normal, ColTextMuted, TextAnchor.UpperLeft);
+            descTxt.gameObject.AddComponent<LayoutElement>().preferredHeight = 34;
 
-            bool state = initialValue;
+            return rowGO;
+        }
+        #endregion [END] CREATE ROW SHELL
 
-            void UpdateVisuals(bool isOn)
+        #region [START] ADD TOGGLE ROW
+        private GameObject AddToggleRow(GameObject card, string monogram, string title, string desc, Func<bool> getter, Action<bool> setter, bool secondary = false)
+        {
+            var rowGO = CreateRowShell(card, monogram, title, desc, secondary, out _);
+            var sw = CreateToggleSwitch(rowGO.transform, getter(), setter);
+            sw.AddComponent<LayoutElement>();
+            return rowGO;
+        }
+        #endregion [END] ADD TOGGLE ROW
+
+        #region [START] ADD BUTTON ROW
+        private GameObject AddButtonRow(GameObject card, string monogram, string title, string desc, string buttonLabel, Action onClick)
+        {
+            var rowGO = CreateRowShell(card, monogram, title, desc, false, out _);
+            var btnGO = CreateGhostButton(rowGO.transform, buttonLabel, onClick);
+            btnGO.AddComponent<LayoutElement>().preferredWidth = 120;
+            return rowGO;
+        }
+        #endregion [END] ADD BUTTON ROW
+
+        #region [START] ADD ACTION ROW
+        // A button row whose label is live (cooldown seconds, current sail mode), so the caller
+        // gets the Text back to keep updating.
+        private Text AddActionRow(GameObject card, string monogram, string title, string desc, string buttonLabel, Action onClick)
+        {
+            var rowGO = CreateRowShell(card, monogram, title, desc, false, out _);
+            var btnGO = CreateGhostButton(rowGO.transform, buttonLabel, onClick);
+            btnGO.AddComponent<LayoutElement>().preferredWidth = 150;
+            return btnGO.GetComponentInChildren<Text>();
+        }
+        #endregion [END] ADD ACTION ROW
+
+        #region [START] ADD TRIPLE BUTTON ROW
+        private GameObject AddTripleButtonRow(GameObject card, string monogram, string title, string desc,
+                                              string l1, Action a1, string l2, Action a2, string l3, Action a3)
+        {
+            var rowGO = CreateRowShell(card, monogram, title, desc, true, out _);
+
+            var groupGO = new GameObject("BtnGroup");
+            groupGO.transform.SetParent(rowGO.transform, false);
+            groupGO.AddComponent<LayoutElement>().preferredWidth = 300;
+            var layout = groupGO.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.spacing = 6;
+            layout.childAlignment = TextAnchor.MiddleRight;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var b1 = CreateGhostButton(groupGO.transform, l1, a1);
+            b1.AddComponent<LayoutElement>().preferredHeight = 34;
+            var b2 = CreateGhostButton(groupGO.transform, l2, a2);
+            b2.AddComponent<LayoutElement>().preferredHeight = 34;
+            var b3 = CreateGhostButton(groupGO.transform, l3, a3);
+            b3.AddComponent<LayoutElement>().preferredHeight = 34;
+
+            return rowGO;
+        }
+        #endregion [END] ADD TRIPLE BUTTON ROW
+
+        #region [START] ADD HOTKEY ROW
+        private void AddHotkeyRow(GameObject card, string key, string desc)
+        {
+            var rowGO = new GameObject("HkRow");
+            rowGO.transform.SetParent(card.transform, false);
+            rowGO.AddComponent<LayoutElement>().preferredHeight = 44;
+            var layout = rowGO.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.padding = new RectOffset(18, 18, 8, 8);
+            layout.spacing = 14;
+            layout.childAlignment = TextAnchor.MiddleLeft;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = true;
+
+            int existingRows = 0;
+            foreach (Transform t in card.transform) { if (t.name == "HkRow") existingRows++; }
+            if (existingRows > 1) AddRowSeparator(rowGO);
+
+            var chipGO = new GameObject("Chip");
+            chipGO.transform.SetParent(rowGO.transform, false);
+            chipGO.AddComponent<LayoutElement>().preferredWidth = 96;
+            var chipImg = chipGO.AddComponent<Image>();
+            chipImg.sprite = GetRoundedSprite(6);
+            chipImg.type = Image.Type.Sliced;
+            chipImg.color = ColBorder;
+            AddInsetFill(chipGO, 6, ColRow);
+            var chipTxt = CreateText(chipGO, key, 14f, FontStyle.Bold, ColTextMuted, TextAnchor.MiddleCenter);
+            chipTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            FillParent(chipTxt.gameObject);
+
+            var descTxt = CreateText(rowGO, desc, 14, FontStyle.Normal, ColTextMuted, TextAnchor.MiddleLeft);
+            descTxt.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
+        }
+        #endregion [END] ADD HOTKEY ROW
+
+        #region [START] ADD STEPPER ROW
+        private GameObject AddStepperRow(GameObject card, string monogram, string title, string desc, float min, float max, float step, string suffix, Func<float> getter, Action<float> setter, bool secondary = false)
+        {
+            var rowGO = CreateRowShell(card, monogram, title, desc, secondary, out _);
+
+            var stepperGO = new GameObject("Stepper");
+            stepperGO.transform.SetParent(rowGO.transform, false);
+            stepperGO.AddComponent<LayoutElement>().preferredWidth = 185;
+            var stepperLayout = stepperGO.AddComponent<HorizontalLayoutGroup>();
+            stepperLayout.childControlWidth = true;
+            stepperLayout.childControlHeight = true;
+            stepperLayout.spacing = 8;
+            stepperLayout.childAlignment = TextAnchor.MiddleRight;
+            stepperLayout.childForceExpandWidth = false;
+            stepperLayout.childForceExpandHeight = true;
+
+            var trackGO = new GameObject("Track");
+            trackGO.transform.SetParent(stepperGO.transform, false);
+            trackGO.AddComponent<LayoutElement>().preferredWidth = 100;
+            var trackImg = trackGO.AddComponent<Image>();
+            trackImg.sprite = GetRoundedSprite(2);
+            trackImg.type = Image.Type.Sliced;
+            trackImg.color = ColBorder;
+
+            var fillGO = new GameObject("Fill");
+            fillGO.transform.SetParent(trackGO.transform, false);
+            var fillRt = fillGO.AddComponent<RectTransform>();
+            fillRt.anchorMin = new Vector2(0, 0.5f);
+            fillRt.anchorMax = new Vector2(0, 0.5f);
+            fillRt.pivot = new Vector2(0, 0.5f);
+            fillRt.sizeDelta = new Vector2(10, 5);
+            var fillImg = fillGO.AddComponent<Image>();
+            fillImg.sprite = GetRoundedSprite(2);
+            fillImg.type = Image.Type.Sliced;
+            fillImg.color = ColAccent;
+
+            var thumbGO = new GameObject("Thumb");
+            thumbGO.transform.SetParent(trackGO.transform, false);
+            var thumbRt = thumbGO.AddComponent<RectTransform>();
+            thumbRt.anchorMin = new Vector2(0, 0.5f);
+            thumbRt.anchorMax = new Vector2(0, 0.5f);
+            thumbRt.pivot = new Vector2(0.5f, 0.5f);
+            thumbRt.sizeDelta = new Vector2(12, 12);
+            var thumbImg = thumbGO.AddComponent<Image>();
+            thumbImg.sprite = GetRoundedSprite(6);
+            thumbImg.type = Image.Type.Sliced;
+            thumbImg.color = ColText;
+
+            var valGO = new GameObject("Val");
+            valGO.transform.SetParent(stepperGO.transform, false);
+            valGO.AddComponent<LayoutElement>().preferredWidth = 66;
+            var valTxt = CreateText(valGO, "", 14, FontStyle.Normal, ColText, TextAnchor.MiddleRight);
+            valTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            FillParent(valTxt.gameObject);
+
+            var slider = trackGO.AddComponent<Slider>();
+            slider.direction = Slider.Direction.LeftToRight;
+            slider.minValue = min;
+            slider.maxValue = max;
+            slider.fillRect = fillRt;
+            slider.handleRect = thumbRt;
+            slider.targetGraphic = thumbImg;
+
+            string fmt = step < 1f ? "F1" : "F0";
+            Action<float> refresh = v => { valTxt.text = v.ToString(fmt, CultureInfo.InvariantCulture) + suffix; };
+
+            float initial = Mathf.Clamp(getter(), min, max);
+            slider.value = initial;
+            refresh(initial);
+            slider.onValueChanged.AddListener(v =>
             {
-                checkTxt.text = isOn ? "ON" : "OFF";
-                checkTxt.color = isOn ? CheckmarkGold : Color.gray;
-            }
+                setter(v);
+                refresh(v);
+            });
 
-            // Click button on checkbox container
-            var btn = checkContainer.AddComponent<Button>();
-            btn.targetGraphic = checkContainer.GetComponent<Image>();
-            var cb = btn.colors;
-            cb.normalColor = CheckboxWoodBg;
-            cb.highlightedColor = WoodButtonHover;
-            cb.pressedColor = WoodWindowBorder;
-            cb.selectedColor = CheckboxWoodBg;
-            btn.colors = cb;
+            return rowGO;
+        }
+        #endregion [END] ADD STEPPER ROW
 
-            void Toggle()
+        // ---------------- animated toggle switch ----------------
+        private const float SwitchW = 48, SwitchH = 27, KnobSize = 21, KnobMargin = 3;
+
+        #region [START] CREATE TOGGLE SWITCH
+        private GameObject CreateToggleSwitch(Transform parent, bool initial, Action<bool> onChange)
+        {
+            var go = new GameObject("Switch");
+            go.transform.SetParent(parent, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(SwitchW, SwitchH);
+            var le = go.AddComponent<LayoutElement>();
+            le.preferredWidth = SwitchW; le.preferredHeight = SwitchH;
+
+            var trackImg = go.AddComponent<Image>();
+            trackImg.sprite = GetRoundedSprite((int)(SwitchH / 2));
+            trackImg.type = Image.Type.Sliced;
+            trackImg.color = initial ? ColAccent : ColBorder;
+
+            var knobGO = new GameObject("Knob");
+            knobGO.transform.SetParent(go.transform, false);
+            var knobRt = knobGO.AddComponent<RectTransform>();
+            knobRt.anchorMin = new Vector2(0, 0.5f);
+            knobRt.anchorMax = new Vector2(0, 0.5f);
+            knobRt.pivot = new Vector2(0, 0.5f);
+            knobRt.sizeDelta = new Vector2(KnobSize, KnobSize);
+            knobRt.anchoredPosition = new Vector2(initial ? SwitchW - KnobSize - KnobMargin : KnobMargin, 0);
+            var knobImg = knobGO.AddComponent<Image>();
+            knobImg.sprite = GetRoundedSprite((int)(KnobSize / 2));
+            knobImg.type = Image.Type.Sliced;
+            knobImg.color = ColBg;
+
+            bool state = initial;
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = trackImg;
+            btn.transition = Selectable.Transition.None;
+            btn.onClick.AddListener(() =>
             {
                 state = !state;
-                UpdateVisuals(state);
-                MarkProfileCustom();
-                if (!string.IsNullOrEmpty(tooltip)) SetQoLTooltip(tooltip);
-                onToggle?.Invoke(state);
+                onChange(state);
+                StartCoroutine(AnimateSwitch(knobRt, trackImg, state));
+            });
+
+            return go;
+        }
+        #endregion [END] CREATE TOGGLE SWITCH
+
+        #region [START] ANIMATE SWITCH
+        private IEnumerator AnimateSwitch(RectTransform knob, Image track, bool on)
+        {
+            float duration = 0.12f;
+            float t = 0f;
+            float fromX = knob.anchoredPosition.x;
+            float toX = on ? SwitchW - KnobSize - KnobMargin : KnobMargin;
+            Color fromC = track.color;
+            Color toC = on ? ColAccent : ColBorder;
+            while (t < duration)
+            {
+                t += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(t / duration);
+                knob.anchoredPosition = new Vector2(Mathf.Lerp(fromX, toX, k), 0);
+                track.color = Color.Lerp(fromC, toC, k);
+                yield return null;
             }
-
-            btn.onClick.AddListener(Toggle);
-
-            // Also allow clicking anywhere on the plank row to toggle
-            var rowBtn = row.AddComponent<Button>();
-            rowBtn.targetGraphic = row.GetComponent<Image>();
-            var rcb = rowBtn.colors;
-            rcb.normalColor = plankColor;
-            rcb.highlightedColor = WoodPlankOdd;
-            rcb.pressedColor = WoodWindowBg;
-            rcb.selectedColor = plankColor;
-            rowBtn.colors = rcb;
-            rowBtn.onClick.AddListener(Toggle);
+            knob.anchoredPosition = new Vector2(toX, 0);
+            track.color = toC;
         }
-        // ============================================================================
-        // [END] UI TOGGLE ITEM WITH RAFT RECESSED CHECKBOX
-        // ============================================================================
-        #endregion
+        #endregion [END] ANIMATE SWITCH
 
-        private void CreateButtonItem(Transform parent, string label, Action onClick)
+        #region [START] CREATE GHOST BUTTON
+        private GameObject CreateGhostButton(Transform parent, string label, Action onClick)
         {
-            var btn = CreateButton(parent, "ButtonItem", label, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 44), onClick, WoodButtonNormal, TextParchmentLight, 15);
-            EnsureLayout(btn, -1, 44);
+            var go = new GameObject("GhostBtn");
+            go.transform.SetParent(parent, false);
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(8);
+            img.type = Image.Type.Sliced;
+            img.color = ColBorder;
+            var fillImg = AddInsetFill(go, 8, ColPanel2);
+
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = fillImg;
+            var cb = btn.colors;
+            cb.normalColor = ColPanel2;
+            cb.highlightedColor = ColAccentWash;
+            cb.pressedColor = ColRow;
+            btn.colors = cb;
+            btn.onClick.AddListener(() => onClick());
+
+            var txt = CreateText(go, label, 15f, FontStyle.Bold, ColText, TextAnchor.MiddleCenter);
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            FillParent(txt.gameObject);
+            return go;
         }
+        #endregion [END] CREATE GHOST BUTTON
 
-        private void CreateStepperItem(Transform parent, string label, float min, float max, float step, float initialValue, string unit, Action<float> onChange)
+        #region [START] CREATE KEY CHIP
+        private GameObject CreateKeyChip(Transform parent, string text)
         {
-            var row = CreateBox(parent, "StepperRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, 42), WoodPlankEven);
-            EnsureLayout(row, -1, 42);
-            CreateBox(row.transform, "Seam", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 1), WoodRowBorder);
-
-            var layout = row.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 12;
-            layout.padding = new RectOffset(14, 14, 0, 0);
-            layout.childForceExpandHeight = false;
-
-            float currentVal = initialValue;
-
-            var labelTxt = CreateText(row.transform, "Label", $"{label}: <b>{currentVal:F1}{unit}</b>", 16, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleLeft);
-            EnsureLayout(labelTxt.gameObject, 520, 34, true);
-
-            var minusBtn = CreateButton(row.transform, "Btn_Minus", "  -  ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(54, 32), () =>
-            {
-                currentVal = Mathf.Max(min, currentVal - step);
-                labelTxt.text = $"{label}: <b>{currentVal:F1}{unit}</b>";
-                onChange?.Invoke(currentVal);
-            }, WoodButtonNormal, TextParchmentLight, 18);
-            EnsureLayout(minusBtn, 54, 32, false);
-
-            var plusBtn = CreateButton(row.transform, "Btn_Plus", "  +  ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(54, 32), () =>
-            {
-                currentVal = Mathf.Min(max, currentVal + step);
-                labelTxt.text = $"{label}: <b>{currentVal:F1}{unit}</b>";
-                onChange?.Invoke(currentVal);
-            }, WoodButtonNormal, TextParchmentLight, 18);
-            EnsureLayout(plusBtn, 54, 32, false);
+            var go = new GameObject("Chip");
+            go.transform.SetParent(parent, false);
+            go.AddComponent<LayoutElement>().preferredWidth = 42;
+            var img = go.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(5);
+            img.type = Image.Type.Sliced;
+            img.color = ColBorder;
+            AddInsetFill(go, 5, ColRow);
+            var txt = CreateText(go, text, 16f, FontStyle.Bold, ColTextMuted, TextAnchor.MiddleCenter);
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            FillParent(txt.gameObject);
+            return go;
         }
+        #endregion [END] CREATE KEY CHIP
 
-        private string FormatMultiplierBadge(string label, float val, string format, string unit)
+        #region [START] ADD DIVIDER
+        private void AddDivider(Transform parent, float marginBottom, RectTransform anchorBelow = null)
         {
-            string valStr = val.ToString(format);
-            return $"{label}: <color=#FFD54F><b>{valStr}{unit}</b></color>";
-        }
-
-        private void CreateDualStepperRow(Transform parent,
-            string label1, float min1, float max1, float step1, float initial1, string unit1, Action<float> cb1, string tooltip1,
-            string label2, float min2, float max2, float step2, float initial2, string unit2, Action<float> cb2, string tooltip2,
-            float rowHeight = 38f)
-        {
-            var row = CreateBox(parent, "DualStepperRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), Color.clear);
-            EnsureLayout(row, -1, rowHeight);
-            var layout = row.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 8;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = true;
-
-            CreateHalfStepper(row.transform, label1, min1, max1, step1, initial1, unit1, cb1, rowHeight, tooltip1);
-            CreateHalfStepper(row.transform, label2, min2, max2, step2, initial2, unit2, cb2, rowHeight, tooltip2);
-        }
-
-        private void CreateHalfStepper(Transform parent, string label, float min, float max, float step, float initialVal, string unit, Action<float> onChange, float height, string tooltip = null)
-        {
-            var box = CreateBox(parent, "StepperBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, height), WoodPlankEven);
-            EnsureLayout(box, -1, height);
-            CreateBox(box.transform, "Seam", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 1), WoodRowBorder);
-
-            var layout = box.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 6;
-            layout.padding = new RectOffset(12, 8, 2, 2);
-            layout.childForceExpandHeight = false;
-            layout.childForceExpandWidth = false;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-
-            float currentVal = initialVal;
-            string format = (step < 1f) ? "F1" : "F0";
-
-            var labelTxt = CreateText(box.transform, "Label", FormatMultiplierBadge(label, currentVal, format, unit), 15, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleLeft);
-            var lLe = labelTxt.gameObject.AddComponent<LayoutElement>();
-            lLe.flexibleWidth = 1f;
-
-            var minusBtn = CreateButton(box.transform, "Btn_Minus", "－", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(34, height - 6), () =>
+            if (anchorBelow != null)
             {
-                currentVal = Mathf.Max(min, currentVal - step);
-                labelTxt.text = FormatMultiplierBadge(label, currentVal, format, unit);
-                MarkProfileCustom();
-                if (!string.IsNullOrEmpty(tooltip)) SetQoLTooltip(tooltip);
-                onChange?.Invoke(currentVal);
-            }, WoodButtonNormal, TextParchmentLight, 18);
-            var mLe = minusBtn.AddComponent<LayoutElement>();
-            mLe.preferredWidth = 34;
-            mLe.preferredHeight = height - 6;
-            mLe.flexibleWidth = 0f;
-
-            var plusBtn = CreateButton(box.transform, "Btn_Plus", "＋", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(34, height - 6), () =>
-            {
-                currentVal = Mathf.Min(max, currentVal + step);
-                labelTxt.text = FormatMultiplierBadge(label, currentVal, format, unit);
-                MarkProfileCustom();
-                if (!string.IsNullOrEmpty(tooltip)) SetQoLTooltip(tooltip);
-                onChange?.Invoke(currentVal);
-            }, WoodButtonNormal, TextParchmentLight, 18);
-            var pLe = plusBtn.AddComponent<LayoutElement>();
-            pLe.preferredWidth = 34;
-            pLe.preferredHeight = height - 6;
-            pLe.flexibleWidth = 0f;
-        }
-
-        private void CreateTripleStepperRow(Transform parent,
-            string label1, float min1, float max1, float step1, float initial1, string unit1, Action<float> cb1, string tooltip1,
-            string label2, float min2, float max2, float step2, float initial2, string unit2, Action<float> cb2, string tooltip2,
-            string label3, float min3, float max3, float step3, float initial3, string unit3, Action<float> cb3, string tooltip3,
-            float rowHeight = 32f)
-        {
-            var row = CreateBox(parent, "TripleStepperRow", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, rowHeight), Color.clear);
-            EnsureLayout(row, -1, rowHeight);
-            var layout = row.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 6;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = true;
-
-            CreateThirdStepper(row.transform, label1, min1, max1, step1, initial1, unit1, cb1, rowHeight, tooltip1);
-            CreateThirdStepper(row.transform, label2, min2, max2, step2, initial2, unit2, cb2, rowHeight, tooltip2);
-            CreateThirdStepper(row.transform, label3, min3, max3, step3, initial3, unit3, cb3, rowHeight, tooltip3);
-        }
-
-        private void CreateThirdStepper(Transform parent, string label, float min, float max, float step, float initialVal, string unit, Action<float> onChange, float height, string tooltip = null)
-        {
-            var box = CreateBox(parent, "StepperBox", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(0, height), WoodPlankEven);
-            EnsureLayout(box, -1, height);
-            CreateBox(box.transform, "Seam", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 1), WoodRowBorder);
-
-            var layout = box.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 4;
-            layout.padding = new RectOffset(8, 6, 2, 2);
-            layout.childForceExpandHeight = false;
-
-            float currentVal = initialVal;
-            string format = (step < 1f) ? "F1" : "F0";
-
-            var labelTxt = CreateText(box.transform, "Label", FormatMultiplierBadge(label, currentVal, format, unit), 12, FontStyle.Normal, TextParchmentLight, TextAnchor.MiddleLeft);
-            EnsureLayout(labelTxt.gameObject, 195, height - 4, true);
-
-            var minusBtn = CreateButton(box.transform, "Btn_Minus", " - ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(34, height - 6), () =>
-            {
-                currentVal = Mathf.Max(min, currentVal - step);
-                labelTxt.text = FormatMultiplierBadge(label, currentVal, format, unit);
-                MarkProfileCustom();
-                if (!string.IsNullOrEmpty(tooltip)) SetQoLTooltip(tooltip);
-                onChange?.Invoke(currentVal);
-            }, WoodButtonNormal, TextParchmentLight, 15);
-            EnsureLayout(minusBtn, 34, height - 6, false);
-
-            var plusBtn = CreateButton(box.transform, "Btn_Plus", " + ", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(34, height - 6), () =>
-            {
-                currentVal = Mathf.Min(max, currentVal + step);
-                labelTxt.text = FormatMultiplierBadge(label, currentVal, format, unit);
-                MarkProfileCustom();
-                if (!string.IsNullOrEmpty(tooltip)) SetQoLTooltip(tooltip);
-                onChange?.Invoke(currentVal);
-            }, WoodButtonNormal, TextParchmentLight, 15);
-            EnsureLayout(plusBtn, 34, height - 6, false);
-        }
-        // ============================================================================
-        // [END] UI COMPONENT BUILDERS
-        // ============================================================================
-        #endregion
-
-        #region [START] UPDATE LOOP & HOTKEY HANDLER
-        // ============================================================================
-        // [START] UPDATE LOOP & HOTKEY HANDLER (F5, F6, F/F7, F8, F9, ESC)
-        // ============================================================================
-        private void Update()
-        {
-            try
-            {
-                if (_canvasGO == null || _modWindowGO == null)
-                {
-                    BuildCanvasUI();
-                }
-
-                // Check hotkeys (F5 or Insert for mod window, F6 for HUD, F/F7 for Fly, F8 for Teleport, F9 for Summon)
-                KeyCode keyMenu = Plugin.KeyMenu != null ? Plugin.KeyMenu.Value : KeyCode.F5;
-                if (InputHelper.WasKeyPressed(keyMenu) || InputHelper.WasKeyPressed(KeyCode.Insert))
-                {
-                    ToggleModWindow();
-                }
-                if (InputHelper.WasKeyPressed(KeyCode.Escape) && _modWindowGO != null && _modWindowGO.activeSelf)
-                {
-                    ToggleModWindow();
-                }
-                KeyCode keyHud = Plugin.KeyHUD != null ? Plugin.KeyHUD.Value : KeyCode.F6;
-                if (InputHelper.WasKeyPressed(keyHud))
-                {
-                    if (InputHelper.IsKeyHeld(KeyCode.LeftShift) || InputHelper.IsKeyHeld(KeyCode.RightShift))
-                    {
-                        HUDOverlay.CycleStyle();
-                        UpdateNavStyleButtonVisuals();
-                    }
-                    else
-                    {
-                        Plugin.EnableHUD.Value = !Plugin.EnableHUD.Value;
-                    }
-                }
-                // Fly / NoClip Hotkey (Strictly single key, safely locked in Survival mode)
-                KeyCode keyFly = Plugin.KeyFly != null ? Plugin.KeyFly.Value : KeyCode.F;
-                if (InputHelper.WasKeyPressed(keyFly))
-                {
-                    if (Plugin.IsSurvivalMode)
-                    {
-                        TeleportManager.SetNotification("🔒 Fly / NoClip is locked in Survival Mode. Switch to Creative Mode in [F5] menu.");
-                    }
-                    else
-                    {
-                        Plugin.EnableFlyMode.Value = !Plugin.EnableFlyMode.Value;
-                        TeleportManager.SetNotification(Plugin.EnableFlyMode.Value ? "🕊️ Fly / NoClip: ON" : "🕊️ Fly / NoClip: OFF");
-                    }
-                }
-
-                // Quick Gameplay Hotkeys ([F4] Sails, [F3] Engines, [F7] Magnet, [F10] Radar)
-                if (Plugin.EnableHotkeys != null && Plugin.EnableHotkeys.Value)
-                {
-                    KeyCode keySails = Plugin.KeySailToggle != null ? Plugin.KeySailToggle.Value : KeyCode.F4;
-                    if (InputHelper.WasKeyPressed(keySails))
-                    {
-                        BoatController.ToggleAllSails();
-                    }
-
-                    KeyCode keyEngines = Plugin.KeyEngineToggle != null ? Plugin.KeyEngineToggle.Value : KeyCode.F3;
-                    if (InputHelper.WasKeyPressed(keyEngines))
-                    {
-                        BoatController.ToggleAllEngines();
-                    }
-
-                    KeyCode keyMagnet = Plugin.KeyMagnetToggle != null ? Plugin.KeyMagnetToggle.Value : KeyCode.F7;
-                    if (InputHelper.WasKeyPressed(keyMagnet))
-                    {
-                        MagneticCollector.ToggleMagnet();
-                    }
-
-                    KeyCode keyScan = Plugin.KeyScannerPulse != null ? Plugin.KeyScannerPulse.Value : KeyCode.F10;
-                    if (InputHelper.WasKeyPressed(keyScan))
-                    {
-                        ItemDetector.TriggerPulseScan();
-                    }
-                }
-
-                KeyCode keyTeleRaft = Plugin.KeyTeleportToRaft != null ? Plugin.KeyTeleportToRaft.Value : KeyCode.F8;
-                if (InputHelper.WasKeyPressed(keyTeleRaft))
-                {
-                    TeleportManager.TeleportPlayerToRaft();
-                }
-                KeyCode keySummon = Plugin.KeyTeleportRaftToPlayer != null ? Plugin.KeyTeleportRaftToPlayer.Value : KeyCode.F9;
-                if (InputHelper.WasKeyPressed(keySummon))
-                {
-                    TeleportManager.TeleportRaftToPlayer();
-                }
-
-                // Free and unlock cursor only when mod window is open
-                if (IsWindowOpen)
-                {
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
-                    try
-                    {
-                        Helper.CursorVisible = true;
-                        Helper.SetCursorLockState(CursorLockMode.None);
-                    }
-                    catch {}
-                }
-
-                // Update live Navigation tab & Survival QoL data if visible (throttled to 5Hz to prevent frame lag)
-                if ((_activeTab == 0 || _activeTab == 2) && Time.unscaledTime - _lastNavTabUpdate > 0.2f)
-                {
-                    _lastNavTabUpdate = Time.unscaledTime;
-                    UpdateNavTabText();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning("[Sailor's Companion] Error in CanvasModUI.Update: " + ex.Message);
-            }
-        }
-
-        private float _lastNavTabUpdate = 0f;
-        private static Raft _cachedNavRaft = null;
-        private static AI_StateMachine_Shark _cachedNavShark = null;
-        private static Camera _cachedNavCamera = null;
-
-        private static string GetSailModeDisplayName()
-        {
-            int mode = Plugin.BoatSailMode != null ? Plugin.BoatSailMode.Value : 0;
-            switch (mode)
-            {
-                case 1: return "🧭 Sail: Auto-Wind";
-                case 2: return "🧭 Sail: Follow Heading";
-                default: return "🧭 Sail: Manual Control";
-            }
-        }
-
-        private void CycleSailMode()
-        {
-            if (Plugin.BoatSailMode == null) return;
-            int next = (Plugin.BoatSailMode.Value + 1) % 3;
-            Plugin.BoatSailMode.Value = next;
-            if (_navSailModeBtnText != null)
-            {
-                _navSailModeBtnText.text = GetSailModeDisplayName();
-            }
-            BoatController.ApplyActiveSailMode();
-            TeleportManager.SetNotification($"🧭 Smart Sail Mode: {GetSailModeDisplayName()}");
-        }
-
-        private void UpdateNavTabText()
-        {
-            if (_navRecallBtnText != null)
-            {
-                float cd = TeleportManager.GetRecallCooldownRemaining();
-                if (cd > 0f)
-                {
-                    int sec = Mathf.CeilToInt(cd);
-                    int mins = sec / 60;
-                    int s = sec % 60;
-                    string cdStr = mins > 0 ? $"{mins}m {s}s" : $"{s}s";
-                    _navRecallBtnText.text = $"⏳ Recall ({cdStr})";
-                }
-                else
-                {
-                    _navRecallBtnText.text = "⚡ Recall to Raft";
-                }
-            }
-
-            if (_navScannerBtnText != null)
-            {
-                if (ItemDetector.IsScanActive)
-                {
-                    int sec = Mathf.CeilToInt(ItemDetector.GetActiveTimeRemaining());
-                    _navScannerBtnText.text = $"🔍 Active ({sec}s)";
-                }
-                else
-                {
-                    float cd = ItemDetector.GetCooldownRemaining();
-                    if (cd > 0f)
-                    {
-                        int sec = Mathf.CeilToInt(cd);
-                        _navScannerBtnText.text = $"⏳ Scan ({sec}s)";
-                    }
-                    else
-                    {
-                        _navScannerBtnText.text = "🔍 Island Radar";
-                    }
-                }
-            }
-
-            if (_qolMagnetBtnText != null)
-            {
-                if (MagneticCollector.IsActive)
-                {
-                    int sec = Mathf.CeilToInt(MagneticCollector.GetActiveTimeRemaining());
-                    _qolMagnetBtnText.text = $"🧲 Active ({sec}s)";
-                }
-                else
-                {
-                    float cd = MagneticCollector.GetCooldownRemaining();
-                    if (cd > 0f)
-                    {
-                        int sec = Mathf.CeilToInt(cd);
-                        _qolMagnetBtnText.text = $"⏳ Magnet ({sec}s)";
-                    }
-                    else
-                    {
-                        _qolMagnetBtnText.text = "🧲 Ocean Magnet";
-                    }
-                }
-            }
-
-            if (_navSailModeBtnText != null)
-            {
-                _navSailModeBtnText.text = GetSailModeDisplayName();
-            }
-
-            var p = PlayerHelper.GetLocalPlayer();
-            if (p == null)
-            {
-                if (_teleHeadingText != null) _teleHeadingText.text = "<b><color=#AD9473>Standby</color></b>\n<size=12><color=#7A6A55>Enter world to read compass</color></size>";
-                if (_teleRaftText != null) _teleRaftText.text = "<b><color=#AD9473>Standby</color></b>\n<size=12><color=#7A6A55>Waiting for save file</color></size>";
-                if (_teleSharkText != null) _teleSharkText.text = "<b><color=#34D399>Sonar Clear</color></b>\n<size=12><color=#7A6A55>No hostile predator detected</color></size>";
-                if (_teleCoordsText != null) _teleCoordsText.text = "<b><color=#AD9473>X: 0.0  Y: 0.0  Z: 0.0</color></b>\n<size=12><color=#7A6A55>Waiting for world telemetry</color></size>";
-                if (_navStatusText != null) _navStatusText.text = "<color=#94A3B8>Enter a game world to see live navigation, raft tracking, and shark distance data.</color>";
+                var dGO = new GameObject("Divider");
+                dGO.transform.SetParent(parent, false);
+                var dRt = dGO.AddComponent<RectTransform>();
+                dRt.anchorMin = new Vector2(0, 1);
+                dRt.anchorMax = new Vector2(1, 1);
+                dRt.pivot = new Vector2(0.5f, 1);
+                dRt.sizeDelta = new Vector2(0, 1);
+                dRt.anchoredPosition = new Vector2(0, -anchorBelow.sizeDelta.y);
+                var img = dGO.AddComponent<Image>();
+                img.color = ColBorderSoft;
                 return;
             }
 
-            if (_cachedNavCamera == null) _cachedNavCamera = Camera.main;
-            float yaw = _cachedNavCamera != null ? _cachedNavCamera.transform.eulerAngles.y : p.transform.eulerAngles.y;
-            string[] cardinals = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
-            int cIndex = Mathf.RoundToInt(yaw / 45f) % 8;
-            if (cIndex < 0) cIndex += 8;
-
-            if (_teleHeadingText != null)
-            {
-                _teleHeadingText.text = $"<b><color=#FFD54F><size=17>{yaw:000}° ({cardinals[cIndex]})</size></color></b>\n<size=12><color=#E6CEAC>Facing {cardinals[cIndex]} Direction</color></size>";
-            }
-
-            string raftStr = "Raft: Not detected";
-            if (_cachedNavRaft == null || !_cachedNavRaft.gameObject.activeInHierarchy)
-            {
-                _cachedNavRaft = ComponentManager<Raft>.Value ?? FindObjectOfType<Raft>();
-            }
-            if (_cachedNavRaft != null)
-            {
-                float dist = Vector3.Distance(p.transform.position, _cachedNavRaft.transform.position);
-                string stateStr = _cachedNavRaft.IsAnchored ? "<color=#F87171>Anchored</color>" : "<color=#34D399>Drifting</color>";
-                float knots = _cachedNavRaft.Velocity.magnitude * 1.94f;
-                raftStr = $"Raft: <b>{dist:F0}m</b> away  |  State: <b>{(_cachedNavRaft.IsAnchored ? "Anchored" : "Drifting")}</b>  |  Speed: <b>{knots:F1} knots</b>";
-                if (_teleRaftText != null)
-                {
-                    _teleRaftText.text = $"<b><color=#FFFFFF>{dist:F0}m Away</color></b> | {stateStr}\n<size=12><color=#E6CEAC>Velocity: <b>{knots:F1} knots</b></color></size>";
-                }
-            }
-            else if (_teleRaftText != null)
-            {
-                _teleRaftText.text = "<b><color=#F87171>Not Detected</color></b>\n<size=12><color=#E6CEAC>Raft reference missing</color></size>";
-            }
-
-            string sharkStr = "Bruce: Peaceful";
-            if (_cachedNavShark == null || !_cachedNavShark.gameObject.activeInHierarchy)
-            {
-                _cachedNavShark = FindObjectOfType<AI_StateMachine_Shark>();
-            }
-            if (_cachedNavShark != null && _cachedNavShark.gameObject.activeInHierarchy)
-            {
-                float sDist = Vector3.Distance(p.transform.position, _cachedNavShark.transform.position);
-                sharkStr = $"Bruce the Shark: <b>{sDist:F0}m</b> away";
-                if (_teleSharkText != null)
-                {
-                    string alertColor = sDist < 25f ? "#EF4444" : (sDist < 50f ? "#F59E0B" : "#34D399");
-                    string threat = sDist < 25f ? "DANGER: Close!" : (sDist < 50f ? "Prowling nearby" : "Far away / Calm");
-                    _teleSharkText.text = $"<b><color={alertColor}>{sDist:F0}m Away</color></b>\n<size=12><color=#E6CEAC>{threat}</color></size>";
-                }
-            }
-            else if (_teleSharkText != null)
-            {
-                _teleSharkText.text = "<b><color=#34D399>No Shark Detected</color></b>\n<size=12><color=#E6CEAC>Ocean waters are clear</color></size>";
-            }
-
-            if (_teleCoordsText != null)
-            {
-                _teleCoordsText.text = $"<b><color=#FFD54F>X: {p.transform.position.x:F1}  Z: {p.transform.position.z:F1}</color></b>\n<size=12><color=#E6CEAC>Altitude: <b>Y: {p.transform.position.y:F1}m</b></color></size>";
-            }
-
-            string notifStr = "";
-            if (!string.IsNullOrEmpty(TeleportManager.LastStatusMessage) && (Time.unscaledTime - TeleportManager.LastStatusTime < 8.0f))
-            {
-                notifStr = $"\n<color=#EF4444><b>Notification:</b> {TeleportManager.LastStatusMessage}</color>";
-                if (_teleNotifText != null)
-                {
-                    _teleNotifText.text = $"📢 <color=#EF4444><b>Notification:</b> {TeleportManager.LastStatusMessage}</color>";
-                }
-            }
-            else if (_teleNotifText != null)
-            {
-                _teleNotifText.text = "💡 <color=#E0D0B5>Hotkeys:</color> <color=#F5C761>[F5]</color> Menu  |  <color=#F5C761>[F6]</color> HUD  |  <color=#F5C761>[Shift+F6]</color> Style  |  <color=#F5C761>[F4]</color> Sails  |  <color=#F5C761>[F3]</color> Engines  |  <color=#F5C761>[F8]</color> Recall  |  <color=#F5C761>[F9]</color> Summon";
-            }
-
-            if (_navStatusText != null)
-            {
-                _navStatusText.text = $"• Player Position: <b>X: {p.transform.position.x:F1}, Y: {p.transform.position.y:F1}, Z: {p.transform.position.z:F1}</b>\n" +
-                                      $"• Facing Direction: <b>{yaw:000}° ({cardinals[cIndex]})</b>\n" +
-                                      $"• {raftStr}\n" +
-                                      $"• {sharkStr}{notifStr}\n\n" +
-                                      $"<size=13><color=#CBD5E1>Hotkeys: [F5] Menu  |  [F6] HUD  |  [Shift+F6] Cycle Style  |  [F] Fly  |  [F8] Recall  |  [F9] Summon</color></size>";
-            }
-
-            UpdateNavStyleButtonVisuals();
+            var go = new GameObject("Divider");
+            go.transform.SetParent(parent, false);
+            go.AddComponent<LayoutElement>().preferredHeight = 1;
+            var im = go.AddComponent<Image>();
+            im.color = ColBorderSoft;
         }
+        #endregion [END] ADD DIVIDER
 
-        private void UpdateNavStyleButtonVisuals()
+        #region [START] BUILD FOOTER
+        private void BuildFooter(GameObject parent)
         {
-            if (_navStyleBtns == null || _navStyleBtns.Count == 0) return;
-            int current = Plugin.HUDStyle != null ? Plugin.HUDStyle.Value : 0;
-            for (int i = 0; i < _navStyleBtns.Count; i++)
-            {
-                if (_navStyleBtns[i] != null)
-                {
-                    bool isSel = (i == current);
-                    var img = _navStyleBtns[i].GetComponent<Image>();
-                    if (img != null)
-                        img.color = isSel ? TabActiveBg : WoodButtonNormal;
-                    var txt = _navStyleBtns[i].GetComponentInChildren<Text>();
-                    if (txt != null)
-                    {
-                        txt.color = isSel ? TabActiveText : TextParchmentLight;
-                        txt.fontStyle = isSel ? FontStyle.Bold : FontStyle.Normal;
-                    }
-                }
-            }
-        }
+            var footGO = new GameObject("Footer");
+            footGO.transform.SetParent(parent.transform, false);
+            var fRt = footGO.AddComponent<RectTransform>();
+            fRt.anchorMin = new Vector2(0, 0);
+            fRt.anchorMax = new Vector2(1, 0);
+            fRt.pivot = new Vector2(0.5f, 0);
+            fRt.sizeDelta = new Vector2(0, 52);
+            fRt.anchoredPosition = Vector2.zero;
 
-        public void RefreshUpdateBanner()
+            AddDivider(footGO.transform, 0);
+            var topLine = footGO.transform.Find("Divider");
+            if (topLine != null)
+            {
+                var tlRt = topLine.GetComponent<RectTransform>();
+                tlRt.anchorMin = new Vector2(0, 1);
+                tlRt.anchorMax = new Vector2(1, 1);
+                tlRt.pivot = new Vector2(0.5f, 1);
+                tlRt.sizeDelta = new Vector2(0, 1);
+                tlRt.anchoredPosition = Vector2.zero;
+
+                // footGO's own HorizontalLayoutGroup treats every child as a row item unless told
+                // otherwise - without this, the next layout rebuild collapses this divider's
+                // full-width top-border anchors into "just another item in the row", rendering as
+                // an unexplained grey box instead of a thin border line.
+                var tlLe = topLine.GetComponent<LayoutElement>();
+                if (tlLe == null) tlLe = topLine.gameObject.AddComponent<LayoutElement>();
+                tlLe.ignoreLayout = true;
+            }
+
+            var layout = footGO.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.padding = new RectOffset(28, 26, 8, 8);
+            layout.childForceExpandHeight = true;
+            layout.childAlignment = TextAnchor.MiddleLeft;
+
+            var verGO = new GameObject("Ver");
+            verGO.transform.SetParent(footGO.transform, false);
+            verGO.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            _footerVerText = CreateText(verGO, "Sailor's Companion  <color=#8FA3A9>v" + PluginInfo.PLUGIN_VERSION + " · not checked yet</color>", 15f, FontStyle.Normal, ColTextMuted, TextAnchor.MiddleLeft);
+            // This line sits in a single-line-tall strip. CreateText defaults to Wrap and Unity's
+            // Text defaults verticalOverflow to Truncate, so a wrapped second line is silently
+            // clipped and the sentence looks cut off mid-word. Force single-line instead.
+            _footerVerText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            FillParent(_footerVerText.gameObject);
+
+            var btnGO = new GameObject("Btn_Check");
+            btnGO.transform.SetParent(footGO.transform, false);
+            btnGO.AddComponent<LayoutElement>().preferredWidth = 175;
+            var btnImg = btnGO.AddComponent<Image>();
+            btnImg.sprite = GetRoundedSprite(8);
+            btnImg.type = Image.Type.Sliced;
+            btnImg.color = ColAccent;
+            var btn = btnGO.AddComponent<Button>();
+            btn.targetGraphic = btnImg;
+            var cb = btn.colors;
+            cb.normalColor = ColAccent;
+            cb.highlightedColor = ColAccentStrong;
+            cb.pressedColor = ColAccentStrong;
+            btn.colors = cb;
+            btn.onClick.AddListener(() =>
+            {
+                UpdateChecker.Dismissed = false;
+                UpdateChecker.Instance?.TriggerCheck();
+                TeleportManager.SetNotification("Checking GitHub for mod updates...");
+                RefreshUpdateBadge();
+            });
+            var btnTxt = CreateText(btnGO, "Check for Updates", 17f, FontStyle.Bold, ColOnAccentTxt, TextAnchor.MiddleCenter);
+            btnTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            FillParent(btnTxt.gameObject);
+        }
+        #endregion [END] BUILD FOOTER
+
+        // ---------------- rounded-rect sprite generator (9-sliced, cached by radius) ----------------
+        private static readonly Dictionary<int, Sprite> _roundedSpriteCache = new Dictionary<int, Sprite>();
+
+        #region [START] GET ROUNDED SPRITE
+        private static Sprite GetRoundedSprite(int radius)
         {
-            if (_updateBannerGO == null) return;
-            bool show = UpdateChecker.IsUpdateAvailable && !UpdateChecker.Dismissed;
-            _updateBannerGO.SetActive(show);
-            if (show && _updateBannerText != null)
+            radius = Mathf.Max(2, radius);
+            if (_roundedSpriteCache.TryGetValue(radius, out var cached) && cached != null) return cached;
+
+            int size = radius * 2 + 4;
+            var tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
+            tex.hideFlags = HideFlags.HideAndDontSave;
+            tex.wrapMode = TextureWrapMode.Clamp;
+            tex.filterMode = FilterMode.Bilinear;
+
+            for (int y = 0; y < size; y++)
             {
-                string notes = !string.IsNullOrEmpty(UpdateChecker.ReleaseNotes) ? $" — <i>\"{UpdateChecker.ReleaseNotes}\"</i>" : "";
-                _updateBannerText.text = $"✨ <b>New Update v{UpdateChecker.LatestVersion} Available!</b> (Current: v{PluginInfo.PLUGIN_VERSION}){notes}";
+                for (int x = 0; x < size; x++)
+                {
+                    bool inCornerX = x < radius || x >= size - radius;
+                    bool inCornerY = y < radius || y >= size - radius;
+                    float alpha = 1f;
+                    if (inCornerX && inCornerY)
+                    {
+                        float cx = x < radius ? radius : size - radius - 1;
+                        float cy = y < radius ? radius : size - radius - 1;
+                        float dist = Mathf.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
+                        alpha = Mathf.Clamp01(radius - dist + 0.5f);
+                    }
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                }
             }
+            tex.Apply();
+
+            var sprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(radius, radius, radius, radius));
+            sprite.name = "SC_Rounded_" + radius;
+            _roundedSpriteCache[radius] = sprite;
+            return sprite;
         }
+        #endregion [END] GET ROUNDED SPRITE
 
-        public static bool IsWindowOpen => Instance != null && Instance._modWindowGO != null && Instance._modWindowGO.activeSelf;
-
-        public void ToggleModWindow()
+        #region [START] ADD INSET FILL
+        // UnityEngine.UI.Outline draws an offset duplicate of the graphic, not a border stroke, so
+        // on a filled shape it reads as a shadow. A border is instead the parent image showing
+        // through around a slightly smaller fill child.
+        private Image AddInsetFill(GameObject go, int radius, Color fillColor, float inset = 1.5f)
         {
-            if (_modWindowGO == null)
-            {
-                BuildCanvasUI();
-            }
-            if (_modWindowGO == null) return;
-            bool open = !_modWindowGO.activeSelf;
-            _modWindowGO.SetActive(open);
-
-            if (open)
-            {
-                EnsureEventSystem();
-                RefreshUpdateBanner();
-
-                try
-                {
-                    var cic = CustomInputConfig.Instance;
-                    if (cic != null)
-                    {
-                        cic.EnableInput();
-                        cic.SwitchCurrentActionMap("UI");
-                    }
-                }
-                catch { }
-
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-                try
-                {
-                    Helper.SetCursorVisibleAndLockState(true, CursorLockMode.None);
-                }
-                catch {}
-
-                try
-                {
-                    if (CanvasHelper.ActiveMenu == MenuType.None)
-                    {
-                        CanvasHelper.ActiveMenu = MenuType.Cheat;
-                    }
-                }
-                catch {}
-            }
-            else
-            {
-                try
-                {
-                    if (CanvasHelper.ActiveMenu == MenuType.Cheat && !CursorPatchHelper.ShouldForceCursorFree())
-                    {
-                        CanvasHelper.ActiveMenu = MenuType.None;
-                    }
-                }
-                catch {}
-
-                var p = PlayerHelper.GetLocalPlayer();
-                if (p != null)
-                {
-                    bool isOtherMenuOpen = false;
-                    try
-                    {
-                        if (CanvasHelper.ActiveMenu != MenuType.None && CanvasHelper.ActiveMenu != MenuType.Cheat)
-                        {
-                            isOtherMenuOpen = true;
-                        }
-                    }
-                    catch {}
-
-                    if (CursorPatchHelper.ShouldForceCursorFree())
-                    {
-                        isOtherMenuOpen = true;
-                    }
-
-                    try
-                    {
-                        var cic = CustomInputConfig.Instance;
-                        if (cic != null && !isOtherMenuOpen)
-                        {
-                            cic.SwitchCurrentActionMap("Player");
-                        }
-                    }
-                    catch { }
-
-                    if (!isOtherMenuOpen)
-                    {
-                        try
-                        {
-                            Helper.SetCursorVisibleAndLockState(false, CursorLockMode.Locked);
-                        }
-                        catch
-                        {
-                            Cursor.lockState = CursorLockMode.Locked;
-                            Cursor.visible = false;
-                        }
-                    }
-                    else
-                    {
-                        try
-                        {
-                            Helper.SetCursorVisibleAndLockState(true, CursorLockMode.None);
-                        }
-                        catch {}
-                        Cursor.lockState = CursorLockMode.None;
-                        Cursor.visible = true;
-                    }
-                }
-                else
-                {
-                    try
-                    {
-                        Helper.SetCursorVisibleAndLockState(true, CursorLockMode.None);
-                        Helper.CursorVisible = true;
-                        Helper.SetCursorLockState(CursorLockMode.None);
-                    }
-                    catch {}
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
-                }
-            }
+            var fillGO = new GameObject("Fill");
+            fillGO.transform.SetParent(go.transform, false);
+            fillGO.transform.SetAsFirstSibling();
+            var rt = fillGO.AddComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(inset, inset);
+            rt.offsetMax = new Vector2(-inset, -inset);
+            var img = fillGO.AddComponent<Image>();
+            img.sprite = GetRoundedSprite(radius);
+            img.type = Image.Type.Sliced;
+            img.color = fillColor;
+            img.raycastTarget = false;
+            fillGO.AddComponent<LayoutElement>().ignoreLayout = true;
+            return img;
         }
-        // ============================================================================
-        // [END] UPDATE LOOP & HOTKEY HANDLER
-        // ============================================================================
-        #endregion
+        #endregion [END] ADD INSET FILL
 
-        #region [START] WORLD TIME & WEATHER HELPERS
-        // ============================================================================
-        // [START] WORLD TIME & WEATHER HELPERS
-        // ============================================================================
-        public void SetHUDVisible(bool visible)
+        #region [START] CREATE TEXT
+        private Text CreateText(GameObject parent, string text, float fontSize, FontStyle style, Color color, TextAnchor alignment)
         {
-            Plugin.EnableHUD.Value = visible;
+            var go = new GameObject("Text");
+            go.transform.SetParent(parent.transform, false);
+            var t = go.AddComponent<Text>();
+            t.text = text;
+            t.font = GetGameFont();
+            t.fontSize = Mathf.RoundToInt(fontSize);
+            t.fontStyle = style;
+            t.color = color;
+            t.alignment = alignment;
+            t.raycastTarget = false;
+            t.supportRichText = true;
+            t.horizontalOverflow = HorizontalWrapMode.Wrap;
+            return t;
         }
+        #endregion [END] CREATE TEXT
 
-        private static void SetTime(float hour)
+        #region [START] FILL PARENT
+        private void FillParent(GameObject go)
         {
-            var sky = FindObjectOfType<UnityEngine.AzureSky.AzureSkyController>();
-            if (sky?.timeOfDay != null)
+            var rt = go.GetComponent<RectTransform>() ?? go.AddComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+        }
+        #endregion [END] FILL PARENT
+
+        #region [START] SET LAYER RECURSIVELY
+        private static void SetLayerRecursively(GameObject obj, int newLayer)
+        {
+            if (obj == null) return;
+            obj.layer = newLayer;
+            for (int i = 0; i < obj.transform.childCount; i++)
             {
-                sky.timeOfDay.GotoTime(hour);
+                var child = obj.transform.GetChild(i);
+                if (child != null) SetLayerRecursively(child.gameObject, newLayer);
             }
         }
-
-        private static void SetWeather(UniqueWeatherType weather)
-        {
-            var wm = ComponentManager<WeatherManager>.Value ?? FindObjectOfType<WeatherManager>();
-            if (wm != null)
-            {
-                wm.SetWeather(weather, true);
-            }
-        }
-        // ============================================================================
-        // [END] WORLD TIME & WEATHER HELPERS
-        // ============================================================================
-        #endregion
+        #endregion [END] SET LAYER RECURSIVELY
+        #endregion [END] SHARED SHELL & COMPONENTS
     }
+    // ============================================================================
+    // [END] CANVAS SAILOR'S COMPANION SETTINGS UI
+    // ============================================================================
+    #endregion [END] CANVAS SAILOR'S COMPANION SETTINGS UI
 }
