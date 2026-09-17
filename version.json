@@ -1,7 +1,7 @@
 {
-  "version": "1.1.10",
+  "version": "1.1.11",
   "name": "Sailor's Companion",
   "downloadUrl": "https://www.nexusmods.com/raft/mods/155",
   "raftModdingUrl": "https://www.raftmodding.com/mods/sailors-companion",
-  "notes": "v1.1.10: Fixed a real item-loss bug in Island Hand Pickup - it only ever credited 1 item and destroyed the rest of any larger pile/stack within pickup range (this is what caused 'drop a stack, only get 1 back'); it also now leaves your own just-dropped items alone instead of instantly re-vacuuming them. Fixed Quick Stack silently resetting a moved tool/weapon's durability to full when placed into a new chest slot. Fixed the in-game Mods Manager showing stale version numbers and incorrect hotkeys (F7/F10) for Sailor's Companion's own features."
+  "notes": "v1.1.11: Redesigned the in-game settings menu with the Modern Clean look shared across Farmer's Companion, Inventory Master, and Collection QoL (8-screen left-rail layout). Hardened the God Mode damage-immunity Harmony patch to bind to its exact method signature instead of resolving it by name alone, addressing a report of God Mode not blocking shark/creature damage. Removed a leftover unused field from the menu rewrite."
 }
