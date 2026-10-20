@@ -356,10 +356,11 @@ namespace SailorsCompanion
             }
         }
 
-        private void OnDestroy()
-        {
-            _harmony?.UnpatchSelf();
-        }
+        // No OnDestroy here on purpose. Raft 1.1.01 destroys BepInEx's manager GameObject (which this
+        // plugin component lives on) right after the main menu loads. The old OnDestroy called
+        // _harmony.UnpatchSelf(), so every patch - God Mode, weapon damage, free crafting, durability,
+        // shark protection, the main menu MODS button - silently vanished a few seconds after launch.
+        // Everything that must keep running lives on ManagerGO (HideAndDontSave), not on this object.
         // ============================================================================
         // [END] SURVIVAL STATS & MOVEMENT MULTIPLIERS
         // ============================================================================

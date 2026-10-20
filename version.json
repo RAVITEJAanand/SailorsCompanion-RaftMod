@@ -1,7 +1,7 @@
 {
-  "version": "1.1.11",
+  "version": "1.1.12",
   "name": "Sailor's Companion",
   "downloadUrl": "https://www.nexusmods.com/raft/mods/155",
   "raftModdingUrl": "https://www.raftmodding.com/mods/sailors-companion",
-  "notes": "v1.1.11: Redesigned the in-game settings menu with the Modern Clean look shared across Farmer's Companion, Inventory Master, and Collection QoL (8-screen left-rail layout). Hardened the God Mode damage-immunity Harmony patch to bind to its exact method signature instead of resolving it by name alone, addressing a report of God Mode not blocking shark/creature damage. Removed a leftover unused field from the menu rewrite."
+  "notes": "v1.1.12: Fixed for Raft 1.1.01. The settings menu's buttons and tabs respond to clicks again (the menu was being drawn underneath the game's own UI, which swallowed every click). God Mode, the weapon damage multiplier, free crafting, infinite durability, shark protection and the main menu MODS button no longer switch themselves off a few seconds after launch."
 }

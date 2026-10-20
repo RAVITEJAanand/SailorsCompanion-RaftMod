@@ -429,7 +429,9 @@ namespace SailorsCompanion.UI
                 _canvas = _canvasGO.AddComponent<Canvas>();
                 _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 _canvas.overrideSorting = true;
-                _canvas.sortingOrder = 33000; // top-most, matches the sibling mods' menu layer
+                // Canvas sorting order is a 16-bit value (max 32767). 33000 wrapped to a large negative
+                // number, which put the menu UNDER Raft's own UI so the game's canvases ate every click.
+                _canvas.sortingOrder = 32700; // top-most, matches the sibling mods' menu layer
 
                 _scaler = _canvasGO.AddComponent<CanvasScaler>();
                 _scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
